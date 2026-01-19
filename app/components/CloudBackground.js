@@ -712,7 +712,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         zIndex: -1, 
         backgroundColor: 'transparent',
         backdropFilter: darkMode ? 'blur(1px)' : 'none',
-        willChange: 'transform'
       }}
     />
   );

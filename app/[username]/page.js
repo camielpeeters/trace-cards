@@ -306,14 +306,16 @@ export default function PublicUserPage() {
       grouped[setId].push(card);
       // Log first card for debugging
       if (index === 0) {
-        console.log('📦 First card structure:', {
-          setId: card.setId,
-          setName: card.setName,
-          cardId: card.cardId,
-          cardName: card.cardName,
-          cardNumber: card.cardNumber || card.number,
-          keys: Object.keys(card)
-        });
+          console.log('📦 First card structure:', {
+            setId: card.setId,
+            setName: card.setName,
+            cardId: card.cardId,
+            cardName: card.cardName,
+            cardNumber: card.cardNumber || card.number,
+            hasTcgplayer: !!card.tcgplayer,
+            tcgplayerPrices: card.tcgplayer?.prices ? Object.keys(card.tcgplayer.prices) : null,
+            keys: Object.keys(card)
+          });
       }
     });
     
