@@ -99,8 +99,10 @@ export default function AdminDashboard() {
     // Load current user
     loadCurrentUser();
     
-    // Auto-sync cards from localStorage to database (once on mount)
-    syncCardsToDatabase();
+    // Auto-sync cards from localStorage to database (once on mount, after a short delay to ensure auth is loaded)
+    setTimeout(() => {
+      syncCardsToDatabase();
+    }, 1000);
   }, [router]);
 
   // Disable native text/image selection while modifier keys are held (keeps click working)

@@ -33,6 +33,7 @@ export async function POST(request) {
           });
           
           if (!existing) {
+            // Create new card
             await prisma.purchaseCard.create({
               data: {
                 userId: user.id,
@@ -44,6 +45,13 @@ export async function POST(request) {
                 images: JSON.stringify(card.images || []),
                 isActive: true
               }
+            });
+            syncedPurchase++;
+          } else if (!existing.isActive) {
+            // Reactivate if it was deactivated
+            await prisma.purchaseCard.update({
+              where: { id: existing.id },
+              data: { isActive: true }
             });
             syncedPurchase++;
           }
@@ -70,6 +78,7 @@ export async function POST(request) {
           });
           
           if (!existing) {
+            // Create new card
             await prisma.shopCard.create({
               data: {
                 userId: user.id,
@@ -82,6 +91,16 @@ export async function POST(request) {
                 price: parseFloat(card.price) || 0,
                 stock: parseInt(card.stock) || 1,
                 isActive: true
+              }
+            });
+            syncedShop++;
+          } else if (!existing.isActive || existing.stock === 0) {
+            // Reactivate if it was deactivated or update stock
+            await prisma.shopCard.update({
+              where: { id: existing.id },
+              data: { 
+                isActive: true,
+                stock: Math.max(existing.stock, parseInt(card.stock) || 1)
               }
             });
             syncedShop++;
