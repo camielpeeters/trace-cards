@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 
 const execAsync = promisify(exec);
 
-// Force dynamic rendering (uses Prisma and file system)
+// Force dynamic rendering (uses Prisma)
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
   try {
-    // Ensure data directory exists
-    const dataDir = join(process.cwd(), 'data');
-    if (!existsSync(dataDir)) {
-      mkdirSync(dataDir, { recursive: true });
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({
+        error: 'DATABASE_URL is not set. Configure PostgreSQL connection string in environment variables.'
+      }, { status: 400 });
     }
 
     // Run Prisma commands
@@ -23,7 +21,7 @@ export async function POST() {
       await execAsync('npx prisma generate', {
         cwd: process.cwd(),
         env: { ...process.env, NODE_ENV: 'production' },
-        maxBuffer: 1024 * 1024 * 10 // 10MB buffer for Plesk
+        maxBuffer: 1024 * 1024 * 10
       });
     } catch (generateError) {
       console.error('Prisma generate error:', generateError);
@@ -34,7 +32,7 @@ export async function POST() {
     const dbPushResult = await execAsync('npx prisma db push --skip-generate --accept-data-loss', {
       cwd: process.cwd(),
       env: { ...process.env, NODE_ENV: 'production' },
-      maxBuffer: 1024 * 1024 * 10 // 10MB buffer for Plesk
+      maxBuffer: 1024 * 1024 * 10
     });
 
     // Test database connection
@@ -61,7 +59,7 @@ export async function POST() {
     return NextResponse.json({
       error: error.message || 'Database setup failed',
       details: error.stderr || error.stdout || error.toString(),
-      help: 'Zorg ervoor dat je schrijfrechten hebt op de data/ folder en dat Prisma correct is geïnstalleerd.'
+      help: 'Ensure DATABASE_URL is set to a valid PostgreSQL connection string.'
     }, { status: 500 });
   }
 }

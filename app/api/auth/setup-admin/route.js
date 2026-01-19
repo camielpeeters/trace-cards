@@ -133,9 +133,9 @@ export async function POST(request) {
     }
     
     // Handle database connection errors
-    if (error.message && error.message.includes('SQLITE')) {
+    if (error.message && (error.message.includes('P1001') || error.message.includes('connection'))) {
       return NextResponse.json(
-        { error: 'Database error: ' + error.message },
+        { error: 'Database connection error: ' + error.message },
         { status: 500 }
       );
     }

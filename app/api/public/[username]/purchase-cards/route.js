@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../../lib/prisma';
 
-// Force dynamic rendering (uses Prisma and dynamic params)
 export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
   try {
     const { username } = await params;
-    
-    // Get Prisma client instance
     const prisma = getPrisma();
     
     // Find user

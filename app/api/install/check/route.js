@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { existsSync, mkdirSync, writeFileSync, accessSync, constants, unlinkSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
 
 export async function GET() {
@@ -22,48 +22,29 @@ export async function GET() {
         : `Node.js ${nodeVersion} is te oud. Minimaal 18.x vereist.`
     };
 
-    // Check 2: Write permissions
-    try {
-      const dataDir = join(process.cwd(), 'data');
-      if (!existsSync(dataDir)) {
-        mkdirSync(dataDir, { recursive: true });
-      }
-      accessSync(dataDir, constants.W_OK);
-      
-      // Test if we can actually write a file
-      const testFile = join(dataDir, '.write-test');
-      writeFileSync(testFile, 'test');
-      unlinkSync(testFile);
-      
-      checks.writable = {
-        passed: true,
-        message: 'Schrijfrechten OK ✅'
-      };
-    } catch (error) {
-      checks.writable = {
-        passed: false,
-        message: `Geen schrijfrechten: ${error.message}`
-      };
-    }
+    // Check 2: Write permissions (not needed for PostgreSQL)
+    checks.writable = {
+      passed: true,
+      message: 'PostgreSQL gebruikt geen lokale bestanden ✅'
+    };
 
-    // Check 3: Database support (check if we can create SQLite)
+    // Check 3: Database connection (PostgreSQL)
     try {
-      const dataDir = join(process.cwd(), 'data');
-      if (!existsSync(dataDir)) {
-        mkdirSync(dataDir, { recursive: true });
+      if (process.env.DATABASE_URL) {
+        checks.database = {
+          passed: true,
+          message: 'DATABASE_URL is configured ✅'
+        };
+      } else {
+        checks.database = {
+          passed: false,
+          message: 'DATABASE_URL is not set. Configure PostgreSQL connection string.'
+        };
       }
-      const testDbPath = join(dataDir, '.test.db');
-      writeFileSync(testDbPath, '');
-      // Clean up test file
-      unlinkSync(testDbPath);
-      checks.database = {
-        passed: true,
-        message: 'SQLite support OK ✅'
-      };
     } catch (error) {
       checks.database = {
         passed: false,
-        message: `Kan geen SQLite database aanmaken: ${error.message}`
+        message: `Database check mislukt: ${error.message}`
       };
     }
 

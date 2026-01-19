@@ -222,7 +222,7 @@ export default function InstallWizard() {
                   status={checks.writable}
                 />
                 <CheckItem 
-                  label="Database Support (SQLite)" 
+                  label="Database Support (PostgreSQL)" 
                   status={checks.database}
                 />
                 <CheckItem 
