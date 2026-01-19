@@ -25,7 +25,7 @@ export default function PublicUserPage() {
   const router = useRouter();
   const username = params.username;
   const isShopPage = pathname?.includes('/shop');
-  const { user: authUser } = useAuth(); // Get authenticated user
+  const { user: authUser, loading: authLoading } = useAuth(); // Get authenticated user
   const [user, setUser] = useState(null);
   const [purchaseCards, setPurchaseCards] = useState([]);
   const [shopCards, setShopCards] = useState([]);
@@ -78,16 +78,16 @@ export default function PublicUserPage() {
     
     window.addEventListener('storage', handleStorageChange);
     
-    // Load user data after auth check
-    loadUserData();
-    
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [username, activeTab, pathname]); // Reload when username/tab/pathname changes
+  }, [username]); // Only run on username change
   
-  // Reload data when authentication state changes
+  // Load user data - wait for auth to load, then decide own vs public
   useEffect(() => {
-    loadUserData();
-  }, [authenticated, authUser?.username]);
+    // Wait for auth to finish loading before deciding
+    if (!authLoading) {
+      loadUserData();
+    }
+  }, [username, activeTab, pathname, authenticated, authUser, authLoading]); // Reload when any of these change
 
   // Load set information from cache (for both purchase and shop cards)
   useEffect(() => {
