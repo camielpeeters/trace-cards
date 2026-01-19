@@ -63,15 +63,19 @@ export async function GET(request, { params }) {
               ? pricing.tcgplayerPriceUSD * pricing.usdToEurRate 
               : null;
             
-            // Convert USD prices to EUR for display
+            // Convert USD prices to EUR for display (use default rate if not available)
+            const defaultRate = 0.92; // Approximate USD to EUR rate as fallback
+            const exchangeRate = pricing.usdToEurRate || defaultRate;
+            
             const convertToEUR = (usdPrice) => {
-              return pricing.usdToEurRate ? usdPrice * pricing.usdToEurRate : null;
+              return usdPrice ? usdPrice * exchangeRate : null;
             };
             
             const holofoilUSD = pricing.tcgplayerPriceUSD;
             const reverseHolofoilUSD = holofoilUSD * 1.1;
             const normalUSD = holofoilUSD * 0.9;
             
+            // Ensure we always return price values (even if approximate)
             tcgplayer = {
               url: pricing.tcgplayerUrl || null,
               prices: {
@@ -95,7 +99,7 @@ export async function GET(request, { params }) {
                 }
               },
               // EUR conversion (for backwards compatibility)
-              eurPrice: priceEUR,
+              eurPrice: holofoilUSD * exchangeRate,
               lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
             };
           }

@@ -395,6 +395,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     // Cloud Class - Verbeterd met hogere resolutie
     class SimpleCloud {
       constructor(isInitial = false) {
+        // Store blob count at creation time for consistency across resets
+        const isMobile = (width || window.innerWidth) < 768;
+        this.blobCount = isMobile ? 18 : 12; // Fixed count per device type
+        this.isMobile = isMobile; // Store mobile flag
         this.reset(isInitial);
       }
 
@@ -409,28 +413,25 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.opacityLight = 0.35;
         this.opacityDark = 0.15 + Math.random() * 0.1; // 0.15 - 0.25 (bijna onzichtbaar in nacht)
         
-        // Meer blobs voor hogere resolutie wolken - consistent tussen mobiel en desktop
-        // Gebruik viewport breedte als deterministische factor (geen random count per reset)
+        // Use stored blob count for consistency (don't recalculate on reset)
+        // This ensures clouds look the same on Firefox mobile across different orientations
         this.blobs = [];
-        // Detecteer mobiel vs desktop (consistent op basis van width)
-        const isMobile = width < 768;
-        // Vaste blob count per device type voor consistentie (was random, nu fixed)
-        const blobCount = isMobile 
-          ? 18 // Vaste 18 blobs op mobiel voor consistent effect
-          : 12; // Vaste 12 blobs op desktop
+        
+        // Use stored isMobile flag and blob count
+        const blobCount = this.blobCount || (this.isMobile ? 18 : 12);
         
         for (let i = 0; i < blobCount; i++) {
-          // Op mobiel: meer variatie in grootte en positie voor natuurlijker effect
-          const blobWidth = isMobile 
+          // Consistent blob sizing based on stored mobile flag
+          const blobWidth = this.isMobile 
             ? 60 + Math.random() * 140 // 60-200px op mobiel
             : 80 + Math.random() * 120; // 80-200px op desktop
-          const blobHeight = isMobile
+          const blobHeight = this.isMobile
             ? 40 + Math.random() * 90 // 40-130px op mobiel
             : 50 + Math.random() * 70; // 50-120px op desktop
           
           this.blobs.push({
-            x: (Math.random() - 0.5) * (isMobile ? 450 : 400),
-            y: (Math.random() - 0.5) * (isMobile ? 100 : 80),
+            x: (Math.random() - 0.5) * (this.isMobile ? 450 : 400),
+            y: (Math.random() - 0.5) * (this.isMobile ? 100 : 80),
             width: blobWidth,
             height: blobHeight,
             rotation: (Math.random() - 0.5) * 0.3 // Consistente rotatie range
