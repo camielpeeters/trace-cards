@@ -1,0 +1,339 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  REFUND
+  ADMIN_CREDIT
+  ADMIN_DEBIT
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  MOLLIE
+  STRIPE
+  MANUAL
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+// Users
+model User {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  displayName   String?
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  
+  // Relations
+  profile       UserProfile?
+  wallet        UserWallet?
+  purchaseCards PurchaseCard[]
+  shopCards     ShopCard[]
+  purchaseOffers PurchaseOffer[]
+  shopOrders    ShopOrder[]
+  transactions  Transaction[]
+  orders        Order[]
+}
+
+// Purchase Cards (inkoop)
+model PurchaseCard {
+  id         String   @id @default(uuid())
+  userId     String
+  setId      String
+  setName    String
+  cardId     String
+  cardName   String
+  cardNumber String
+  images     String   // JSON stored as string
+  addedAt    DateTime @default(now())
+  isActive   Boolean  @default(true)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, setId, cardId])
+  @@index([userId])
+}
+
+// Shop Cards (verkoop)
+model ShopCard {
+  id         String   @id @default(uuid())
+  userId     String
+  setId      String
+  setName    String
+  cardId     String
+  cardName   String
+  cardNumber String
+  images     String   // JSON stored as string
+  price      Float
+  stock      Int      @default(1)
+  addedAt    DateTime @default(now())
+  isActive   Boolean  @default(true)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, setId, cardId])
+  @@index([userId])
+}
+
+// Purchase Offers (inkoop aanbiedingen)
+model PurchaseOffer {
+  id            String   @id @default(uuid())
+  userId        String
+  visitorName   String
+  visitorEmail  String
+  visitorPhone  String?
+  cards         String   // JSON stored as string
+  totalExpected Float?
+  notes         String?
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+// Shop Orders (verkoop bestellingen)
+model ShopOrder {
+  id            String   @id @default(uuid())
+  userId        String
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  cards         String   // JSON stored as string
+  totalPrice    Float
+  notes         String?
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+// User Profile (NAW gegevens)
+model UserProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // NAW
+  firstName      String
+  lastName       String
+  street         String
+  houseNumber    String
+  houseNumberExt String?
+  postalCode     String
+  city           String
+  country        String   @default("NL")
+  phoneNumber    String?
+  
+  // Optioneel
+  dateOfBirth    DateTime?
+  
+  // Verificatie
+  isVerified     Boolean  @default(false)
+  verifiedAt     DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// User Wallet
+model UserWallet {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  balance         Float    @default(0.00)
+  currency        String   @default("EUR")
+  
+  // Limieten
+  dailySpendLimit Float?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Transactions
+model Transaction {
+  id            String            @id @default(uuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type          TransactionType
+  amount        Float
+  currency      String            @default("EUR")
+  
+  status        TransactionStatus
+  
+  // Payment provider
+  provider      PaymentProvider
+  providerId    String?           // External transaction ID
+  
+  // Metadata
+  description   String?
+  metadata      String?           // JSON stored as string
+  
+  // Relaties
+  orderId       String?
+  order         Order?            @relation(fields: [orderId], references: [id])
+  
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([providerId])
+}
+
+// Orders
+model Order {
+  id              String       @id @default(uuid())
+  orderNumber     String       @unique
+  
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  items           OrderItem[]
+  transactions    Transaction[]
+  
+  // Pricing
+  subtotal        Float
+  tax             Float
+  total           Float
+  
+  status          OrderStatus
+  
+  // Shipping
+  shippingAddress String?      // JSON stored as string
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+}
+
+// Order Items
+model OrderItem {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  cardId        String
+  card          Card     @relation(fields: [cardId], references: [id])
+  
+  quantity      Int      @default(1)
+  pricePerUnit  Float
+  total         Float
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([orderId])
+  @@index([cardId])
+}
+
+// Cards (voor pricing systeem)
+model Card {
+  id                String            @id @default(uuid())
+  
+  // Pokemon TCG API data
+  pokemonTcgId      String            @unique
+  name              String
+  setName           String
+  setCode           String?
+  number            String?
+  rarity            String?
+  imageUrl          String?
+  
+  // Pricing
+  pricing           CardPricing?
+  orderItems        OrderItem[]
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  
+  @@index([name])
+  @@index([setName])
+}
+
+// Card Pricing - Simplified model
+model CardPricing {
+  id                String   @id @default(uuid())
+  cardId            String   @unique
+  card              Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  // TCGPlayer data (auto-synced)
+  tcgplayerPriceUSD Float?
+  tcgplayerUrl      String?
+  tcgplayerUpdated  DateTime?
+  
+  // Manual pricing (admin override)
+  customPriceEUR    Float?
+  useCustomPrice    Boolean  @default(false)
+  
+  // Cardmarket integration (deep link only)
+  cardmarketUrl     String?
+  
+  // Display settings
+  showTCGPrice      Boolean  @default(true)
+  showCardmarketLink Boolean @default(true)
+  
+  // Conversion rate (cached)
+  usdToEurRate      Float?
+  lastRateUpdate    DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// API Credentials (encrypted storage)
+model ApiCredential {
+  id            String   @id @default(uuid())
+  service       String   @unique // "cardmarket", "tcgplayer"
+  
+  // Encrypted credentials
+  apiKey        String
+  apiSecret     String?
+  accessToken   String?
+  refreshToken  String?
+  
+  isActive      Boolean  @default(true)
+  lastSync      DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

@@ -1,0 +1,126 @@
+TRACE.CARDS - PLESK SETUP GUIDE
+================================
+
+VEREISTEN:
+- Plesk met Node.js support (18.x of hoger)
+- SSH toegang (voor npm install)
+- Minimaal 512MB RAM
+- 1GB disk space
+
+STAP 1: UPLOAD BESTANDEN
+-------------------------
+1. Unzip trace-cards-deployment.zip lokaal
+2. Upload alle bestanden naar Plesk via:
+   - FTP/SFTP → /var/www/vhosts/trace.cards/httpdocs/
+   - OF Plesk File Manager → httpdocs/
+
+BESTANDEN STRUCTUUR:
+httpdocs/
+├── .next/              (build output)
+├── public/             (static assets)
+├── prisma/             (database schema)
+├── data/               (database location)
+├── package.json
+├── next.config.js
+└── .env
+
+STAP 2: NODE.JS INSTELLEN IN PLESK
+-----------------------------------
+1. Ga naar: Domains → trace.cards → Node.js
+
+2. Enable Node.js: ON
+
+3. Configuratie:
+   Node.js version: 18.x of hoger
+   Application mode: production
+   Application root: /httpdocs
+   Application startup file: node_modules/next/dist/bin/next
+   Custom environment variables:
+     DATABASE_URL=file:./data/production.db
+     JWT_SECRET=<genereer random string met 64 karakters>
+     NODE_ENV=production
+     POKEMON_API_KEY=<jouw pokemon api key>
+
+STAP 3: DEPENDENCIES INSTALLEREN (SSH)
+---------------------------------------
+1. SSH inloggen via Plesk → SSH Terminal
+2. Navigeer naar app folder:
+   cd /var/www/vhosts/trace.cards/httpdocs
+
+3. Install dependencies:
+   npm install --production
+
+4. Generate Prisma client:
+   npx prisma generate
+
+5. Setup database:
+   npx prisma db push
+
+STAP 4: FILE PERMISSIONS
+-------------------------
+chmod 755 data/
+chmod 644 data/production.db (na aanmaken)
+
+STAP 5: START APPLICATION
+--------------------------
+1. In Plesk Node.js panel:
+   - Click "Enable Node.js" als nog niet enabled
+   - Click "Restart App"
+
+2. Check status in Plesk logs
+
+STAP 6: SSL/HTTPS
+-----------------
+1. Plesk → SSL/TLS Certificates
+2. Let's Encrypt (gratis) of eigen SSL
+3. Force HTTPS redirect
+
+STAP 7: TEST
+------------
+Ga naar: https://trace.cards
+
+Je zou de homepage moeten zien!
+
+Test:
+- /register → Maak account
+- /login → Inloggen
+- /dashboard → Admin panel
+
+TROUBLESHOOTING:
+----------------
+Probleem: "Cannot find module"
+Fix: npm install --production in SSH
+
+Probleem: "Database locked"
+Fix: chmod 755 data/ && chmod 644 data/*.db
+
+Probleem: "Port already in use"
+Fix: Restart Node.js in Plesk panel
+
+Probleem: 500 errors
+Fix: Check logs in Plesk → Logs → Error log
+
+LOGS LOCATIES:
+--------------
+Plesk Logs: Domains → trace.cards → Logs
+Application logs: /var/www/vhosts/trace.cards/logs/
+Error log: /var/www/vhosts/trace.cards/logs/error_log
+
+ONDERHOUD:
+----------
+Database backup: Kopieer data/production.db regelmatig
+Update app: Upload nieuwe bestanden, run npm install, restart app
+
+PERFORMANCE:
+------------
+- SQLite werkt goed tot ~1000 concurrent users
+- Voor grotere schaal: upgrade naar PostgreSQL
+- Monitor disk space (logs + database)
+
+SECURITY:
+---------
+✅ HTTPS enabled
+✅ JWT_SECRET is random en veilig
+✅ Database niet in public folder
+✅ .env niet publiek accessible
+✅ File permissions correct

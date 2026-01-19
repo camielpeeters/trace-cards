@@ -1,0 +1,598 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-shadow: rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  --glass-bg: rgba(30, 30, 30, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.3);
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Glass Morphism Utilities - Apple Style */
+@layer utilities {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px var(--glass-shadow);
+  }
+  
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(50px) saturate(200%);
+    -webkit-backdrop-filter: blur(50px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+  
+  .dark .glass-strong {
+    background: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Header specifieke styling zonder witte rand */
+  header.glass-strong {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Modal container without border - force remove all borders */
+  .offer-modal-container {
+    border: none !important;
+    outline: none !important;
+  }
+  
+  .offer-modal-container::before,
+  .offer-modal-container::after {
+    display: none !important;
+  }
+  
+  /* Dark mode specific - remove border completely */
+  .dark .offer-modal-container {
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  .dark header.glass-strong {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Header glass zonder border in light mode */
+  header.glass {
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dark header.glass {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Prevent text selection on card containers - AGGRESSIVE */
+  .card-select-container,
+  .card-select-container * {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+  
+  /* Prevent image dragging */
+  .card-select-container img {
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+  }
+
+  /* Disable text/image selection while modifier keys are held (Shift/Ctrl/Cmd) */
+  .no-text-select,
+  .no-text-select * {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+  
+  .glass-dark {
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(50px) saturate(200%);
+    -webkit-backdrop-filter: blur(50px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  
+  .card-selected {
+    border: 1.5px solid rgba(220, 38, 38, 0.5);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15),
+                0 0 0 0.5px rgba(220, 38, 38, 0.2) inset;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out, padding 0.3s ease;
+    padding: 2px;
+  }
+  
+  .dark .card-selected {
+    border: 1.5px solid rgba(239, 68, 68, 0.6);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2),
+                0 0 0 0.5px rgba(239, 68, 68, 0.3) inset;
+  }
+  
+  .card-3d-tilt {
+    perspective: 1000px;
+  }
+  
+  .card-3d-tilt .card-inner {
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+  }
+}
+
+/* Animated background with red/white theme */
+@keyframes aurora1 {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateX(0%) translateY(0%);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-50%, -50%) translateX(10%) translateY(-8%);
+    opacity: 0.8;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes card-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.3),
+                0 0 10px rgba(239, 68, 68, 0.2),
+                0 0 15px rgba(239, 68, 68, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6),
+                0 0 25px rgba(239, 68, 68, 0.4),
+                0 0 35px rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.3),
+                0 0 10px rgba(239, 68, 68, 0.2),
+                0 0 15px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.animated-background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  overflow: hidden;
+  /* Light mode: lichte blauwe lucht met gradient naar wit */
+  background: linear-gradient(to bottom, 
+    #87CEEB 0%,
+    #B0E0E6 20%,
+    #D4E8F0 40%,
+    #E8F2F8 60%,
+    #F0F8FF 80%,
+    #FFFFFF 100%
+  );
+  transition: background 0.3s ease;
+}
+
+.dark .animated-background-container {
+  /* Dark mode: donkerblauwe/donkere lucht */
+  background: linear-gradient(to bottom, 
+    #0a1929 0%,
+    #0f1e35 20%,
+    #16213e 40%,
+    #1a1a2e 60%,
+    #1e1e3e 80%,
+    #0a0a0a 100%
+  );
+}
+
+/* Lucht animatie - volledige achtergrond */
+.animated-background-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    #87CEEB 0%,
+    #B0E0E6 25%,
+    #D4E8F0 50%,
+    #E8F2F8 75%,
+    #FFFFFF 100%
+  );
+  animation: sky-shift 30s ease-in-out infinite;
+  z-index: 0;
+}
+
+.dark .animated-background-container::before {
+  background: linear-gradient(to bottom, 
+    #0a1929 0%,
+    #0f1e35 25%,
+    #16213e 50%,
+    #1a1a2e 75%,
+    #0a0a0a 100%
+  );
+}
+
+
+/* Wolken animatie */
+@keyframes cloud-move {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100vw);
+  }
+}
+
+@keyframes cloud-move-slow {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(100vw);
+  }
+}
+
+@keyframes sky-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Oude wolken CSS uitgeschakeld - nu via CloudBackground component */
+.cloud {
+  display: none !important;
+}
+
+.cloud1,
+.cloud2,
+.cloud3 {
+  display: none !important;
+}
+
+@keyframes fade-orbs {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  75% {
+    opacity: 0;
+  }
+}
+
+/* Card glow animation - subtieler */
+.card-glow {
+  transition: all 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4),
+              0 0 15px rgba(239, 68, 68, 0.2),
+              0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+/* Shimmer effect for cards - wit en diagonaal, 50% transparanter en langzamer */
+@keyframes shimmer-border {
+  0% {
+    transform: translateX(-150%) translateY(-150%);
+  }
+  60% {
+    transform: translateX(150%) translateY(150%);
+  }
+  100% {
+    transform: translateX(150%) translateY(150%);
+  }
+}
+
+.shimmer-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.shimmer-border::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(255, 255, 255, 0.125) 50%,
+    transparent 58%,
+    transparent 100%
+  );
+  animation: shimmer-border 18s ease-in-out infinite;
+}
+
+/* Sharp image rendering during transforms - NO BLUR */
+.card-image-3d img {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+  -webkit-transform: translate3d(0, 0, 0) scale(1) !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  will-change: auto !important;
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: auto !important;
+  -webkit-image-rendering: optimize-contrast !important;
+}
+
+/* Prevent blur during scale/transform - force sharp rendering always */
+.card-image-3d {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+}
+
+/* Prevent subpixel rendering - ensure images stay crisp during transforms */
+.card-image-3d img {
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: auto !important;
+  -webkit-image-rendering: optimize-contrast !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Prevent blur on card containers during hover scale */
+[data-card-key] {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+[data-card-key]:hover .card-image-3d img {
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: auto !important;
+  -webkit-image-rendering: optimize-contrast !important;
+}
+
+/* Ensure no blur on image containers */
+[data-card-key] .aspect-\[2\.5\/3\.5\] {
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 3D Glans effect - wordt dynamisch aangepast via JavaScript */
+.card-shine-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: inherit;
+  transition: opacity 0.2s ease-out;
+  will-change: opacity, background;
+  background-color: transparent;
+  mix-blend-mode: screen;
+}
+
+/* Holografische reflectie effect - Pokemon kaart glinstering */
+/* Geen animaties - wordt dynamisch gecontroleerd via JavaScript op basis van rotatie */
+.card-holographic-reflect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 16 !important;
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+  background-color: transparent;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.card-holographic-reflect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse 200% 200% at var(--reflect-x, 50%) var(--reflect-y, 50%),
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.12) 20%,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(255, 255, 255, 0.02) 60%,
+    transparent 75%
+  );
+  mix-blend-mode: screen;
+  filter: blur(2px) !important;
+  -webkit-filter: blur(2px) !important;
+  transform: rotate(var(--reflect-angle, 0deg));
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.card-holographic-reflect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(
+      circle 200px at var(--reflect-x, 50%) var(--reflect-y, 50%),
+      rgba(255, 200, 255, 0.06) 0%,
+      rgba(200, 255, 255, 0.05) 25%,
+      rgba(255, 255, 200, 0.04) 50%,
+      transparent 70%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  filter: blur(3px);
+  background-color: transparent;
+}
+
+/* Breathing effect - langzamer en subtieler */
+.breathing {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* Breathing on scroll - alleen wanneer zichtbaar */
+.breathing-on-scroll {
+  animation: none;
+  transition: transform 0.3s ease-out;
+}
+
+.breathing-on-scroll.visible {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+/* Intro animation for series logos - fade in + slide from right + zoom on scroll */
+@keyframes logo-intro {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.series-logo-intro {
+  position: relative;
+  display: inline-block;
+  opacity: 0;
+  transform: translateX(30px) scale(0.8);
+}
+
+.series-logo-intro.visible {
+  animation: logo-intro 0.6s ease-out forwards;
+}
+
+.series-logo-intro:not(.visible) {
+  animation: none;
+  opacity: 0;
+  transform: translateX(30px) scale(0.8);
+}
+
+.series-logo-intro img {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* Animated diagonal background for offer modal - translate X creates diagonal movement */
+@keyframes diagonal-slide {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(56.57px, 0, 0); /* 40px * sqrt(2) for 45deg diagonal movement */
+  }
+}
+
+.offer-modal-background {
+  animation: diagonal-slide 3s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
