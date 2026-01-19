@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import prisma from '../../../lib/prisma';
+import { getPrisma } from '../../../lib/prisma';
 import { signToken } from '../../../lib/jwt';
 
 // Force dynamic rendering (uses Prisma)
@@ -14,6 +14,17 @@ export async function POST(request) {
       return NextResponse.json(
         { error: 'Missing username or password' },
         { status: 400 }
+      );
+    }
+    
+    // Get Prisma client instance
+    const prisma = getPrisma();
+    
+    if (!prisma) {
+      console.error('Prisma client is not available');
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
       );
     }
     

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import prisma from '../../../lib/prisma';
+import { getPrisma } from '../../../lib/prisma';
 
 // Force dynamic rendering (uses Prisma)
 export const dynamic = 'force-dynamic';
@@ -9,18 +9,11 @@ export const dynamic = 'force-dynamic';
 // Useful for migration from localStorage to database
 export async function POST(request) {
   try {
-    // Check if prisma is initialized
-    if (!prisma) {
-      console.error('Prisma client is not initialized');
-      return NextResponse.json(
-        { error: 'Database client not initialized. Please check server logs.' },
-        { status: 500 }
-      );
-    }
+    // Get Prisma client instance
+    const prisma = getPrisma();
     
-    // Check if prisma is initialized
     if (!prisma) {
-      console.error('Prisma client is not initialized');
+      console.error('Prisma client is not available');
       return NextResponse.json(
         { 
           error: 'Database client not initialized. Please check server logs.',
