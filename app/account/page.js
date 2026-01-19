@@ -187,11 +187,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const [syncing, setSyncing] = useState(false);
+
   // Sync cards from localStorage to database
-  const syncCardsToDatabase = async () => {
+  const syncCardsToDatabase = async (showAlert = false) => {
     try {
       const token = localStorage.getItem('authToken');
-      if (!token) return;
+      if (!token) {
+        if (showAlert) alert('❌ Je moet ingelogd zijn om kaarten te synchroniseren');
+        return;
+      }
+      
+      setSyncing(true);
       
       // Get cards from localStorage
       const purchaseCardsObj = getPurchaseCards();
@@ -204,6 +211,8 @@ export default function AdminDashboard() {
       // Only sync if there are cards
       if (purchaseCardsArray.length === 0 && shopCardsArray.length === 0) {
         console.log('📦 No cards to sync');
+        if (showAlert) alert('📦 Geen kaarten gevonden in localStorage om te synchroniseren');
+        setSyncing(false);
         return;
       }
       
@@ -224,14 +233,30 @@ export default function AdminDashboard() {
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ Synced ${data.syncedPurchase} purchase cards and ${data.syncedShop} shop cards to database`);
+        
+        if (showAlert) {
+          if (data.syncedPurchase > 0 || data.syncedShop > 0) {
+            alert(`✅ ${data.syncedPurchase + data.syncedShop} kaarten gesynchroniseerd naar database!\n\n• ${data.syncedPurchase} inkoop kaarten\n• ${data.syncedShop} winkel kaarten`);
+          } else {
+            alert('ℹ️ Alle kaarten staan al in de database');
+          }
+        }
+        
         if (data.errors && data.errors.length > 0) {
           console.warn('⚠️ Some cards had errors:', data.errors);
+          if (showAlert) {
+            alert(`⚠️ Er waren ${data.errors.length} fouten tijdens synchronisatie. Check de console voor details.`);
+          }
         }
       } else {
         console.error('❌ Failed to sync cards:', response.status);
+        if (showAlert) alert('❌ Fout bij synchroniseren van kaarten. Probeer het opnieuw.');
       }
     } catch (error) {
       console.error('❌ Error syncing cards:', error);
+      if (showAlert) alert(`❌ Fout bij synchroniseren: ${error.message}`);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -935,6 +960,28 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Sync Button */}
+            <div className="mb-6 flex justify-center">
+              <button
+                onClick={() => syncCardsToDatabase(true)}
+                disabled={syncing}
+                className="glass-strong rounded-2xl px-6 py-3 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Synchroniseer alle kaarten uit localStorage naar de database zodat ze publiek zichtbaar zijn"
+              >
+                {syncing ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>Synchroniseren...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Sync kaarten naar database</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Tabs - Modern Toggle Design */}
