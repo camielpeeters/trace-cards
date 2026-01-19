@@ -53,6 +53,13 @@ export async function GET(request, { params }) {
           }
         });
         
+        // Debug: Log if card record not found
+        if (!cardRecord) {
+          console.log(`⚠️ No Card record found for ${card.cardName} (${card.setName}) - cardId: ${card.cardId}`);
+        } else if (!cardRecord.pricing) {
+          console.log(`⚠️ Card record found but no pricing data for ${card.cardName} (${card.setName})`);
+        }
+        
         // Build TCGPlayer price data structure if available
         let tcgplayer = null;
         if (cardRecord?.pricing) {
@@ -102,6 +109,9 @@ export async function GET(request, { params }) {
               eurPrice: holofoilUSD * exchangeRate,
               lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
             };
+            console.log(`✅ Added pricing for ${card.cardName}: €${(holofoilUSD * exchangeRate).toFixed(2)}`);
+          } else {
+            console.log(`⚠️ No tcgplayerPriceUSD found for ${card.cardName} (${card.setName})`);
           }
         }
         
