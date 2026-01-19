@@ -47,11 +47,17 @@ export async function POST(request) {
               }
             });
             syncedPurchase++;
-          } else if (!existing.isActive) {
-            // Reactivate if it was deactivated
+          } else {
+            // Always update existing card to ensure it's active and has latest data
             await prisma.purchaseCard.update({
               where: { id: existing.id },
-              data: { isActive: true }
+              data: {
+                isActive: true,
+                setName: card.setName || card.set?.name || existing.setName || 'Unknown',
+                cardName: card.cardName || card.name || existing.cardName || 'Unknown',
+                cardNumber: card.cardNumber || card.number || existing.cardNumber || '',
+                images: JSON.stringify(card.images || JSON.parse(existing.images || '[]'))
+              }
             });
             syncedPurchase++;
           }
@@ -94,12 +100,17 @@ export async function POST(request) {
               }
             });
             syncedShop++;
-          } else if (!existing.isActive || existing.stock === 0) {
-            // Reactivate if it was deactivated or update stock
+          } else {
+            // Always update existing card to ensure it's active and has latest data
             await prisma.shopCard.update({
               where: { id: existing.id },
               data: { 
                 isActive: true,
+                setName: card.setName || card.set?.name || existing.setName || 'Unknown',
+                cardName: card.cardName || card.name || existing.cardName || 'Unknown',
+                cardNumber: card.cardNumber || card.number || existing.cardNumber || '',
+                images: JSON.stringify(card.images || JSON.parse(existing.images || '[]')),
+                price: parseFloat(card.price) || existing.price || 0,
                 stock: Math.max(existing.stock, parseInt(card.stock) || 1)
               }
             });
