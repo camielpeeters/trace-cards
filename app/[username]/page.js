@@ -886,7 +886,7 @@ export default function PublicUserPage() {
                                     scale3d(0.95, 0.95, 1)
                                   `;
                                   // Force hardware acceleration
-                                  cardImage3d.style.willChange = 'transform';
+                                  // Removed will-change to reduce memory usage
                                   cardImage3d.style.backfaceVisibility = 'hidden';
                                   cardImage3d.style.webkitBackfaceVisibility = 'hidden';
                                   
@@ -1033,7 +1033,6 @@ export default function PublicUserPage() {
                                     borderRadius: '0.75rem',
                                     transition: selected ? 'padding 0.3s ease' : 'transform 0.3s ease',
                                     transform: selected ? 'none' : 'translate3d(0, 0, 0) scale(1)',
-                                    willChange: selected ? 'auto' : 'transform'
                                   }}
                                   onMouseEnter={(e) => {
                                     if (!selected) {
@@ -1107,7 +1106,6 @@ export default function PublicUserPage() {
                                       isolation: 'isolate',
                                       transform: 'translate3d(0, 0, 0)',
                                       WebkitTransform: 'translate3d(0, 0, 0)',
-                                      willChange: 'transform'
                                     }}
                                     onMouseDown={(e) => {
                                       // Block browser range-selection on shift+click
@@ -1134,7 +1132,7 @@ export default function PublicUserPage() {
                                         WebkitTransform: 'translate3d(0, 0, 0) scale(1)',
                                         backfaceVisibility: 'hidden',
                                         WebkitBackfaceVisibility: 'hidden',
-                                        willChange: 'transform',
+,
                                         transformOrigin: 'center center',
                                         WebkitTransformOrigin: 'center center'
                                       }}
@@ -1150,7 +1148,6 @@ export default function PublicUserPage() {
                                           transform: 'translate3d(0, 0, 0)',
                                           WebkitTransform: 'translate3d(0, 0, 0)',
                                           isolation: 'isolate',
-                                          willChange: 'auto',
                                           transformOrigin: 'center center',
                                           WebkitTransformOrigin: 'center center'
                                         }}
@@ -1172,7 +1169,6 @@ export default function PublicUserPage() {
                                             WebkitImageRendering: 'optimize-contrast',
                                             filter: 'none',
                                             WebkitFilter: 'none',
-                                            willChange: 'auto',
                                             transformOrigin: 'center center',
                                             WebkitTransformOrigin: 'center center',
                                             imageRendering: 'auto'
@@ -1556,7 +1552,7 @@ export default function PublicUserPage() {
                                     rotateY(${clampedRotateY}deg)
                                     scale3d(0.95, 0.95, 1)
                                   `;
-                                  cardImage3d.style.willChange = 'transform';
+                                  // Removed will-change to reduce memory usage
                                   cardImage3d.style.backfaceVisibility = 'hidden';
                                   cardImage3d.style.webkitBackfaceVisibility = 'hidden';
                                   
@@ -1697,7 +1693,6 @@ export default function PublicUserPage() {
                                     borderRadius: '0.75rem',
                                     transition: selected ? 'padding 0.3s ease' : 'transform 0.3s ease',
                                     transform: selected ? 'none' : 'translate3d(0, 0, 0) scale(1)',
-                                    willChange: selected ? 'auto' : 'transform'
                                   }}
                                   onMouseEnter={(e) => {
                                     if (!selected) {
@@ -1768,7 +1763,6 @@ export default function PublicUserPage() {
                                       isolation: 'isolate',
                                       transform: 'translate3d(0, 0, 0)',
                                       WebkitTransform: 'translate3d(0, 0, 0)',
-                                      willChange: 'transform'
                                     }}
                                     onClick={handleClick}
                                     onMouseMove={handleImageMouseMove}
@@ -1789,7 +1783,7 @@ export default function PublicUserPage() {
                                         WebkitTransform: 'translate3d(0, 0, 0) scale(1)',
                                         backfaceVisibility: 'hidden',
                                         WebkitBackfaceVisibility: 'hidden',
-                                        willChange: 'transform',
+,
                                         transformOrigin: 'center center',
                                         WebkitTransformOrigin: 'center center'
                                       }}
@@ -1804,7 +1798,6 @@ export default function PublicUserPage() {
                                           transform: 'translate3d(0, 0, 0)',
                                           WebkitTransform: 'translate3d(0, 0, 0)',
                                           isolation: 'isolate',
-                                          willChange: 'auto',
                                           transformOrigin: 'center center',
                                           WebkitTransformOrigin: 'center center'
                                         }}
@@ -1826,7 +1819,6 @@ export default function PublicUserPage() {
                                             WebkitImageRendering: 'optimize-contrast',
                                             filter: 'none',
                                             WebkitFilter: 'none',
-                                            willChange: 'auto',
                                             transformOrigin: 'center center',
                                             WebkitTransformOrigin: 'center center',
                                             imageRendering: 'auto'
