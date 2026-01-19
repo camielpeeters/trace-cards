@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '../../../lib/prisma';
 
+// Force dynamic rendering (uses Prisma)
+export const dynamic = 'force-dynamic';
+
 // This route allows creating or updating the admin user
 // Useful for migration from localStorage to database
 export async function POST(request) {

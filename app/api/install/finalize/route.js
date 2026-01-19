@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 
+// Force dynamic rendering (uses file system)
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     // Create .installed file to mark installation as complete

@@ -6,6 +6,9 @@ import { join } from 'path';
 
 const execAsync = promisify(exec);
 
+// Force dynamic rendering (uses Prisma and file system)
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     // Ensure data directory exists

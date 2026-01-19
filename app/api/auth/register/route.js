@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import prisma from '../../../lib/prisma';
 import { signToken } from '../../../lib/jwt';
 
+// Force dynamic rendering (uses Prisma)
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { username, email, password, displayName } = await request.json();

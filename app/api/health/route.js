@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '../../lib/prisma';
 
+// Force dynamic rendering (uses Prisma)
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Test database connection

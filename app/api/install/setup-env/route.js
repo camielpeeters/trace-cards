@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
+// Force dynamic rendering (uses file system)
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { jwtSecret, pokemonApiKey } = await request.json();
