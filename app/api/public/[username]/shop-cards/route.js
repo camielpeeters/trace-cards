@@ -63,29 +63,38 @@ export async function GET(request, { params }) {
               ? pricing.tcgplayerPriceUSD * pricing.usdToEurRate 
               : null;
             
+            // Convert USD prices to EUR for display
+            const convertToEUR = (usdPrice) => {
+              return pricing.usdToEurRate ? usdPrice * pricing.usdToEurRate : null;
+            };
+            
+            const holofoilUSD = pricing.tcgplayerPriceUSD;
+            const reverseHolofoilUSD = holofoilUSD * 1.1;
+            const normalUSD = holofoilUSD * 0.9;
+            
             tcgplayer = {
               url: pricing.tcgplayerUrl || null,
               prices: {
                 holofoil: {
-                  market: pricing.tcgplayerPriceUSD,
-                  mid: pricing.tcgplayerPriceUSD,
-                  low: pricing.tcgplayerPriceUSD * 0.9,
-                  high: pricing.tcgplayerPriceUSD * 1.1
+                  market: convertToEUR(holofoilUSD),
+                  mid: convertToEUR(holofoilUSD),
+                  low: convertToEUR(holofoilUSD * 0.9),
+                  high: convertToEUR(holofoilUSD * 1.1)
                 },
                 reverseHolofoil: {
-                  market: pricing.tcgplayerPriceUSD * 1.1,
-                  mid: pricing.tcgplayerPriceUSD * 1.1,
-                  low: pricing.tcgplayerPriceUSD,
-                  high: pricing.tcgplayerPriceUSD * 1.2
+                  market: convertToEUR(reverseHolofoilUSD),
+                  mid: convertToEUR(reverseHolofoilUSD),
+                  low: convertToEUR(holofoilUSD),
+                  high: convertToEUR(holofoilUSD * 1.2)
                 },
                 normal: {
-                  market: pricing.tcgplayerPriceUSD * 0.9,
-                  mid: pricing.tcgplayerPriceUSD * 0.9,
-                  low: pricing.tcgplayerPriceUSD * 0.8,
-                  high: pricing.tcgplayerPriceUSD
+                  market: convertToEUR(normalUSD),
+                  mid: convertToEUR(normalUSD),
+                  low: convertToEUR(holofoilUSD * 0.8),
+                  high: convertToEUR(holofoilUSD)
                 }
               },
-              // EUR conversion
+              // EUR conversion (for backwards compatibility)
               eurPrice: priceEUR,
               lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
             };
