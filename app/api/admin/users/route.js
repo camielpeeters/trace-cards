@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '../../../lib/auth';
-import prisma from '../../../lib/prisma';
+import { getPrisma } from '../../../lib/prisma';
 
 // Force dynamic rendering to avoid build-time Prisma issues
 export const dynamic = 'force-dynamic';
@@ -14,6 +14,9 @@ export async function GET(request) {
     // If no JWT user, check for admin session in cookies/headers
     // For now, we'll allow access if there's any authentication
     // You can add role-based checks later if needed
+    
+    // Get Prisma client instance
+    const prisma = getPrisma();
     
     const users = await prisma.user.findMany({
       select: {

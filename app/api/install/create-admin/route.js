@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import prisma from '../../../lib/prisma';
+import { getPrisma } from '../../../lib/prisma';
 
 // Force dynamic rendering (uses Prisma)
 export const dynamic = 'force-dynamic';
@@ -8,6 +8,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(request) {
   try {
     const { username, email, password, displayName } = await request.json();
+
+    // Get Prisma client instance
+    const prisma = getPrisma();
 
     // Check if any users exist
     const userCount = await prisma.user.count();

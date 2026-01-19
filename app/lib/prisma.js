@@ -46,16 +46,35 @@ function initializePrisma() {
 // This proxy ensures lazy initialization and handles build-time gracefully
 const prisma = new Proxy({}, {
   get(target, prop) {
-    // During build phase, return undefined for all properties
+    // During build phase, return a no-op function to avoid errors
     if (process.env.NEXT_PHASE === 'phase-production-build') {
+      // Return a function that does nothing for methods
+      if (typeof prop === 'string' && prop.startsWith('$')) {
+        return async () => {};
+      }
       return undefined;
     }
     
-    const instance = initializePrisma();
-    if (instance && typeof instance[prop] !== 'undefined') {
-      return instance[prop];
+    // During runtime, initialize and return the property
+    try {
+      const instance = initializePrisma();
+      if (!instance) {
+        throw new Error('PrismaClient failed to initialize. Check DATABASE_URL and database connection.');
+      }
+      
+      if (instance && typeof instance[prop] !== 'undefined') {
+        const value = instance[prop];
+        // If it's a function, bind it to the instance
+        if (typeof value === 'function') {
+          return value.bind(instance);
+        }
+        return value;
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Prisma proxy error:', error);
+      throw error;
     }
-    return undefined;
   }
 });
 
