@@ -27,7 +27,10 @@ export async function GET(request, { params }) {
         isActive: true,
         stock: { gt: 0 } // Only show cards with stock > 0
       },
-      orderBy: { addedAt: 'desc' }
+      orderBy: [
+        { setId: 'asc' },
+        { cardNumber: 'asc' }
+      ]
     });
     
     const cardsWithImages = cards.map(card => ({

@@ -23,7 +23,10 @@ export async function GET(request, { params }) {
         userId: user.id,
         isActive: true
       },
-      orderBy: { addedAt: 'desc' }
+      orderBy: [
+        { setId: 'asc' },
+        { cardNumber: 'asc' }
+      ]
     });
     
     const cardsWithImages = cards.map(card => ({

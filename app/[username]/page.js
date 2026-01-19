@@ -289,7 +289,7 @@ export default function PublicUserPage() {
     }, 100); // Small delay to ensure UI renders first
   };
 
-  // Group cards by set
+  // Group cards by set and sort by card number
   const groupCardsBySet = (cards) => {
     const grouped = {};
     if (!cards || !Array.isArray(cards) || cards.length === 0) {
@@ -311,10 +311,33 @@ export default function PublicUserPage() {
           setName: card.setName,
           cardId: card.cardId,
           cardName: card.cardName,
+          cardNumber: card.cardNumber || card.number,
           keys: Object.keys(card)
         });
       }
     });
+    
+    // Sort cards within each set by card number
+    Object.keys(grouped).forEach(setId => {
+      grouped[setId].sort((a, b) => {
+        // Get card numbers (handle both formats)
+        const numA = a.cardNumber || a.number || '';
+        const numB = b.cardNumber || b.number || '';
+        
+        // Try to parse as numbers for numeric comparison
+        const parsedA = parseInt(numA, 10);
+        const parsedB = parseInt(numB, 10);
+        
+        // If both are valid numbers, compare numerically
+        if (!isNaN(parsedA) && !isNaN(parsedB)) {
+          return parsedA - parsedB;
+        }
+        
+        // Otherwise, compare as strings
+        return numA.localeCompare(numB, undefined, { numeric: true, sensitivity: 'base' });
+      });
+    });
+    
     console.log('📦 Grouped into', Object.keys(grouped).length, 'sets');
     return grouped;
   };
