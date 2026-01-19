@@ -160,8 +160,9 @@ export default function PublicUserPage() {
     try {
       setLoading(true);
       
-      // Check if viewing own profile
-      const isOwnProfile = authenticated && authUser?.username?.toLowerCase() === username.toLowerCase();
+      // Check if viewing own profile - wait for authUser to load if authenticated
+      // If not authenticated or authUser not loaded yet, assume public profile
+      const isOwnProfile = authenticated && authUser && authUser.username?.toLowerCase() === username.toLowerCase();
       
       if (isOwnProfile) {
         // Load own cards from localStorage (fast, cached)
@@ -198,27 +199,42 @@ export default function PublicUserPage() {
         }
       } else {
         // Public profile: Load cards from API (database)
-        const [purchaseResponse, shopResponse] = await Promise.all([
-          fetch(`/api/public/${username}/purchase-cards`),
-          activeTab === 'shop' || pathname?.includes('/shop') 
-            ? fetch(`/api/public/${username}/shop-cards`)
-            : Promise.resolve(null)
-        ]);
+        // Always load purchase cards, conditionally load shop cards based on tab
+        const promises = [
+          fetch(`/api/public/${username}/purchase-cards`).catch(err => {
+            console.error('Error fetching purchase cards:', err);
+            return null;
+          })
+        ];
         
-        if (purchaseResponse.ok) {
+        // Only load shop cards if on shop tab or shop page
+        if (activeTab === 'shop' || pathname?.includes('/shop')) {
+          promises.push(
+            fetch(`/api/public/${username}/shop-cards`).catch(err => {
+              console.error('Error fetching shop cards:', err);
+              return null;
+            })
+          );
+        }
+        
+        const responses = await Promise.all(promises);
+        
+        // Handle purchase cards response
+        const purchaseResponse = responses[0];
+        if (purchaseResponse && purchaseResponse.ok) {
           const purchaseData = await purchaseResponse.json();
           setUser(purchaseData.user);
           setPurchaseCards(purchaseData.cards || []);
+        } else if (purchaseResponse && !purchaseResponse.ok) {
+          // User might not exist
+          console.error('Failed to load purchase cards:', purchaseResponse.status);
         }
         
-        if (shopResponse?.ok) {
-          const shopData = await shopResponse.json();
-          setShopCards(shopData.cards || []);
-        } else if (activeTab === 'shop' || pathname?.includes('/shop')) {
-          // Load shop cards if on shop tab
-          const shopResponse2 = await fetch(`/api/public/${username}/shop-cards`);
-          if (shopResponse2.ok) {
-            const shopData = await shopResponse2.json();
+        // Handle shop cards response (if loaded)
+        if (responses.length > 1 && responses[1]) {
+          const shopResponse = responses[1];
+          if (shopResponse.ok) {
+            const shopData = await shopResponse.json();
             setShopCards(shopData.cards || []);
           }
         }
