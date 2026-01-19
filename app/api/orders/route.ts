@@ -43,7 +43,15 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ orders });
+    // Add response caching headers (1 minute for user-specific data)
+    return NextResponse.json(
+      { orders },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching orders:', error);
     return NextResponse.json(
@@ -88,21 +96,32 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Calculate totals
+    // Calculate totals - OPTIMIZED: Batch query instead of N+1
+    const cardIds = items.map(item => item.cardId).filter(Boolean);
+    const uniqueCardIds = [...new Set(cardIds)];
+    
+    // Batch fetch all cards at once
+    const cards = await prisma.card.findMany({
+      where: {
+        id: { in: uniqueCardIds },
+      },
+      include: {
+        prices: true,
+        customPrice: true,
+      },
+    });
+
+    // Create a map for O(1) lookup
+    const cardMap = new Map(cards.map(card => [card.id, card]));
+
     let subtotal = 0;
     const orderItems = [];
 
     for (const item of items) {
       const { cardId, quantity = 1 } = item;
 
-      // Get card with pricing
-      const card = await prisma.card.findUnique({
-        where: { id: cardId },
-        include: {
-          prices: true,
-          customPrice: true,
-        },
-      });
+      // Get card from map
+      const card = cardMap.get(cardId);
 
       if (!card) {
         return NextResponse.json(

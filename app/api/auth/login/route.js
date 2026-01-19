@@ -2,12 +2,27 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getPrisma } from '../../../lib/prisma';
 import { signToken } from '../../../lib/jwt';
+import { authRateLimit } from '../../../lib/rate-limit';
 
 // Force dynamic rendering (uses Prisma)
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
+    // Rate limiting for login attempts
+    const rateLimitError = await authRateLimit(request);
+    if (rateLimitError) {
+      return NextResponse.json(
+        { error: rateLimitError.error },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitError.retryAfter.toString(),
+          },
+        }
+      );
+    }
+    
     const { username, password } = await request.json();
     
     if (!username || !password) {

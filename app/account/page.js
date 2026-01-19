@@ -788,13 +788,13 @@ export default function AdminDashboard() {
           
           <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="relative group">
-                <div className="relative transform hover:rotate-12 transition-transform duration-300">
+              <div className="relative group" style={{ overflow: 'visible' }}>
+                <div className="relative transform hover:rotate-12 transition-transform duration-300" style={{ overflow: 'visible' }}>
                   <img 
                     src="/pokeball-icon.png" 
                     alt="Pokeball" 
                     className="w-14 h-14 filter drop-shadow-lg"
-                    style={{ imageRendering: 'crisp-edges' }}
+                    style={{ imageRendering: 'crisp-edges', overflow: 'visible', clipPath: 'none' }}
                   />
                 </div>
               </div>

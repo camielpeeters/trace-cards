@@ -48,6 +48,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     const CLOUD_COUNT = 6;
     const WIND_SPEED = 0.5; // Snellere animatie (was 0.2)
     const STAR_COUNT = 250; // Meer sterren maar subtieler
+    
+    // Force dark mode check from DOM (Safari compatibility)
+    const getCurrentDarkMode = () => {
+      return document.documentElement.classList.contains('dark');
+    };
 
     function resize() {
       const newWidth = window.innerWidth;
@@ -457,14 +462,23 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
         }
 
-        // Teken alle blobs als ellipsen
+        // Teken alle blobs als ellipsen - Safari compatible met arc() in plaats van ellipse()
         this.blobs.forEach(blob => {
           ctx.save();
           ctx.translate(blob.x, blob.y);
           ctx.rotate(blob.rotation);
           
           ctx.beginPath();
-          ctx.ellipse(0, 0, blob.width, blob.height, 0, 0, Math.PI * 2);
+          // Safari compatible: gebruik meerdere arc() calls voor een betere ellips vorm
+          // In plaats van ellipse() gebruiken we een path met bezier curves voor betere Safari compatibiliteit
+          const radiusX = blob.width / 2;
+          const radiusY = blob.height / 2;
+          
+          // Teken ellips met bezier curves (Safari compatible)
+          ctx.moveTo(0, -radiusY);
+          ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+          ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+          ctx.closePath();
           ctx.fill();
           
           ctx.restore();
@@ -531,6 +545,20 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
       if (darkModeRef.current && starsRef.current.length === 0) {
         initStars();
+      }
+      
+      // Force check dark mode from DOM (Safari compatibility)
+      const currentDarkMode = getCurrentDarkMode();
+      if (currentDarkMode !== darkModeRef.current) {
+        darkModeRef.current = currentDarkMode;
+        // Reset stars/clouds when mode changes
+        if (currentDarkMode && starsRef.current.length === 0) {
+          starsRef.current = [];
+        }
+        if (!currentDarkMode) {
+          shootingStarsRef.current = [];
+          sunRef.current = null;
+        }
       }
       
       // Clear canvas (transparant - achtergrond wordt door CSS afgehandeld)
