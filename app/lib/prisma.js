@@ -31,11 +31,12 @@ function initializePrisma() {
     }
     
     // Initialize PrismaClient - it will use DATABASE_URL from environment
-    // For SQLite, we don't need adapter or accelerateUrl
-    // Pass at least an empty object to satisfy PrismaClient constructor requirements
-    prismaInstance = new PrismaClient({
+    // Prisma 6.x works correctly with SQLite without needing adapter or accelerateUrl
+    const clientOptions = {
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
+    };
+    
+    prismaInstance = new PrismaClient(clientOptions);
     
     // Store in globalThis for reuse across requests (important for serverless)
     globalThis.prisma = prismaInstance;
