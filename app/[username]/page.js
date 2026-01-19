@@ -199,28 +199,19 @@ export default function PublicUserPage() {
         }
       } else {
         // Public profile: Load cards from API (database)
-        // Always load purchase cards, conditionally load shop cards based on tab
-        const promises = [
+        // Always load purchase cards, always load shop cards (we'll need them when switching tabs)
+        const [purchaseResponse, shopResponse] = await Promise.all([
           fetch(`/api/public/${username}/purchase-cards`).catch(err => {
             console.error('Error fetching purchase cards:', err);
             return null;
+          }),
+          fetch(`/api/public/${username}/shop-cards`).catch(err => {
+            console.error('Error fetching shop cards:', err);
+            return null;
           })
-        ];
-        
-        // Only load shop cards if on shop tab or shop page
-        if (activeTab === 'shop' || pathname?.includes('/shop')) {
-          promises.push(
-            fetch(`/api/public/${username}/shop-cards`).catch(err => {
-              console.error('Error fetching shop cards:', err);
-              return null;
-            })
-          );
-        }
-        
-        const responses = await Promise.all(promises);
+        ]);
         
         // Handle purchase cards response
-        const purchaseResponse = responses[0];
         if (purchaseResponse && purchaseResponse.ok) {
           const purchaseData = await purchaseResponse.json();
           console.log('📦 Public purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
@@ -234,13 +225,13 @@ export default function PublicUserPage() {
           console.error('❌ No purchase cards response received');
         }
         
-        // Handle shop cards response (if loaded)
-        if (responses.length > 1 && responses[1]) {
-          const shopResponse = responses[1];
-          if (shopResponse.ok) {
-            const shopData = await shopResponse.json();
-            setShopCards(shopData.cards || []);
-          }
+        // Handle shop cards response
+        if (shopResponse && shopResponse.ok) {
+          const shopData = await shopResponse.json();
+          console.log('📦 Public shop cards loaded:', shopData.cards?.length || 0, 'cards');
+          setShopCards(shopData.cards || []);
+        } else if (shopResponse && !shopResponse.ok) {
+          console.error('❌ Failed to load shop cards:', shopResponse.status, shopResponse.statusText);
         }
       }
     } catch (error) {
