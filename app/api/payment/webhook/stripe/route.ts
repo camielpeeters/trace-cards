@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '../../../../lib/prisma';
 import { PaymentFactory } from '../../../../lib/payment/payment-factory';
 
+// Force dynamic rendering (webhook routes are always dynamic)
+export const dynamic = 'force-dynamic';
+
 // POST - Handle Stripe webhook
 export async function POST(request: NextRequest) {
   try {

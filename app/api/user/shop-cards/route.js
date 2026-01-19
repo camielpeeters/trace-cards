@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '../../../lib/auth';
 import prisma from '../../../lib/prisma';
 
+// Force dynamic rendering (uses request.headers via requireAuth)
+export const dynamic = 'force-dynamic';
+
 // Get user's shop cards
 export async function GET(request) {
   try {

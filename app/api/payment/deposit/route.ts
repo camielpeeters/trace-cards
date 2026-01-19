@@ -5,6 +5,9 @@ import { getPrisma } from '../../../lib/prisma';
 import { getCurrentUser } from '../../../lib/auth';
 import { PaymentFactory } from '../../../lib/payment/payment-factory';
 
+// Force dynamic rendering (uses request.headers via getCurrentUser)
+export const dynamic = 'force-dynamic';
+
 // POST - Create deposit payment
 export async function POST(request: NextRequest) {
   try {

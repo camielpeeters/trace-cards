@@ -3,6 +3,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '../../../lib/prisma';
 
+// Force dynamic rendering (uses request.headers via getCurrentUser)
+export const dynamic = 'force-dynamic';
+
 // GET - Get user profile
 export async function GET(request: NextRequest) {
   try {

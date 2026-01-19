@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering (uses request.url)
+export const dynamic = 'force-dynamic';
+
 // Helper functie voor fetch met timeout
 async function fetchWithTimeout(url, options, timeout = 60000) {
   const controller = new AbortController();

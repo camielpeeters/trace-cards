@@ -5,6 +5,9 @@ import { getPrisma } from '../../../../lib/prisma';
 import { isAuthenticated } from '../../../../lib/auth';
 import { encrypt, decrypt } from '../../../../lib/encryption';
 
+// Force dynamic rendering (uses Prisma and authentication)
+export const dynamic = 'force-dynamic';
+
 // GET - List all API credentials (decrypted for admin)
 export async function GET() {
   try {

@@ -5,6 +5,9 @@ import { getPrisma } from '../../lib/prisma';
 import { getCurrentUser } from '../../lib/auth';
 import { getPriceDisplay } from '../../lib/pricing';
 
+// Force dynamic rendering (uses request.headers via getCurrentUser)
+export const dynamic = 'force-dynamic';
+
 // GET - Get user orders
 export async function GET(request: NextRequest) {
   try {
