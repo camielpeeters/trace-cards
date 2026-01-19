@@ -64,7 +64,6 @@ export default function PublicUserPage() {
   }, [username, pathname]); // Run when username or pathname changes
 
   useEffect(() => {
-    loadUserData();
     const checkAuth = () => {
       setAuthenticated(isAuthenticated());
     };
@@ -78,8 +77,17 @@ export default function PublicUserPage() {
     };
     
     window.addEventListener('storage', handleStorageChange);
+    
+    // Load user data after auth check
+    loadUserData();
+    
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [username]);
+  }, [username, activeTab, pathname]); // Reload when username/tab/pathname changes
+  
+  // Reload data when authentication state changes
+  useEffect(() => {
+    loadUserData();
+  }, [authenticated, authUser?.username]);
 
   // Load set information from cache (for both purchase and shop cards)
   useEffect(() => {
@@ -152,29 +160,68 @@ export default function PublicUserPage() {
     try {
       setLoading(true);
       
-      // Load user info from API (minimal fetch, just for user display)
-      const purchaseResponse = await fetch(`/api/public/${username}/purchase-cards`);
-      if (purchaseResponse.ok) {
-        const purchaseData = await purchaseResponse.json();
-        setUser(purchaseData.user);
-      }
+      // Check if viewing own profile
+      const isOwnProfile = authenticated && authUser?.username?.toLowerCase() === username.toLowerCase();
       
-      // Load cards from localStorage ONLY (zero fetch on page load for cards)
-      const purchaseCardsData = getPurchaseCards();
-      const shopCardsData = getShopCards();
-      
-      // Convert object to array for display
-      const purchaseCardsArray = Object.values(purchaseCardsData);
-      const shopCardsArray = Object.values(shopCardsData);
-      
-      // Render immediately from cache (zero fetch on page load)
-      setPurchaseCards(purchaseCardsArray);
-      setShopCards(shopCardsArray);
-      
-      // Trigger background price hydration (non-blocking)
-      // This will update cards in localStorage as prices are fetched
-      if (purchaseCardsArray.length > 0 || shopCardsArray.length > 0) {
-        hydratePricesInBackground(purchaseCardsArray, shopCardsArray);
+      if (isOwnProfile) {
+        // Load own cards from localStorage (fast, cached)
+        const purchaseCardsData = getPurchaseCards();
+        const shopCardsData = getShopCards();
+        
+        // Convert object to array for display
+        const purchaseCardsArray = Object.values(purchaseCardsData);
+        const shopCardsArray = Object.values(shopCardsData);
+        
+        // Render immediately from cache
+        setPurchaseCards(purchaseCardsArray);
+        setShopCards(shopCardsArray);
+        
+        // Trigger background price hydration (non-blocking)
+        if (purchaseCardsArray.length > 0 || shopCardsArray.length > 0) {
+          hydratePricesInBackground(purchaseCardsArray, shopCardsArray);
+        }
+        
+        // Load user info from localStorage or API
+        if (authUser) {
+          setUser({
+            username: authUser.username,
+            displayName: authUser.displayName,
+            avatarUrl: authUser.avatarUrl
+          });
+        } else {
+          // Fallback to API if no authUser
+          const purchaseResponse = await fetch(`/api/public/${username}/purchase-cards`);
+          if (purchaseResponse.ok) {
+            const purchaseData = await purchaseResponse.json();
+            setUser(purchaseData.user);
+          }
+        }
+      } else {
+        // Public profile: Load cards from API (database)
+        const [purchaseResponse, shopResponse] = await Promise.all([
+          fetch(`/api/public/${username}/purchase-cards`),
+          activeTab === 'shop' || pathname?.includes('/shop') 
+            ? fetch(`/api/public/${username}/shop-cards`)
+            : Promise.resolve(null)
+        ]);
+        
+        if (purchaseResponse.ok) {
+          const purchaseData = await purchaseResponse.json();
+          setUser(purchaseData.user);
+          setPurchaseCards(purchaseData.cards || []);
+        }
+        
+        if (shopResponse?.ok) {
+          const shopData = await shopResponse.json();
+          setShopCards(shopData.cards || []);
+        } else if (activeTab === 'shop' || pathname?.includes('/shop')) {
+          // Load shop cards if on shop tab
+          const shopResponse2 = await fetch(`/api/public/${username}/shop-cards`);
+          if (shopResponse2.ok) {
+            const shopData = await shopResponse2.json();
+            setShopCards(shopData.cards || []);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
