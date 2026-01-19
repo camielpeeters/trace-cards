@@ -721,6 +721,9 @@ export default function AdminDashboard() {
     }
     
     if (savedCount > 0) {
+      // Immediately sync new cards to database so they're available publicly
+      console.log('🔄 Syncing newly added cards to database...');
+      await syncCardsToDatabase();
       alert(`✅ ${savedCount} kaarten toegevoegd aan ${isShop ? 'winkel' : 'inkoop'}!`);
     } else {
       alert(`❌ Geen kaarten opgeslagen. Fouten: ${errors.join(', ')}`);
