@@ -21,13 +21,17 @@ function initializePrisma() {
   
   try {
     // Ensure DATABASE_URL is set (required for PrismaClient initialization)
+    // For SQLite, PrismaClient reads DATABASE_URL from environment variables
+    // We don't pass datasources in the constructor - it's read from env
     if (!process.env.DATABASE_URL) {
-      // In production (Vercel), use environment variable or default
+      // Set default based on environment
       process.env.DATABASE_URL = process.env.VERCEL 
-        ? (process.env.DATABASE_URL || "file:./data/production.db")
+        ? "file:./data/production.db"
         : "file:./dev.db";
     }
     
+    // Initialize PrismaClient - it will use DATABASE_URL from environment
+    // For SQLite, we don't need adapter or accelerateUrl
     prismaInstance = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
@@ -38,6 +42,14 @@ function initializePrisma() {
     return prismaInstance;
   } catch (error) {
     console.error('PrismaClient initialization error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack?.substring(0, 500),
+      DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+    });
     throw error;
   }
 }
