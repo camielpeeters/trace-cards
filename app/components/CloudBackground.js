@@ -409,17 +409,30 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.opacityLight = 0.35;
         this.opacityDark = 0.15 + Math.random() * 0.1; // 0.15 - 0.25 (bijna onzichtbaar in nacht)
         
-        // Meer blobs voor hogere resolutie wolken
+        // Meer blobs voor hogere resolutie wolken - meer op mobiel voor betere rendering
         this.blobs = [];
-        const blobCount = 10 + Math.floor(Math.random() * 6); // 10-16 blobs (was 8-13)
+        // Detecteer mobiel vs desktop
+        const isMobile = width < 768;
+        // Meer blobs op mobiel voor beter wolk effect
+        const blobCount = isMobile 
+          ? 14 + Math.floor(Math.random() * 8) // 14-22 blobs op mobiel
+          : 10 + Math.floor(Math.random() * 6); // 10-16 blobs op desktop
         
         for (let i = 0; i < blobCount; i++) {
+          // Op mobiel: meer variatie in grootte en positie voor natuurlijker effect
+          const blobWidth = isMobile 
+            ? 60 + Math.random() * 140 // 60-200px op mobiel
+            : 80 + Math.random() * 120; // 80-200px op desktop
+          const blobHeight = isMobile
+            ? 40 + Math.random() * 90 // 40-130px op mobiel
+            : 50 + Math.random() * 70; // 50-120px op desktop
+          
           this.blobs.push({
-            x: (Math.random() - 0.5) * 400,
-            y: (Math.random() - 0.5) * 80,
-            width: 80 + Math.random() * 120,
-            height: 50 + Math.random() * 70,
-            rotation: (Math.random() - 0.5) * 0.3
+            x: (Math.random() - 0.5) * (isMobile ? 450 : 400),
+            y: (Math.random() - 0.5) * (isMobile ? 100 : 80),
+            width: blobWidth,
+            height: blobHeight,
+            rotation: (Math.random() - 0.5) * 0.4 // Iets meer rotatie op mobiel
           });
         }
       }
@@ -444,9 +457,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Scale context voor hoge resolutie (canvas is al geschaald in resize)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Extra blur in dark mode: minimaal 20px 
+        // Extra blur: meer op mobiel voor natuurlijker wolk effect
+        // In dark mode: minimaal 20px 
         // In light mode: standaard 25px blur
-        const baseBlur = darkMode ? 20 : 25;
+        const isMobile = width < 768;
+        const baseBlur = isMobile 
+          ? (darkMode ? 25 : 30) // Meer blur op mobiel
+          : (darkMode ? 20 : 25); // Normale blur op desktop
         // Brightness filter alleen in dark mode
         ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
         
