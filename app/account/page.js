@@ -98,6 +98,9 @@ export default function AdminDashboard() {
     
     // Load current user
     loadCurrentUser();
+    
+    // Auto-sync cards from localStorage to database (once on mount)
+    syncCardsToDatabase();
   }, [router]);
 
   // Disable native text/image selection while modifier keys are held (keeps click working)
@@ -179,6 +182,54 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error loading current user:', error);
+    }
+  };
+
+  // Sync cards from localStorage to database
+  const syncCardsToDatabase = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+      
+      // Get cards from localStorage
+      const purchaseCardsObj = getPurchaseCards();
+      const shopCardsObj = getShopCards();
+      
+      // Convert to arrays
+      const purchaseCardsArray = Object.values(purchaseCardsObj);
+      const shopCardsArray = Object.values(shopCardsObj);
+      
+      // Only sync if there are cards
+      if (purchaseCardsArray.length === 0 && shopCardsArray.length === 0) {
+        console.log('📦 No cards to sync');
+        return;
+      }
+      
+      console.log(`🔄 Syncing ${purchaseCardsArray.length} purchase cards and ${shopCardsArray.length} shop cards to database...`);
+      
+      const response = await fetch('/api/user/sync-cards', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          purchaseCards: purchaseCardsArray,
+          shopCards: shopCardsArray
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Synced ${data.syncedPurchase} purchase cards and ${data.syncedShop} shop cards to database`);
+        if (data.errors && data.errors.length > 0) {
+          console.warn('⚠️ Some cards had errors:', data.errors);
+        }
+      } else {
+        console.error('❌ Failed to sync cards:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error syncing cards:', error);
     }
   };
 
