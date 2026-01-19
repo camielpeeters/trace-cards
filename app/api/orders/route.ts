@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate totals - OPTIMIZED: Batch query instead of N+1
     const cardIds = items.map(item => item.cardId).filter(Boolean);
-    const uniqueCardIds = [...new Set(cardIds)];
+    const uniqueCardIds = Array.from(new Set(cardIds));
     
     // Batch fetch all cards at once
     const cards = await prisma.card.findMany({
