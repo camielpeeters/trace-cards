@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '../../../../lib/prisma';
 import { getCurrentUser } from '../../../../lib/auth';
 
+// Force dynamic rendering to avoid build-time Prisma issues
+export const dynamic = 'force-dynamic';
+
 // POST - Trigger manual price sync
 export async function POST(request: NextRequest) {
   try {

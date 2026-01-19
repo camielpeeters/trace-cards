@@ -5,7 +5,7 @@ import { syncCardPricing } from '../../../../../lib/pricing-sync';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { getCurrentUser } = await import('../../../../../lib/auth');
@@ -18,8 +18,9 @@ export async function POST(
       );
     }
     
+    const { id } = await params;
     // Sync pricing for this card
-    const pricing = await syncCardPricing(params.id);
+    const pricing = await syncCardPricing(id);
     
     return NextResponse.json({
       success: true,

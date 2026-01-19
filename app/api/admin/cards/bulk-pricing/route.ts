@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '../../../../lib/prisma';
 import { getCurrentUser } from '../../../../lib/auth';
 
+// Force dynamic rendering to avoid build-time Prisma issues
+export const dynamic = 'force-dynamic';
+
 // POST - Apply bulk pricing actions
 export async function POST(request: NextRequest) {
   try {
@@ -39,17 +42,40 @@ export async function POST(request: NextRequest) {
     }
     
     if (filters?.priceRange) {
-      const prices = await prisma.cardPrice.findMany({
+      // Use CardPricing model (not cardPrice)
+      // Get a sample rate for USD conversion (default to 0.92 if not available)
+      const samplePricing = await prisma.cardPricing.findFirst({
+        where: { usdToEurRate: { not: null } },
+        select: { usdToEurRate: true },
+      });
+      const usdToEurRate = samplePricing?.usdToEurRate || 0.92;
+      
+      const pricingRecords = await prisma.cardPricing.findMany({
         select: { cardId: true },
         where: {
-          averagePrice: {
-            gte: filters.priceRange.min,
-            lte: filters.priceRange.max,
-          },
+          OR: [
+            {
+              customPriceEUR: {
+                gte: filters.priceRange.min,
+                lte: filters.priceRange.max,
+              },
+            },
+            {
+              AND: [
+                { tcgplayerPriceUSD: { not: null } },
+                {
+                  tcgplayerPriceUSD: {
+                    gte: filters.priceRange.min / usdToEurRate,
+                    lte: filters.priceRange.max / usdToEurRate,
+                  },
+                },
+              ],
+            },
+          ],
         },
       });
-      if (prices.length > 0) {
-        where.id = { in: prices.map(p => p.cardId) };
+      if (pricingRecords.length > 0) {
+        where.id = { in: pricingRecords.map(p => p.cardId) };
       } else {
         // No cards match price range
         return NextResponse.json({
@@ -64,8 +90,7 @@ export async function POST(request: NextRequest) {
     const cards = await prisma.card.findMany({
       where,
       include: {
-        prices: true,
-        customPrice: true,
+        pricing: true,
       },
     });
 
@@ -79,37 +104,41 @@ export async function POST(request: NextRequest) {
         if (action === 'set-custom' && customPrice !== undefined) {
           finalPrice = parseFloat(customPrice);
         } else if (action === 'apply-margin' && margin !== undefined) {
-          // Calculate from market price
-          const marketPrice = card.prices.length > 0
-            ? card.prices.reduce((sum, p) => sum + p.averagePrice, 0) / card.prices.length
+          // Calculate from market price (use TCGPlayer price converted to EUR)
+          const marketPrice = card.pricing?.tcgplayerPriceUSD 
+            ? (card.pricing.tcgplayerPriceUSD * (card.pricing.usdToEurRate || 1))
             : 0;
           
           if (marketPrice > 0) {
             finalPrice = marketPrice * (1 + parseFloat(margin) / 100);
           }
         } else if (action === 'use-market') {
-          // Remove custom price
-          await prisma.customCardPrice.delete({
-            where: { cardId: card.id },
-          }).catch(() => {});
+          // Remove custom price (set useCustomPrice to false)
+          if (card.pricing) {
+            await prisma.cardPricing.update({
+              where: { cardId: card.id },
+              data: {
+                useCustomPrice: false,
+                updatedAt: new Date(),
+              },
+            });
+          }
           updated++;
           continue;
         }
 
         if (finalPrice !== null) {
-          await prisma.customCardPrice.upsert({
+          await prisma.cardPricing.upsert({
             where: { cardId: card.id },
             update: {
-              customPrice: finalPrice,
+              customPriceEUR: finalPrice,
               useCustomPrice: useCustomPrice !== undefined ? Boolean(useCustomPrice) : true,
-              showMarketPrice: showMarketPrice !== undefined ? Boolean(showMarketPrice) : true,
               updatedAt: new Date(),
             },
             create: {
               cardId: card.id,
-              customPrice: finalPrice,
+              customPriceEUR: finalPrice,
               useCustomPrice: useCustomPrice !== undefined ? Boolean(useCustomPrice) : true,
-              showMarketPrice: showMarketPrice !== undefined ? Boolean(showMarketPrice) : true,
             },
           });
           updated++;

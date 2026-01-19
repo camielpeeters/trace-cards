@@ -5,10 +5,11 @@ import { getCardDisplayPrice } from '../../../../lib/pricing-sync';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const priceData = await getCardDisplayPrice(params.id);
+    const { id } = await params;
+    const priceData = await getCardDisplayPrice(id);
     
     if (!priceData) {
       return NextResponse.json(

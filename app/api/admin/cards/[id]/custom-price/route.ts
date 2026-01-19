@@ -3,9 +3,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '../../../../../lib/prisma';
 
+// Force dynamic rendering to avoid build-time Prisma issues
+export const dynamic = 'force-dynamic';
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { getCurrentUser } = await import('../../../../../lib/auth');
@@ -18,6 +21,7 @@ export async function PUT(
       );
     }
     
+    const { id } = await params;
     const body = await request.json();
     const { customPriceEUR, useCustomPrice } = body;
     
@@ -25,9 +29,9 @@ export async function PUT(
     
     // Update or create pricing
     const pricing = await prisma.cardPricing.upsert({
-      where: { cardId: params.id },
+      where: { cardId: id },
       create: {
-        cardId: params.id,
+        cardId: id,
         customPriceEUR: customPriceEUR ? parseFloat(customPriceEUR) : null,
         useCustomPrice: useCustomPrice || false,
       },

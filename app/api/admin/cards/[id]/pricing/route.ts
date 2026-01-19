@@ -7,7 +7,7 @@ import { getCurrentUser } from '../../../../../lib/auth';
 // GET - Get pricing for a specific card
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser(request);
@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const cardId = params.id;
+    const { id: cardId } = await params;
     const prisma = getPrisma();
 
     const card = await prisma.card.findUnique({
@@ -43,7 +43,7 @@ export async function GET(
 // POST/PUT - Update custom pricing for a card
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser(request);
@@ -51,7 +51,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const cardId = params.id;
+    const { id: cardId } = await params;
     const body = await request.json();
     const { customPrice, useCustomPrice, showMarketPrice } = body;
 
@@ -103,7 +103,7 @@ export async function POST(
 // DELETE - Remove custom pricing (revert to market price)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser(request);
@@ -111,7 +111,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const cardId = params.id;
+    const { id: cardId } = await params;
     const prisma = getPrisma();
 
     await prisma.customCardPrice.delete({
