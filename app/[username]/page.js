@@ -223,11 +223,15 @@ export default function PublicUserPage() {
         const purchaseResponse = responses[0];
         if (purchaseResponse && purchaseResponse.ok) {
           const purchaseData = await purchaseResponse.json();
+          console.log('📦 Public purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
+          console.log('📦 First card sample:', purchaseData.cards?.[0]);
           setUser(purchaseData.user);
           setPurchaseCards(purchaseData.cards || []);
         } else if (purchaseResponse && !purchaseResponse.ok) {
           // User might not exist
-          console.error('Failed to load purchase cards:', purchaseResponse.status);
+          console.error('❌ Failed to load purchase cards:', purchaseResponse.status, purchaseResponse.statusText);
+        } else if (!purchaseResponse) {
+          console.error('❌ No purchase cards response received');
         }
         
         // Handle shop cards response (if loaded)
@@ -297,12 +301,30 @@ export default function PublicUserPage() {
   // Group cards by set
   const groupCardsBySet = (cards) => {
     const grouped = {};
-    cards.forEach(card => {
-      if (!grouped[card.setId]) {
-        grouped[card.setId] = [];
+    if (!cards || !Array.isArray(cards) || cards.length === 0) {
+      console.log('⚠️ groupCardsBySet: No cards to group', cards);
+      return grouped;
+    }
+    console.log('📦 Grouping cards:', cards.length, 'cards');
+    cards.forEach((card, index) => {
+      // Handle both localStorage format and database format
+      const setId = card.setId || card.setid || 'unknown';
+      if (!grouped[setId]) {
+        grouped[setId] = [];
       }
-      grouped[card.setId].push(card);
+      grouped[setId].push(card);
+      // Log first card for debugging
+      if (index === 0) {
+        console.log('📦 First card structure:', {
+          setId: card.setId,
+          setName: card.setName,
+          cardId: card.cardId,
+          cardName: card.cardName,
+          keys: Object.keys(card)
+        });
+      }
     });
+    console.log('📦 Grouped into', Object.keys(grouped).length, 'sets');
     return grouped;
   };
 
