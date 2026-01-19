@@ -111,8 +111,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create a map for O(1) lookup
-    const cardMap = new Map(cards.map(card => [card.id, card]));
+    // Create a map for O(1) lookup with proper typing
+    type CardWithPricing = typeof cards[0];
+    const cardMap = new Map<string, CardWithPricing>(
+      cards.map(card => [card.id, card])
+    );
 
     let subtotal = 0;
     const orderItems = [];
@@ -132,7 +135,7 @@ export async function POST(request: NextRequest) {
 
       // Get price
       const pricing = getPriceDisplay(
-        card.prices,
+        card.prices || [],
         card.customPrice?.customPrice,
         card.customPrice?.useCustomPrice,
         card.customPrice?.showMarketPrice
