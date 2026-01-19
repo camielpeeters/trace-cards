@@ -6,6 +6,7 @@
     "dev": "next dev",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
+    "postbuild": "if [ \"$VERCEL\" = \"1\" ] && [ -n \"$DATABASE_URL\" ]; then npx prisma db push --skip-generate --accept-data-loss || true; fi",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
