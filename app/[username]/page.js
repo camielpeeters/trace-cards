@@ -601,44 +601,44 @@ export default function PublicUserPage() {
           
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-500/10 to-transparent animate-glow"></div>
           
-          <div className="relative z-10 max-w-7xl mx-auto px-4 py-4 flex items-center justify-between w-full">
-            <div className="flex items-center gap-4 flex-shrink-0">
-              <Link href="/account">
-                <button className="relative p-3 glass rounded-xl backdrop-blur-md transition-all hover:scale-110 group">
-                  <ArrowLeft className="w-5 h-5 text-white dark:text-red-200 relative z-10" />
+          <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 flex items-center justify-between w-full gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0 min-w-0 flex-1">
+              <Link href="/account" className="flex-shrink-0">
+                <button className="relative p-2 sm:p-3 glass rounded-lg sm:rounded-xl backdrop-blur-md transition-all hover:scale-110 group">
+                  <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-white dark:text-red-200 relative z-10" />
                 </button>
               </Link>
-              <div className="relative group">
+              <div className="relative group flex-shrink-0">
                 <div className="relative transform hover:rotate-12 transition-transform duration-300">
                   <img 
                     src="/pokeball-icon.png" 
                     alt="Pokeball" 
-                    className="w-14 h-14 filter drop-shadow-lg"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 filter drop-shadow-lg"
                     style={{ imageRendering: 'crisp-edges' }}
                   />
                 </div>
               </div>
-              <div className="min-w-0">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white dark:text-red-100 tracking-tight drop-shadow-xl truncate">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-black text-white dark:text-red-100 tracking-tight drop-shadow-xl truncate">
                   {user.displayName || user.username}
                 </h1>
-                <p className="text-sm text-white/90 dark:text-red-200/80 font-medium mt-1">
+                <p className="hidden sm:block text-xs sm:text-sm text-white/90 dark:text-red-200/80 font-medium mt-0.5 sm:mt-1 truncate">
                   Pokemon Kaarten Collectie
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-4">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               <ThemeToggle />
               
               {/* Show login link only if not authenticated */}
               {!authenticated && (
                 <Link href="/login">
                   <button
-                    className="relative p-3 glass rounded-xl backdrop-blur-md transition-all hover:scale-110 group"
+                    className="relative p-2 sm:p-3 glass rounded-lg sm:rounded-xl backdrop-blur-md transition-all hover:scale-110 group"
                     title="Inloggen"
                   >
-                    <Shield className="w-5 h-5 text-gray-800 dark:text-red-200" />
+                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800 dark:text-red-200" />
                   </button>
                 </Link>
               )}
@@ -649,12 +649,12 @@ export default function PublicUserPage() {
               {selectedCards.length > 0 && activeTab === 'purchase' && (
                 <button
                   onClick={() => setShowModal(true)}
-                  className="relative flex items-center gap-2 bg-white text-red-600 px-3 md:px-5 py-2 md:py-3 rounded-full font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all group overflow-hidden z-20 flex-shrink-0"
+                  className="relative flex items-center gap-1 sm:gap-2 bg-white text-red-600 px-2 sm:px-3 md:px-5 py-1.5 sm:py-2 md:py-3 rounded-full font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all group overflow-hidden z-20 flex-shrink-0"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/20 to-red-500/0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 relative z-10" />
-                  <span className="hidden sm:inline relative z-10 text-sm md:text-base">Aanbieden</span>
-                  <span className="relative z-10 bg-red-600 text-white text-xs font-black rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center shadow-lg">
+                  <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 relative z-10" />
+                  <span className="hidden md:inline relative z-10 text-sm md:text-base">Aanbieden</span>
+                  <span className="relative z-10 bg-red-600 text-white text-xs font-black rounded-full w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center shadow-lg">
                     {selectedCards.length}
                   </span>
                 </button>
