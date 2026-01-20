@@ -752,11 +752,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        // Performance fix: gebruik Math.round voor vloeiendere animatie
-        const controlX = Math.round((baseX + windX * 0.5) * 10) / 10;
-        const controlY = Math.round((baseY - this.height * 0.4) * 10) / 10;
-        const endX = Math.round((baseX + windX) * 10) / 10;
-        const endY = Math.round((baseY - this.height) * 10) / 10;
+        // Performance fix: gebruik directe berekening voor vloeiendere animatie
+        const controlX = baseX + windX * 0.5;
+        const controlY = baseY - this.height * 0.4;
+        const endX = baseX + windX;
+        const endY = baseY - this.height;
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
