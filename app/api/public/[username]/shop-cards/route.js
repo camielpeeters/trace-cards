@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../../lib/prisma';
+import { getUSDtoEURRate } from '../../../../lib/pricing-sources/tcgplayer';
 
 // Force dynamic rendering (uses Prisma and dynamic params)
 export const dynamic = 'force-dynamic';
@@ -53,65 +54,99 @@ export async function GET(request, { params }) {
           }
         });
         
-        // Debug: Log if card record not found
-        if (!cardRecord) {
-          console.log(`⚠️ No Card record found for ${card.cardName} (${card.setName}) - cardId: ${card.cardId}`);
-        } else if (!cardRecord.pricing) {
-          console.log(`⚠️ Card record found but no pricing data for ${card.cardName} (${card.setName})`);
-        }
-        
-        // Build TCGPlayer price data structure if available
+        // Build TCGPlayer price data structure - try Card record first, then fallback to Pokémon TCG API
         let tcgplayer = null;
-        if (cardRecord?.pricing) {
+        let exchangeRate = 0.92; // Default fallback rate
+        
+        // Try to get pricing from Card record
+        if (cardRecord?.pricing?.tcgplayerPriceUSD) {
           const pricing = cardRecord.pricing;
-          if (pricing.tcgplayerPriceUSD) {
-            // Convert USD to EUR if rate is available
-            const priceEUR = pricing.usdToEurRate 
-              ? pricing.tcgplayerPriceUSD * pricing.usdToEurRate 
-              : null;
-            
-            // Convert USD prices to EUR for display (use default rate if not available)
-            const defaultRate = 0.92; // Approximate USD to EUR rate as fallback
-            const exchangeRate = pricing.usdToEurRate || defaultRate;
-            
-            const convertToEUR = (usdPrice) => {
-              return usdPrice ? usdPrice * exchangeRate : null;
-            };
-            
-            const holofoilUSD = pricing.tcgplayerPriceUSD;
-            const reverseHolofoilUSD = holofoilUSD * 1.1;
-            const normalUSD = holofoilUSD * 0.9;
-            
-            // Ensure we always return price values (even if approximate)
-            tcgplayer = {
-              url: pricing.tcgplayerUrl || null,
-              prices: {
-                holofoil: {
-                  market: convertToEUR(holofoilUSD),
-                  mid: convertToEUR(holofoilUSD),
-                  low: convertToEUR(holofoilUSD * 0.9),
-                  high: convertToEUR(holofoilUSD * 1.1)
-                },
-                reverseHolofoil: {
-                  market: convertToEUR(reverseHolofoilUSD),
-                  mid: convertToEUR(reverseHolofoilUSD),
-                  low: convertToEUR(holofoilUSD),
-                  high: convertToEUR(holofoilUSD * 1.2)
-                },
-                normal: {
-                  market: convertToEUR(normalUSD),
-                  mid: convertToEUR(normalUSD),
-                  low: convertToEUR(holofoilUSD * 0.8),
-                  high: convertToEUR(holofoilUSD)
-                }
+          exchangeRate = pricing.usdToEurRate || 0.92;
+          
+          const convertToEUR = (usdPrice) => {
+            return usdPrice ? usdPrice * exchangeRate : null;
+          };
+          
+          const holofoilUSD = pricing.tcgplayerPriceUSD;
+          const reverseHolofoilUSD = holofoilUSD * 1.1;
+          const normalUSD = holofoilUSD * 0.9;
+          
+          tcgplayer = {
+            url: pricing.tcgplayerUrl || null,
+            prices: {
+              holofoil: {
+                market: convertToEUR(holofoilUSD),
+                mid: convertToEUR(holofoilUSD),
+                low: convertToEUR(holofoilUSD * 0.9),
+                high: convertToEUR(holofoilUSD * 1.1)
               },
-              // EUR conversion (for backwards compatibility)
-              eurPrice: holofoilUSD * exchangeRate,
-              lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
-            };
-            console.log(`✅ Added pricing for ${card.cardName}: €${(holofoilUSD * exchangeRate).toFixed(2)}`);
-          } else {
-            console.log(`⚠️ No tcgplayerPriceUSD found for ${card.cardName} (${card.setName})`);
+              reverseHolofoil: {
+                market: convertToEUR(reverseHolofoilUSD),
+                mid: convertToEUR(reverseHolofoilUSD),
+                low: convertToEUR(holofoilUSD),
+                high: convertToEUR(holofoilUSD * 1.2)
+              },
+              normal: {
+                market: convertToEUR(normalUSD),
+                mid: convertToEUR(normalUSD),
+                low: convertToEUR(holofoilUSD * 0.8),
+                high: convertToEUR(holofoilUSD)
+              }
+            },
+            eurPrice: holofoilUSD * exchangeRate,
+            lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
+          };
+        } else {
+          // Fallback: Try to fetch from Pokémon TCG API if cardId matches format
+          // Only try if we have the Pokémon TCG API format (e.g., "me1-1")
+          try {
+            const pokemonApiKey = process.env.POKEMON_TCG_API_KEY;
+            if (pokemonApiKey && card.cardId) {
+              const apiUrl = `https://api.pokemontcg.io/v2/cards/${card.cardId}`;
+              const apiResponse = await fetch(apiUrl, {
+                headers: { 'X-Api-Key': pokemonApiKey }
+              });
+              
+              if (apiResponse.ok) {
+                const apiData = await apiResponse.json();
+                const apiCard = apiData.data;
+                
+                // Use tcgplayer data directly from Pokémon TCG API
+                if (apiCard.tcgplayer?.prices) {
+                  // Get exchange rate
+                  exchangeRate = await getUSDtoEURRate().catch(() => 0.92);
+                  
+                  const convertToEUR = (usdPrice) => {
+                    return usdPrice ? usdPrice * exchangeRate : null;
+                  };
+                  
+                  // Convert all price variants from USD to EUR
+                  const convertedPrices = {};
+                  Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
+                    const variant = apiCard.tcgplayer.prices[variantKey];
+                    if (variant) {
+                      convertedPrices[variantKey] = {
+                        market: variant.market ? convertToEUR(variant.market) : null,
+                        mid: variant.mid ? convertToEUR(variant.mid) : null,
+                        low: variant.low ? convertToEUR(variant.low) : null,
+                        high: variant.high ? convertToEUR(variant.high) : null
+                      };
+                    }
+                  });
+                  
+                  tcgplayer = {
+                    url: apiCard.tcgplayer.url || null,
+                    prices: convertedPrices,
+                    lastUpdated: new Date().toISOString()
+                  };
+                  
+                  console.log(`✅ Fetched pricing from Pokémon TCG API for ${card.cardName}`);
+                }
+              }
+            }
+          } catch (error) {
+            // Silently fail - no pricing available
+            console.log(`⚠️ Could not fetch pricing for ${card.cardName}: ${error.message}`);
           }
         }
         
