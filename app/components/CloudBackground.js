@@ -1123,7 +1123,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      grassRef.current.forEach(blade => {
+      // Chrome fix: Skip eerste 30% van sprieten (achterste laag) om knipperingen te voorkomen
+      const skipCount = Math.floor(grassRef.current.length * 0.3);
+      
+      grassRef.current.forEach((blade, index) => {
+        // Skip achterste laag sprieten (eerste 30%) - Chrome render probleem
+        if (index < skipCount) {
+          return; // Skip deze spriet - voorkomt knipperingen
+        }
+        
         blade.update(animationTimeRef.current);
         // Geef altijd actuele height mee voor footer positie (consistent bij zoom/uitzoom)
         blade.draw(ctx, darkModeRef.current, dpr, resolutionScale, height);
