@@ -9,6 +9,14 @@ export async function GET(request, { params }) {
   try {
     const { username } = await params;
     
+    // Check if API key is configured
+    const pokemonApiKey = process.env.POKEMON_TCG_API_KEY;
+    if (!pokemonApiKey) {
+      console.error('❌ POKEMON_TCG_API_KEY not configured in environment variables');
+    } else {
+      console.log('✅ POKEMON_TCG_API_KEY is configured');
+    }
+    
     // Get Prisma client instance
     const prisma = getPrisma();
     

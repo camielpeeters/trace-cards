@@ -241,13 +241,12 @@ export default function PublicUserPage() {
     }
   };
   
-  // Background price hydration (non-blocking)
+  // Background price hydration (non-blocking) - DISABLED
+  // Server now handles all price hydration via API routes
   const hydratePricesInBackground = async (purchaseCardsArray, shopCardsArray) => {
-    const apiKey = getAPIKey();
-    if (!apiKey) {
-      console.log('⚠️ No API key available for price hydration');
-      return;
-    }
+    // Price hydration now happens server-side in the API routes
+    // No client-side API key needed anymore
+    return;
     
     // Run hydration in background without blocking UI
     setTimeout(async () => {
