@@ -1116,11 +1116,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      // Chrome fix: Verwijder achterste laag sprieten volledig (eerste 30% van sprieten)
-      // Dit voorkomt knipperingen en hakkelige beweging
+      // Chrome fix: Verwijder achterste laag sprieten volledig
+      // 1. Verwijder eerste 30% van sprieten (achterste laag)
+      // 2. Filter ook alle dunne sprieten (width < 6) die knipperen
       const totalBlades = grassRef.current.length;
       const skipCount = Math.floor(totalBlades * 0.3);
-      const visibleBlades = grassRef.current.slice(skipCount);
+      const visibleBlades = grassRef.current
+        .slice(skipCount) // Skip eerste 30% (achterste laag)
+        .filter(blade => blade.width >= 6); // Filter dunne sprieten (width < 6)
       
       visibleBlades.forEach((blade) => {
         blade.update(animationTimeRef.current);
