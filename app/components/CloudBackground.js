@@ -600,8 +600,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             ctx.restore();
           });
         } else {
-          // DESKTOP: Softer blur for better cloud effect (was 22/27, now higher for softer clouds)
-          const baseBlur = darkMode ? 28 : 35; // Increased blur for softer, more realistic clouds
+          // DESKTOP: Softer blur for better cloud effect - high quality blur
+          const baseBlur = darkMode ? 30 : 38; // Increased blur for softer, more realistic clouds (was 22/27)
           
           // Use off-screen canvas for blur if available (better Firefox support)
           if (offScreenCanvas && offScreenCtx) {
