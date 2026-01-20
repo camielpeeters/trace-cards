@@ -129,7 +129,7 @@ export default function Home() {
         {/* Hero Section */}
         <main className="max-w-7xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center mb-16">
-            <div className="inline-block mb-8 animate-bounce" style={{ overflow: 'visible' }}>
+            <div className="inline-block mb-8" style={{ overflow: 'visible' }}>
               <img 
                 src="/pokeball-icon.png" 
                 alt="Pokeball" 

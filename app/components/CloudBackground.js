@@ -18,6 +18,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
   const starsRef = useRef([]);
   const shootingStarsRef = useRef([]);
   const sunRef = useRef(null);
+  const grassRef = useRef([]);
   const animationTimeRef = useRef(0);
 
   // Update darkMode ref wanneer het verandert (zonder effect opnieuw te runnen)
@@ -66,6 +67,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       
       width = newWidth;
       height = newHeight;
+      
+      // Reset gras bij resize zodat het altijd aan footer blijft
+      if (widthChanged || heightChanged) {
+        grassRef.current = [];
+      }
       
       // Hogere resolutie canvas (2x in dark mode voor anti-pixelation)
       const resolutionScale = darkModeRef.current ? 2 : 1;
@@ -642,6 +648,290 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
     }
 
+    // Grass Class - Wild grass sprieten op footer met wind animatie
+    class GrassBlade {
+      constructor(x, grassHeight) {
+        this.x = x;
+        this.baseY = grassHeight; // Y positie op footer
+        // Meer variatie in breedte - WILDER GRAS (eerst breedte bepalen)
+        const widthType = Math.random();
+        let isExtraThick = false;
+        if (widthType < 0.3) {
+          this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (30%) - iets dikker
+        } else if (widthType < 0.7) {
+          this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
+        } else if (widthType < 0.9) {
+          this.width = 7 + Math.random() * 4; // Dik: 7-11px (20%)
+        } else {
+          this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (10%)
+          isExtraThick = true;
+        }
+        
+        // Meer variatie in hoogte: mix van kort, medium en lang
+        // Dikke sprieten zijn LANGER (komen boven de rest uit)
+        const heightType = Math.random();
+        if (isExtraThick) {
+          // Extra dikke sprieten zijn altijd lang en komen bovenuit
+          this.height = 70 + Math.random() * 40; // 70-110px (boven de rest uit)
+        } else if (heightType < 0.3) {
+          this.height = 15 + Math.random() * 15; // Kort: 15-30px (30%)
+        } else if (heightType < 0.7) {
+          this.height = 30 + Math.random() * 25; // Medium: 30-55px (40%)
+        } else {
+          this.height = 50 + Math.random() * 30; // Lang: 50-80px (30%)
+        }
+        
+        // Variatie in wind snelheid - LANGZAMER
+        // Dunne sprieten bewegen minder (kalmer)
+        const isThin = this.width < 5;
+        this.windSpeed = isThin 
+          ? 0.2 + Math.random() * 0.2  // Dun: 0.2-0.4 (veel langzamer)
+          : 0.3 + Math.random() * 0.4; // Dik: 0.3-0.7 (normaal)
+        this.windOffset = Math.random() * Math.PI * 2; // Random start fase
+        this.swayAmount = isThin
+          ? 5 + Math.random() * 8   // Dun: 5-13px (veel minder beweging)
+          : 10 + Math.random() * 18; // Dik: 10-28px (normaal)
+        this.isThick = this.width > 7; // Dikke sprieten zijn automatisch thick
+        this.isThin = isThin; // Markeer dunne sprieten
+        this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
+        
+        // Uitstekers voor wild gras (meerdere zijtakken)
+        this.outgrowths = [];
+        const outgrowthCount = Math.random() > 0.6 ? Math.floor(Math.random() * 3) : 0; // 0-2 uitstekers (40% kans)
+        for (let i = 0; i < outgrowthCount; i++) {
+          this.outgrowths.push({
+            height: this.height * (0.3 + Math.random() * 0.4), // 30-70% van hoofdhoogte
+            position: 0.3 + Math.random() * 0.5, // Positie op spriet (30-80% vanaf bodem)
+            side: Math.random() > 0.5 ? 1 : -1, // Links of rechts
+            angle: (Math.random() - 0.5) * 0.8, // Hoek variatie
+            width: this.width * (0.5 + Math.random() * 0.3) // 50-80% van hoofdbreedte
+          });
+        }
+      }
+
+      update(time) {
+        // Wind animatie: sin wave voor heen en weer beweging
+        this.windPhase = time * this.windSpeed + this.windOffset;
+      }
+
+      draw(ctx, darkMode, dpr = 1, resolutionScale = 1, currentHeight = null) {
+        if (!ctx) return;
+        
+        // Dunne sprieten: normale resolutie (geen 1.5x meer voor performance)
+        const isThin = this.isThin || this.width < 5;
+        
+        ctx.save();
+        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+        
+        // Geen blur meer voor dunne sprieten (te zwaar voor performance)
+        // Alleen langzamere beweging voor kalmer effect
+        
+        // Bereken wind beweging (sin wave) - LANGZAMER
+        // Gebruik Math.floor voor alle bewegingen om knipperingen te voorkomen
+        const windX = Math.floor(Math.sin(this.windPhase) * this.swayAmount * 10) / 10;
+        
+        // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
+        const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
+        const baseX = Math.floor((baseXPos + (this.clusterOffset || 0)) * 10) / 10;
+        
+        // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
+        const baseY = Math.floor((currentHeight || this.baseY || height) * 10) / 10;
+        
+        // Kleur afhankelijk van dark mode
+        if (darkMode) {
+          // Dark mode: donkergroen tot bijna zwart
+          ctx.strokeStyle = `rgba(30, 50, 30, 0.9)`;
+          ctx.fillStyle = `rgba(20, 40, 20, 0.7)`;
+        } else {
+          // Light mode: groenig
+          ctx.strokeStyle = `rgba(60, 120, 60, 1)`;
+          ctx.fillStyle = `rgba(80, 150, 80, 0.8)`;
+        }
+        
+        // Dikkere lijn voor vollere sprieten
+        const lineWidth = this.isThick ? this.width * 1.5 : this.width;
+        ctx.lineWidth = lineWidth;
+        ctx.lineJoin = 'round';
+        
+        // Teken gras spriet als gebogen lijn (wind effect)
+        const controlX = baseX + windX * 0.5;
+        const controlY = baseY - this.height * 0.4;
+        const endX = baseX + windX;
+        const endY = baseY - this.height;
+        
+        // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
+        const tipX = endX;
+        const tipY = endY;
+        
+        // Bereken scherpe punt - echt puntig, niet afgesneden
+        // De punt moet naar een echt scherp punt lopen (0px breedte aan top)
+        const tipSharpness = lineWidth * 0.15; // Hoe scherp de punt is (kleiner = scherper)
+        const tipHeight = lineWidth * 0.5; // Hoogte van punt sectie
+        
+        // Teken spriet als gevulde vorm die uitloopt in ECHTE scherpe punt
+        ctx.beginPath();
+        ctx.moveTo(baseX, baseY);
+        ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
+        
+        // Teken naar scherpe punt: van breed naar 0px breedte
+        // Eerst naar de zijkanten van de punt basis
+        ctx.lineTo(tipX + tipSharpness, tipY + tipHeight * 0.6);
+        // Dan naar het scherpe punt (0px breedte) - ECHTE PUNT
+        ctx.lineTo(tipX, tipY + tipHeight); // ECHTE PUNT (0px breedte aan top)
+        // Dan naar de andere zijkant
+        ctx.lineTo(tipX - tipSharpness, tipY + tipHeight * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Teken outline voor duidelijkheid (met puntige top)
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.moveTo(baseX, baseY);
+        ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
+        // Outline loopt ook naar punt
+        ctx.lineTo(tipX, tipY + tipHeight); // Tot aan de punt
+        ctx.lineWidth = lineWidth * 0.2;
+        ctx.stroke();
+        
+        // Geen extra lijn meer - voorkomt trillen
+        
+        // Extra zijtak voor meer variatie (50% van sprieten) - ook puntig
+        if (this.hasExtraBlade) {
+          ctx.globalAlpha = darkMode ? 0.4 : 0.5;
+          const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
+          const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
+          const sideWindX = Math.round(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6) * 100) / 100;
+          
+          const sideControlX = sideBladeX + sideWindX * 0.4;
+          const sideControlY = baseY - sideBladeHeight * 0.4;
+          const sideEndX = sideBladeX + sideWindX * 0.7;
+          const sideEndY = baseY - sideBladeHeight;
+          
+          // Zijtak met echte puntige top
+          const sideTipSharpness = lineWidth * 0.15;
+          const sideTipHeight = lineWidth * 0.5;
+          
+          ctx.beginPath();
+          ctx.moveTo(sideBladeX, baseY);
+          ctx.quadraticCurveTo(sideControlX, sideControlY, sideEndX, sideEndY);
+          // Echte puntige top
+          ctx.lineTo(sideEndX + sideTipSharpness * 0.7, sideEndY + sideTipHeight * 0.6);
+          ctx.lineTo(sideEndX, sideEndY + sideTipHeight); // ECHTE PUNT
+          ctx.lineTo(sideEndX - sideTipSharpness * 0.7, sideEndY + sideTipHeight * 0.6);
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // Uitstekers voor wild gras - meerdere puntige zijtakken
+        if (this.outgrowths && this.outgrowths.length > 0) {
+          this.outgrowths.forEach(outgrowth => {
+            ctx.globalAlpha = darkMode ? 0.5 : 0.6;
+            
+            // Bereken start positie op hoofdspriet
+            const startY = baseY - (this.height * outgrowth.position);
+            const startX = baseX + (windX * (1 - outgrowth.position) * 0.5);
+            
+            // Bereken uitsteker positie en beweging
+            const outgrowthHeight = outgrowth.height;
+            const outgrowthWindX = Math.round(Math.sin(this.windPhase * 1.1) * (this.swayAmount * 0.5) * 100) / 100;
+            const outgrowthX = startX + (outgrowth.side * 4); // Offset van hoofdspriet
+            const outgrowthEndX = outgrowthX + outgrowthWindX * 0.6 + (outgrowth.side * outgrowth.angle * 10);
+            const outgrowthEndY = startY - outgrowthHeight;
+            
+            // Teken uitsteker met puntige top
+            const outgrowthWidth = outgrowth.width;
+            const outgrowthTipSharpness = outgrowthWidth * 0.2;
+            
+            ctx.beginPath();
+            ctx.moveTo(outgrowthX, startY);
+            ctx.quadraticCurveTo(
+              outgrowthX + outgrowthWindX * 0.3,
+              startY - outgrowthHeight * 0.4,
+              outgrowthEndX,
+              outgrowthEndY
+            );
+            // Echte puntige top (0px breedte aan top)
+            const outgrowthTipHeight = outgrowthWidth * 0.5;
+            ctx.lineTo(outgrowthEndX + outgrowthTipSharpness, outgrowthEndY + outgrowthTipHeight * 0.6);
+            ctx.lineTo(outgrowthEndX, outgrowthEndY + outgrowthTipHeight); // ECHTE PUNT
+            ctx.lineTo(outgrowthEndX - outgrowthTipSharpness, outgrowthEndY + outgrowthTipHeight * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Outline voor duidelijkheid
+            ctx.globalAlpha = darkMode ? 0.7 : 0.8;
+            ctx.beginPath();
+            ctx.moveTo(outgrowthX, startY);
+            ctx.quadraticCurveTo(
+              outgrowthX + outgrowthWindX * 0.3,
+              startY - outgrowthHeight * 0.4,
+              outgrowthEndX,
+              outgrowthEndY
+            );
+            ctx.lineWidth = outgrowthWidth * 0.2;
+            ctx.stroke();
+          });
+        }
+        
+        // Reset filter voor volgende spriet
+        ctx.filter = 'none';
+        ctx.restore();
+      }
+    }
+
+    function initGrass() {
+      if (!width || !height) return;
+      // Reset gras bij resize (zodat het altijd aan footer blijft)
+      grassRef.current = [];
+      
+      // Gras op footer (onderkant van scherm) - gebruik altijd actuele height
+      // Meer clusters voor volledige bodem vulling
+      const clusterCount = Math.floor(width / 8); // Meer clusters (was /12)
+      
+      for (let i = 0; i < clusterCount; i++) {
+        // Bepaal cluster positie - meer uniform verdeeld voor volledige vulling
+        const baseClusterX = (i / clusterCount) * width;
+        const clusterX = baseClusterX + (Math.random() - 0.5) * (width / clusterCount) * 0.6;
+        
+        // Elke cluster heeft 2-4 sprieten vanuit 1 punt
+        const bladesPerCluster = 2 + Math.floor(Math.random() * 3); // 2-4 sprieten
+        
+        for (let j = 0; j < bladesPerCluster; j++) {
+          // Sprieten vanuit cluster punt, iets verspreid
+          const offsetX = (Math.random() - 0.5) * 5; // Iets meer verspreiding
+          const x = clusterX + offsetX;
+          
+          // Creëer spriet met referentie naar cluster voor gedeelde beweging
+          // baseY wordt dynamisch gebruikt (altijd huidige height)
+          const blade = new GrassBlade(x, 0); // 0 = placeholder, wordt dynamisch gebruikt
+          blade.clusterX = clusterX; // Bewaar cluster positie
+          blade.clusterOffset = offsetX; // Bewaar offset
+          grassRef.current.push(blade);
+        }
+      }
+      
+      // Extra anker punten tussen clusters voor volledige bodem vulling
+      const extraClusterCount = Math.floor(width / 16); // Extra clusters tussen de hoofdclusters
+      for (let i = 0; i < extraClusterCount; i++) {
+        // Plaats tussen bestaande clusters
+        const extraX = (i / extraClusterCount) * width + (width / extraClusterCount) * 0.5;
+        const clusterX = extraX + (Math.random() - 0.5) * 8;
+        
+        // Kleinere clusters voor tussenruimtes (1-3 sprieten)
+        const bladesPerCluster = 1 + Math.floor(Math.random() * 3); // 1-3 sprieten
+        
+        for (let j = 0; j < bladesPerCluster; j++) {
+          const offsetX = (Math.random() - 0.5) * 4;
+          const x = clusterX + offsetX;
+          
+          const blade = new GrassBlade(x, 0); // 0 = placeholder
+          blade.clusterX = clusterX;
+          blade.clusterOffset = offsetX;
+          grassRef.current.push(blade);
+        }
+      }
+    }
+
     function initStars() {
       // Gebruik actuele viewport dimensies voor volledige scherm coverage
       const currentWidth = width || window.innerWidth;
@@ -819,6 +1109,17 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           cloud.draw(darkModeRef.current, dpr, resolutionScale);
         }
       });
+      
+      // Teken gras op footer (onderkant) - met wind animatie
+      if (grassRef.current.length === 0) {
+        initGrass();
+      }
+      
+      grassRef.current.forEach(blade => {
+        blade.update(animationTimeRef.current);
+        // Geef altijd actuele height mee voor footer positie (consistent bij zoom/uitzoom)
+        blade.draw(ctx, darkModeRef.current, dpr, resolutionScale, height);
+      });
 
       animationId = requestAnimationFrame(animate);
     }
@@ -829,6 +1130,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     // Initialiseer en start animatie
     if (width && height) {
       initClouds();
+      initGrass(); // Initialiseer gras
       if (darkModeRef.current) {
         initStars();
       }
