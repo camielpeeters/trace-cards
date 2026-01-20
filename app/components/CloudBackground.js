@@ -1123,11 +1123,19 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      // Chrome fix: Skip eerste 30% van sprieten (achterste laag) om knipperingen te voorkomen
-      const skipCount = Math.floor(grassRef.current.length * 0.3);
+      // Chrome fix: Sorteer sprieten op X-positie en skip links (achterste laag)
+      // Dit voorkomt knipperingen door de achterste laag niet te tekenen
+      const sortedBlades = [...grassRef.current].sort((a, b) => {
+        const aX = a.clusterX !== undefined ? a.clusterX : a.x;
+        const bX = b.clusterX !== undefined ? b.clusterX : b.x;
+        return aX - bX; // Sorteer van links naar rechts
+      });
       
-      grassRef.current.forEach((blade, index) => {
-        // Skip achterste laag sprieten (eerste 30%) - Chrome render probleem
+      // Skip eerste 30% (links/achterste laag) - Chrome render probleem
+      const skipCount = Math.floor(sortedBlades.length * 0.3);
+      
+      sortedBlades.forEach((blade, index) => {
+        // Skip achterste laag sprieten (links, eerste 30%) - Chrome render probleem
         if (index < skipCount) {
           return; // Skip deze spriet - voorkomt knipperingen
         }
