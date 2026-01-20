@@ -681,15 +681,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.height = 50 + Math.random() * 30; // Lang: 50-80px (30%)
         }
         
-        // Variatie in wind snelheid - LANGZAMER
-        // Dunne sprieten bewegen minder (kalmer)
+        // Variatie in wind snelheid - ZEER LANGZAAM voor dunne sprieten
+        // Dunne sprieten bewegen veel minder (kalmer, geen knipperingen)
         const isThin = this.width < 5;
         this.windSpeed = isThin 
-          ? 0.2 + Math.random() * 0.2  // Dun: 0.2-0.4 (veel langzamer)
+          ? 0.05 + Math.random() * 0.1  // Dun: 0.05-0.15 (ZEER langzaam, geen knipperingen)
           : 0.3 + Math.random() * 0.4; // Dik: 0.3-0.7 (normaal)
         this.windOffset = Math.random() * Math.PI * 2; // Random start fase
         this.swayAmount = isThin
-          ? 5 + Math.random() * 8   // Dun: 5-13px (veel minder beweging)
+          ? 2 + Math.random() * 4   // Dun: 2-6px (ZEER weinig beweging, geen knipperingen)
           : 10 + Math.random() * 18; // Dik: 10-28px (normaal)
         this.isThick = this.width > 7; // Dikke sprieten zijn automatisch thick
         this.isThin = isThin; // Markeer dunne sprieten
