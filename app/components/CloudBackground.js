@@ -811,17 +811,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         const endX = q(baseX + windX);
         const endY = q(baseY - this.height);
 
-        // Some blades use a softer rounded tip (no angled peak)
-        if (this.tipStyle === 'round') {
-          ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.moveTo(baseX, baseY);
-          ctx.quadraticCurveTo(controlX, controlY, endX, endY);
-          ctx.stroke();
-          ctx.restore();
-          return;
-        }
-        
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
         const tipY = endY;
