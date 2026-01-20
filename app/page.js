@@ -85,23 +85,26 @@ export default function Home() {
           
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-500/10 to-transparent animate-glow"></div>
           
-          <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative group">
-                <div className="relative transform hover:rotate-12 transition-transform duration-300">
-                  <img 
-                    src="/pokeball-icon.png" 
-                    alt="Pokeball" 
-                    className="w-14 h-14 filter drop-shadow-lg"
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </div>
-              </div>
+          <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 lg:py-6 flex items-center justify-between">
+            {/* Mobile: Logo + Pokeball naast elkaar, kleiner */}
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+              <img 
+                src="/pokemon-logo.svg" 
+                alt="Pokemon Logo" 
+                className="w-8 h-8 sm:w-10 md:w-12 lg:w-14 h-auto"
+              />
+              <img 
+                src="/pokeball-icon.png" 
+                alt="Pokeball" 
+                className="w-6 h-6 sm:w-8 md:w-10 lg:w-12 h-auto filter drop-shadow-lg"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
               <div>
-                <h1 className="text-3xl md:text-4xl font-black text-white dark:text-red-100 tracking-tight drop-shadow-xl">
+                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black text-white dark:text-red-100 tracking-tight drop-shadow-xl">
                   Trace Cards
                 </h1>
-                <p className="text-sm text-white/90 dark:text-red-200/80 font-medium mt-1">
+                {/* Slogan alleen op desktop */}
+                <p className="hidden md:block text-sm text-white/90 dark:text-red-200/80 font-medium mt-1">
                   Pokemon Kaarten Verkoop Platform
                 </p>
               </div>
