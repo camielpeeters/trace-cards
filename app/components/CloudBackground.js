@@ -491,12 +491,24 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         // Mobile gets more blur for softer, more natural cloud effect
         // Desktop keeps original blur for sharper clouds
-        // This ensures mobile and desktop styling are completely separate
-        const baseBlur = this.isMobile
+        // Re-check mobile status in case of orientation change
+        const currentWidth = width || window.innerWidth;
+        const isMobileNow = currentWidth < 768;
+        const effectiveMobile = this.isMobile || isMobileNow;
+        
+        const baseBlur = effectiveMobile
           ? (darkMode ? 25 : 30) // More blur on mobile for better effect
           : (darkMode ? 22 : 27); // Original blur on desktop
-        // Brightness filter alleen in dark mode
-        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+        
+        // Apply blur filter BEFORE transforms for Firefox compatibility
+        // Firefox mobile needs filter set before translate/scale
+        const filterString = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+        ctx.filter = filterString;
+        
+        // Verify filter is applied (for debugging)
+        if (!ctx.filter || ctx.filter === 'none') {
+          console.warn('⚠️ Filter not applied, fallback blur may be needed');
+        }
         
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
