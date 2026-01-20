@@ -39,12 +39,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    // Chromium/Chrome has known canvas sub-pixel / thin-stroke flicker issues (seen in Cursor browser).
-    // We apply a safe fallback for Chromium only: avoid outline strokes + avoid tiny outgrowth details.
-    const IS_CHROMIUM =
-      typeof navigator !== 'undefined' &&
-      /Chrome/i.test(navigator.userAgent) &&
-      !/Edg|OPR/i.test(navigator.userAgent);
+    // Browser detection (used only for canvas safety fallbacks)
+    const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
+    const IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
+    // Treat Electron/Cursor as Chromium too
+    const IS_CHROMIUM = !IS_FIREFOX && /Chrome|Chromium|CriOS|Edg|OPR|Electron/i.test(ua);
     let width, height;
     let animationId;
     let dpr = window.devicePixelRatio || 1;
@@ -1171,15 +1170,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       // - Do NOT render thin back-layer blades (they flicker/glitch across browsers)
       // - Render only the thicker blades on top (smooth + stable)
       {
-        // Firefox: use a VERY subtle strip (prevents "floating blade" illusion without a visible bar).
-        // Chromium/Cursor: keep a slightly stronger strip to avoid any perceived gaps (thin blades are hidden).
-        const isChromium = IS_CHROMIUM;
-        const grassBaseHeight = isChromium ? 34 : 10; // px (CSS pixels)
-        const topAlpha = isChromium ? 0.65 : 0.12;
-        const bottomAlpha = isChromium ? 0.9 : 0.0;
+        // Firefox: no strip (prevents any visible green band).
+        // Chromium/Cursor: keep a strip to ensure "filled footer" even when thin blades are hidden.
+        if (IS_CHROMIUM) {
+          const grassBaseHeight = 34; // px (CSS pixels)
+          const topAlpha = 0.65;
+          const bottomAlpha = 0.9;
 
-        if (grassBaseHeight > 0) {
-          const grassBaseHeight = 34; // px (CSS pixels) - smaller to avoid banding
           ctx.save();
           ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
 
