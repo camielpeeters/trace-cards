@@ -709,31 +709,32 @@ function CloudBackgroundCanvas({ darkMode = false }) {
 
       update(time) {
         // Wind animatie: sin wave voor heen en weer beweging
-        // Bug fix: update ALLE sprieten consistent (geen uitzonderingen meer)
-        // Dit voorkomt inconsistent gedrag tussen update en draw
-        this.windPhase = time * this.windSpeed + this.windOffset;
+        // Bug fix: langzamere update voor dunne sprieten om glitch te voorkomen
+        const effectiveWindSpeed = this.width < 6 ? this.windSpeed * 0.5 : this.windSpeed;
+        this.windPhase = time * effectiveWindSpeed + this.windOffset;
       }
 
       draw(ctx, darkMode, dpr = 1, resolutionScale = 1, currentHeight = null) {
         if (!ctx) return;
         
         ctx.save();
-        // Bug fix: gebruik integer scaling voor pixel-perfect rendering (voorkomt sub-pixel flickering)
-        const scale = Math.floor(dpr * resolutionScale);
-        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Bug fix: gebruik integer windX voor pixel-perfect rendering (voorkomt sub-pixel flickering)
-        // Bereken wind beweging voor ALLE sprieten (consistent)
-        const windX = Math.round(Math.sin(this.windPhase) * this.swayAmount);
+        // Bug fix: gebruik imageSmoothingEnabled = false voor pixel-perfect rendering zonder hakkelige animatie
+        ctx.imageSmoothingEnabled = false;
+        
+        // Bereken wind beweging - gebruik floating point voor vloeiende animatie
+        // Bug fix: beperk wind snelheid voor dunne sprieten om glitch te voorkomen
+        const effectiveWindSpeed = this.width < 6 ? this.windSpeed * 0.5 : this.windSpeed;
+        const effectiveSwayAmount = this.width < 6 ? this.swayAmount * 0.5 : this.swayAmount;
+        const windX = Math.sin(this.windPhase) * effectiveSwayAmount;
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
-        const baseX = Math.round(baseXPos + (this.clusterOffset || 0));
+        const baseX = baseXPos + (this.clusterOffset || 0);
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
-        const baseY = Math.round(currentHeight || this.baseY || height);
+        const baseY = currentHeight || this.baseY || height;
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
