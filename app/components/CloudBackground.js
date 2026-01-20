@@ -711,6 +711,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
 
       update(time) {
         // Wind animatie: sin wave voor heen en weer beweging
+        // Dunne sprieten: GEEN update (stil)
+        if (this.isThin || this.width < 5) {
+          return; // Geen update voor dunne sprieten
+        }
         this.windPhase = time * this.windSpeed + this.windOffset;
       }
 
