@@ -753,11 +753,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
-        const controlX = Math.round(baseX + windX * 0.5);
-        const controlY = Math.round(baseY - this.height * 0.4);
-        const endX = Math.round(baseX + windX);
-        const endY = Math.round(baseY - this.height);
+        // Gebruik floating point voor vloeiende animatie
+        const controlX = baseX + windX * 0.5;
+        const controlY = baseY - this.height * 0.4;
+        const endX = baseX + windX;
+        const endY = baseY - this.height;
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
@@ -801,14 +801,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
           const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
-          // Bug fix: gebruik Math.round voor integer animatie (voorkomt sub-pixel flickering)
-          const sideWindX = Math.round(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6));
+          // Gebruik floating point voor vloeiende animatie
+          const sideWindX = Math.sin(this.windPhase * 1.2) * (effectiveSwayAmount * 0.6);
           
-          // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
-          const sideControlX = Math.round(sideBladeX + sideWindX * 0.4);
-          const sideControlY = Math.round(baseY - sideBladeHeight * 0.4);
-          const sideEndX = Math.round(sideBladeX + sideWindX * 0.7);
-          const sideEndY = Math.round(baseY - sideBladeHeight);
+          // Gebruik floating point voor vloeiende animatie
+          const sideControlX = sideBladeX + sideWindX * 0.4;
+          const sideControlY = baseY - sideBladeHeight * 0.4;
+          const sideEndX = sideBladeX + sideWindX * 0.7;
+          const sideEndY = baseY - sideBladeHeight;
           
           // Zijtak met echte puntige top
           const sideTipSharpness = lineWidth * 0.15;
