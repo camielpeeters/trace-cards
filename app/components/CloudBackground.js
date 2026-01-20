@@ -728,20 +728,24 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
         // Bereken wind beweging - alleen voor dikke sprieten
+        // Chrome fix: gebruik Math.round in plaats van Math.floor voor betere rendering
         let windX = 0;
         
         // Alleen dikke sprieten bewegen
         if (!isThin) {
           // Bereken wind beweging (sin wave) - alleen voor dikke sprieten
-          windX = Math.floor(Math.sin(this.windPhase) * this.swayAmount * 10) / 10;
+          // Chrome fix: gebruik Math.round voor vloeiendere rendering
+          windX = Math.round(Math.sin(this.windPhase) * this.swayAmount * 100) / 100;
         }
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        const baseX = Math.floor((baseXPos + (this.clusterOffset || 0)) * 10) / 10;
+        // Chrome fix: gebruik Math.round voor vloeiendere rendering
+        const baseX = Math.round((baseXPos + (this.clusterOffset || 0)) * 100) / 100;
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        const baseY = Math.floor((currentHeight || this.baseY || height) * 10) / 10;
+        // Chrome fix: gebruik Math.round voor vloeiendere rendering
+        const baseY = Math.round((currentHeight || this.baseY || height) * 100) / 100;
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
