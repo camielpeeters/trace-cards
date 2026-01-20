@@ -1127,8 +1127,34 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      // Teken ALLE sprieten - geen verwijdering meer
+      // SAFE DESIGN (cross-browser):
+      // - Draw a solid grass base strip so the footer is always fully filled (no gaps)
+      // - Do NOT render thin back-layer blades (they flicker/glitch across browsers)
+      // - Render only the thicker blades on top (smooth + stable)
+      {
+        const grassBaseHeight = 46; // px (CSS pixels)
+        ctx.save();
+        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+
+        const y0 = height - grassBaseHeight;
+        const gradient = ctx.createLinearGradient(0, y0, 0, height);
+        if (darkModeRef.current) {
+          gradient.addColorStop(0, 'rgba(18, 35, 18, 0.92)');
+          gradient.addColorStop(1, 'rgba(8, 20, 8, 0.98)');
+        } else {
+          gradient.addColorStop(0, 'rgba(90, 165, 90, 0.95)');
+          gradient.addColorStop(1, 'rgba(55, 120, 55, 1)');
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, y0, width, grassBaseHeight);
+        ctx.restore();
+      }
+
       grassRef.current.forEach((blade) => {
+        // Thin back-layer blades are the source of the visible "glitch" across browsers.
+        // We keep them in the array (no layout gaps), but never render them.
+        if (blade.isThin || blade.width < 5) return;
+
         blade.update(animationTimeRef.current);
         // Geef altijd actuele height mee voor footer positie (consistent bij zoom/uitzoom)
         blade.draw(ctx, darkModeRef.current, dpr, resolutionScale, height);
