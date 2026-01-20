@@ -39,10 +39,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    // Browser detection (used only for canvas safety fallbacks)
+    // Browser detection (used only for canvas safety fallbacks / minor styling)
     const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
     const IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
     const IS_CURSOR = /Cursor|Electron/i.test(ua);
+    const IS_CHROME =
+      /Chrome|Chromium|CriOS/i.test(ua) && !/Edg|OPR|Electron|Cursor/i.test(ua) && !IS_FIREFOX;
     // Treat Electron/Cursor as Chromium too (broad)
     const IS_CHROMIUM = !IS_FIREFOX && /Chrome|Chromium|CriOS|Edg|OPR|Electron/i.test(ua);
     // Only enable aggressive grass safe-mode for Cursor/Electron. Chrome should match Firefox visuals.
@@ -664,12 +666,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Meer variatie in breedte - WILDER GRAS (eerst breedte bepalen)
         const widthType = Math.random();
         let isExtraThick = false;
-        if (widthType < 0.3) {
-          this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (30%) - iets dikker
-        } else if (widthType < 0.7) {
-          this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
-        } else if (widthType < 0.9) {
-          this.width = 7 + Math.random() * 4; // Dik: 7-11px (20%)
+        // More "thick" presence for the nice (Chrome/Firefox) path.
+        // Cursor safe-mode uses strokes anyway, so thick distribution is less critical there.
+        if (widthType < 0.22) {
+          this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (22%)
+        } else if (widthType < 0.55) {
+          this.width = 4 + Math.random() * 3; // Medium: 4-7px (33%)
+        } else if (widthType < 0.85) {
+          this.width = 7 + Math.random() * 4; // Dik: 7-11px (30%)
         } else {
           this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (10%)
           isExtraThick = true;
@@ -703,6 +707,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.windSpeed = 0.12 + Math.random() * 0.08; // 0.12-0.20 (very gentle)
           this.swayAmount = 4 + Math.random() * 4; // 4-8px (small sway)
         }
+
+        // Tip style: not every blade should have the angled "piekje".
+        // Only applies to the full-fidelity (non-safe) path.
+        this.tipStyle = (!IS_SAFE_GRASS && !isThin && Math.random() < 0.28) ? 'round' : 'sharp';
 
         // Side-blade parameters: precompute ONCE (no Math.random in draw -> prevents "glitch" flicker)
         if (this.hasExtraBlade) {
@@ -789,12 +797,24 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         const lineWidth = this.isThick ? this.width * 1.5 : this.width;
         ctx.lineWidth = lineWidth;
         ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
         const controlX = q(baseX + windX * 0.5);
         const controlY = q(baseY - this.height * 0.4);
         const endX = q(baseX + windX);
         const endY = q(baseY - this.height);
+
+        // Some blades use a softer rounded tip (no angled peak)
+        if (this.tipStyle === 'round') {
+          ctx.globalAlpha = 1;
+          ctx.beginPath();
+          ctx.moveTo(baseX, baseY);
+          ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+          ctx.stroke();
+          ctx.restore();
+          return;
+        }
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
