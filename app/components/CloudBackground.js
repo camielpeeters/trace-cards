@@ -423,9 +423,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.seed = baseSeed;
         this.random = seededRandom(this.seed);
         
-        // Mobile gets more blobs for realistic layered clouds WITHOUT blur
-        // Desktop keeps original styling with blur
-        this.blobCount = this.isMobile ? 24 : 12; // More blobs on mobile for layered effect
+        // Mobile and desktop use same blob count - only rendering method differs
+        this.blobCount = 12; // Same as desktop for consistency
         
         this.reset(isInitial);
       }
