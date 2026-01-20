@@ -709,10 +709,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
 
       update(time) {
         // Wind animatie: sin wave voor heen en weer beweging
-        // Dunne sprieten: GEEN update (stil)
-        if (this.isThin || this.width < 5) {
-          return; // Geen update voor dunne sprieten
-        }
+        // Bug fix: update ALLE sprieten consistent (geen uitzonderingen meer)
+        // Dit voorkomt inconsistent gedrag tussen update en draw
         this.windPhase = time * this.windSpeed + this.windOffset;
       }
 
@@ -753,11 +751,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        // Performance fix: gebruik directe berekening voor vloeiendere animatie
-        const controlX = baseX + windX * 0.5;
-        const controlY = baseY - this.height * 0.4;
-        const endX = baseX + windX;
-        const endY = baseY - this.height;
+        // Bug fix: gebruik Math.round voor consistente posities (voorkomt sub-pixel flickering)
+        const controlX = Math.round((baseX + windX * 0.5) * 10) / 10;
+        const controlY = Math.round((baseY - this.height * 0.4) * 10) / 10;
+        const endX = Math.round((baseX + windX) * 10) / 10;
+        const endY = Math.round((baseY - this.height) * 10) / 10;
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
@@ -801,14 +799,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
           const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
-          // Performance fix: gebruik directe berekening voor vloeiendere animatie
-          const sideWindX = Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6);
+          // Bug fix: gebruik Math.round voor consistente animatie (voorkomt sub-pixel flickering)
+          const sideWindX = Math.round(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6) * 10) / 10;
           
-          // Performance fix: gebruik directe berekening voor vloeiendere animatie
-          const sideControlX = sideBladeX + sideWindX * 0.4;
-          const sideControlY = baseY - sideBladeHeight * 0.4;
-          const sideEndX = sideBladeX + sideWindX * 0.7;
-          const sideEndY = baseY - sideBladeHeight;
+          // Bug fix: gebruik Math.round voor consistente posities (voorkomt sub-pixel flickering)
+          const sideControlX = Math.round((sideBladeX + sideWindX * 0.4) * 10) / 10;
+          const sideControlY = Math.round((baseY - sideBladeHeight * 0.4) * 10) / 10;
+          const sideEndX = Math.round((sideBladeX + sideWindX * 0.7) * 10) / 10;
+          const sideEndY = Math.round((baseY - sideBladeHeight) * 10) / 10;
           
           // Zijtak met echte puntige top
           const sideTipSharpness = lineWidth * 0.15;
