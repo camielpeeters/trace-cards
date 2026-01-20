@@ -49,6 +49,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     const WIND_SPEED = 0.5; // Snellere animatie (was 0.2)
     const STAR_COUNT = 250; // Meer sterren maar subtieler
     
+    // Create off-screen canvas for blur effect (Firefox mobile compatibility)
+    let offScreenCanvas = null;
+    let offScreenCtx = null;
+    
     // Simple seeded random number generator for deterministic cloud generation
     function seededRandom(seed) {
       let value = seed;
@@ -481,7 +485,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         }
       }
 
-      draw(darkMode, dpr = 1, resolutionScale = 1) {
+      draw(darkMode, dpr = 1, resolutionScale = 1, offScreenCanvas = null, offScreenCtx = null) {
         if (!ctx) return;
         
         // Mobile gets more blur for softer, more natural cloud effect
@@ -497,18 +501,73 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         const opacity = this.getOpacity(darkMode);
         
+        // Use off-screen canvas for blur if available (better Firefox mobile support)
+        if (offScreenCanvas && offScreenCtx) {
+          // Calculate cloud bounds for off-screen canvas
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          this.blobs.forEach(blob => {
+            const blobX = this.x + blob.x - blob.width / 2;
+            const blobY = this.y + blob.y - blob.height / 2;
+            minX = Math.min(minX, blobX - baseBlur * 2);
+            maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
+            minY = Math.min(minY, blobY - baseBlur * 2);
+            maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
+          });
+          
+          const cloudWidth = (maxX - minX) * this.scale + baseBlur * 4;
+          const cloudHeight = (maxY - minY) * this.scale + baseBlur * 4;
+          
+          offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
+          offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
+          offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+          
+          // Clear and draw cloud on off-screen canvas
+          offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
+          offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+          offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+          offScreenCtx.translate(-minX * this.scale + baseBlur * 2, -minY * this.scale + baseBlur * 2);
+          offScreenCtx.scale(this.scale, this.scale);
+          offScreenCtx.translate(this.x - minX, this.y - minY);
+          
+          // Draw blobs on off-screen canvas
+          if (darkMode) {
+            offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
+          } else {
+            offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+          }
+          
+          this.blobs.forEach(blob => {
+            offScreenCtx.save();
+            offScreenCtx.translate(blob.x, blob.y);
+            offScreenCtx.rotate(blob.rotation);
+            
+            offScreenCtx.beginPath();
+            const radiusX = blob.width / 2;
+            const radiusY = blob.height / 2;
+            offScreenCtx.moveTo(0, -radiusY);
+            offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+            offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+            offScreenCtx.closePath();
+            offScreenCtx.fill();
+            offScreenCtx.restore();
+          });
+          
+          // Draw blurred cloud from off-screen canvas to main canvas
+          ctx.save();
+          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+          ctx.drawImage(offScreenCanvas, minX * this.scale - baseBlur * 2, minY * this.scale - baseBlur * 2);
+          ctx.restore();
+          return;
+        }
+        
+        // Fallback: draw directly with filter
         ctx.save();
         
         // Scale context voor hoge resolutie (canvas is al geschaald in resize)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Firefox mobile often doesn't support ctx.filter properly
-        // Use shadowBlur as primary blur method - works reliably on all browsers
-        ctx.filter = 'none'; // Disable filter, use shadowBlur instead
-        ctx.shadowBlur = baseBlur;
-        ctx.shadowColor = darkMode ? `rgba(200, 210, 220, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
+        // Apply filter BEFORE transforms - critical for Firefox mobile
+        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
         
         // Apply brightness adjustment for dark mode
         if (darkMode) {
@@ -522,24 +581,21 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
-          ctx.fillStyle = `rgba(200, 210, 220, 1)`; // Full opacity, alpha handled by globalAlpha
+          ctx.fillStyle = `rgba(200, 210, 220, 1)`;
         } else {
-          ctx.fillStyle = `rgba(255, 255, 255, 1)`; // Full opacity, alpha handled by globalAlpha
+          ctx.fillStyle = `rgba(255, 255, 255, 1)`;
         }
 
-        // Teken alle blobs als ellipsen - Safari compatible met arc() in plaats van ellipse()
+        // Teken alle blobs als ellipsen - Safari compatible
         this.blobs.forEach(blob => {
           ctx.save();
           ctx.translate(blob.x, blob.y);
           ctx.rotate(blob.rotation);
           
           ctx.beginPath();
-          // Safari compatible: gebruik meerdere arc() calls voor een betere ellips vorm
-          // In plaats van ellipse() gebruiken we een path met bezier curves voor betere Safari compatibiliteit
           const radiusX = blob.width / 2;
           const radiusY = blob.height / 2;
           
-          // Teken ellips met bezier curves (Safari compatible)
           ctx.moveTo(0, -radiusY);
           ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
           ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
@@ -548,12 +604,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           
           ctx.restore();
         });
-
-        // Reset shadow properties after drawing to prevent bleed
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
         ctx.restore();
       }
@@ -706,11 +756,17 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         shootingStarsRef.current = [];
       }
       
-      // Teken wolken (boven alles) - met DPR scaling en resolution scale
-      cloudsRef.current.forEach(cloud => {
-        cloud.update();
-        cloud.draw(darkModeRef.current, dpr, resolutionScale);
-      });
+          // Initialize off-screen canvas if not already created
+          if (!offScreenCanvas) {
+            offScreenCanvas = document.createElement('canvas');
+            offScreenCtx = offScreenCanvas.getContext('2d');
+          }
+          
+          // Teken wolken (boven alles) - met DPR scaling en resolution scale
+          cloudsRef.current.forEach(cloud => {
+            cloud.update();
+            cloud.draw(darkModeRef.current, dpr, resolutionScale, offScreenCanvas, offScreenCtx);
+          });
 
       animationId = requestAnimationFrame(animate);
     }
