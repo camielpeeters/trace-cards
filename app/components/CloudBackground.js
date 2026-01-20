@@ -401,17 +401,27 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
     }
 
-    // Cloud Class - Verbeterd met deterministische wolken voor 1:1 mobile/desktop
+    // Cloud Class - Separate styling for mobile and desktop
     class SimpleCloud {
       constructor(isInitial = false, cloudIndex = 0) {
         // Store cloud index for deterministic generation
         this.cloudIndex = cloudIndex;
-        // Use fixed seed based on cloud index for 1:1 identical clouds across devices
-        this.seed = cloudIndex * 1000 + (isInitial ? 0 : 5000);
+        
+        // Detect if mobile - set once at creation, stored for entire cloud lifetime
+        const currentWidth = width || window.innerWidth;
+        this.isMobile = currentWidth < 768;
+        
+        // Separate seeds for mobile vs desktop to ensure isolated styling
+        // Mobile: higher seed range (10000+), Desktop: lower seed range (0-9999)
+        const baseSeed = this.isMobile 
+          ? 10000 + (cloudIndex * 1000) + (isInitial ? 0 : 5000)
+          : cloudIndex * 1000 + (isInitial ? 0 : 5000);
+        this.seed = baseSeed;
         this.random = seededRandom(this.seed);
         
-        // Fixed blob count - same for mobile and desktop (12 blobs for consistent rendering)
-        this.blobCount = 12;
+        // Mobile gets more blobs for better cloud effect on smaller screens
+        // Desktop keeps original styling
+        this.blobCount = this.isMobile ? 18 : 12;
         
         this.reset(isInitial);
       }
@@ -429,17 +439,29 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.opacityLight = 0.35;
         this.opacityDark = 0.15 + this.random() * 0.1; // 0.15 - 0.25 (bijna onzichtbaar in nacht)
         
-        // Deterministic blob generation - same clouds on mobile and desktop
+        // Mobile-specific blob generation (separate from desktop)
         this.blobs = [];
         
         for (let i = 0; i < this.blobCount; i++) {
-          // Use deterministic random for consistent blob sizes across devices
-          const blobWidth = 80 + this.random() * 120; // 80-200px (same on all devices)
-          const blobHeight = 50 + this.random() * 70; // 50-120px (same on all devices)
+          let blobWidth, blobHeight, blobSpreadX, blobSpreadY;
+          
+          if (this.isMobile) {
+            // Mobile: more blobs, slightly smaller sizes, more spread for natural effect
+            blobWidth = 60 + this.random() * 140; // 60-200px on mobile
+            blobHeight = 40 + this.random() * 90; // 40-130px on mobile
+            blobSpreadX = 450; // Wider spread on mobile
+            blobSpreadY = 100; // Taller spread on mobile
+          } else {
+            // Desktop: original styling
+            blobWidth = 80 + this.random() * 120; // 80-200px on desktop
+            blobHeight = 50 + this.random() * 70; // 50-120px on desktop
+            blobSpreadX = 400; // Original spread on desktop
+            blobSpreadY = 80; // Original spread on desktop
+          }
           
           this.blobs.push({
-            x: (this.random() - 0.5) * 400,
-            y: (this.random() - 0.5) * 80,
+            x: (this.random() - 0.5) * blobSpreadX,
+            y: (this.random() - 0.5) * blobSpreadY,
             width: blobWidth,
             height: blobHeight,
             rotation: (this.random() - 0.5) * 0.3
@@ -467,9 +489,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Scale context voor hoge resolutie (canvas is al geschaald in resize)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Consistent blur across all devices for 1:1 identical clouds
-        // Same blur value on mobile and desktop for Firefox compatibility
-        const baseBlur = darkMode ? 22 : 27;
+        // Mobile gets more blur for softer, more natural cloud effect
+        // Desktop keeps original blur for sharper clouds
+        // This ensures mobile and desktop styling are completely separate
+        const baseBlur = this.isMobile
+          ? (darkMode ? 25 : 30) // More blur on mobile for better effect
+          : (darkMode ? 22 : 27); // Original blur on desktop
         // Brightness filter alleen in dark mode
         ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
         
