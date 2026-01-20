@@ -690,7 +690,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.windOffset = Math.random() * Math.PI * 2; // Random start fase
         this.swayAmount = baseSwayAmount + (Math.random() - 0.5) * 4; // Zeer kleine variatie (10-14px)
         this.isThick = this.width > 7; // Dikke sprieten zijn automatisch thick
-        this.isThin = isThin; // Geen dunne sprieten meer
+        this.isThin = false; // Geen dunne sprieten meer - alle sprieten bewegen normaal
         this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
         
         // Uitstekers voor wild gras (meerdere zijtakken)
