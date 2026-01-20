@@ -722,6 +722,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.swayAmount = 4 + Math.random() * 4; // 4-8px (small sway)
         }
 
+        // Cursor/Electron: keep blades visually lighter/thinner (safe mode otherwise looks too chunky)
+        if (IS_SAFE_GRASS) {
+          this.width = Math.min(this.width, 6.5);
+          this.isThick = this.width > 7; // recompute (will be false after clamp)
+        }
+
         // Tip style: not every blade should have the angled "piekje".
         // Only on real Chrome (requested); keep Safari/Firefox consistent.
         this.tipStyle =
@@ -775,10 +781,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Cursor SAFE MODE:
         // Filled shapes with sharp tips can still shimmer in Cursor/Electron. Use a simple stroked curve.
         if (IS_SAFE_GRASS) {
-          // Colors (more opaque to reduce shimmer)
-          ctx.strokeStyle = darkMode ? 'rgba(24, 48, 24, 0.95)' : 'rgba(70, 140, 70, 0.95)';
-          const lineWidth = this.isThick ? this.width * 1.4 : this.width * 1.15;
-          ctx.lineWidth = Math.max(3, lineWidth);
+          // Cursor safe mode: slightly thinner + a bit less opaque (prevents "big thick stems" look)
+          ctx.strokeStyle = darkMode ? 'rgba(24, 48, 24, 0.85)' : 'rgba(70, 140, 70, 0.85)';
+          const lineWidth = this.isThick ? this.width * 1.15 : this.width;
+          ctx.lineWidth = Math.max(2, lineWidth);
           ctx.lineJoin = 'round';
           ctx.lineCap = 'round';
 
@@ -968,7 +974,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       
       // Gras op footer (onderkant van scherm) - gebruik altijd actuele height
       // Meer clusters voor volledige bodem vulling
-      const clusterCount = Math.floor(width / 8); // Meer clusters (was /12)
+      // Chrome looked "too thick/dense" mainly due to too many blades. Reduce density for Chrome only.
+      const clusterCount = IS_CHROME ? Math.floor(width / 12) : Math.floor(width / 8);
       
       for (let i = 0; i < clusterCount; i++) {
         // Bepaal cluster positie - meer uniform verdeeld voor volledige vulling
@@ -976,7 +983,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         const clusterX = baseClusterX + (Math.random() - 0.5) * (width / clusterCount) * 0.6;
         
         // Elke cluster heeft 2-4 sprieten vanuit 1 punt
-        const bladesPerCluster = 2 + Math.floor(Math.random() * 3); // 2-4 sprieten
+        const bladesPerCluster = IS_CHROME
+          ? (1 + Math.floor(Math.random() * 3)) // 1-3 (less dense)
+          : (2 + Math.floor(Math.random() * 3)); // 2-4
         
         for (let j = 0; j < bladesPerCluster; j++) {
           // Sprieten vanuit cluster punt, iets verspreid
@@ -993,14 +1002,16 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
       
       // Extra anker punten tussen clusters voor volledige bodem vulling
-      const extraClusterCount = Math.floor(width / 16); // Extra clusters tussen de hoofdclusters
+      const extraClusterCount = IS_CHROME ? Math.floor(width / 24) : Math.floor(width / 16);
       for (let i = 0; i < extraClusterCount; i++) {
         // Plaats tussen bestaande clusters
         const extraX = (i / extraClusterCount) * width + (width / extraClusterCount) * 0.5;
         const clusterX = extraX + (Math.random() - 0.5) * 8;
         
         // Kleinere clusters voor tussenruimtes (1-3 sprieten)
-        const bladesPerCluster = 1 + Math.floor(Math.random() * 3); // 1-3 sprieten
+        const bladesPerCluster = IS_CHROME
+          ? (1 + Math.floor(Math.random() * 2)) // 1-2 (less dense)
+          : (1 + Math.floor(Math.random() * 3)); // 1-3
         
         for (let j = 0; j < bladesPerCluster; j++) {
           const offsetX = (Math.random() - 0.5) * 4;
