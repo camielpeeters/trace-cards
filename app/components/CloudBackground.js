@@ -722,16 +722,19 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.save();
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Performance fix: gebruik directe berekening zonder Math.floor/round voor vloeiendere animatie
+        // Bug fix: gebruik requestAnimationFrame tijd voor consistente animatie
         // Bereken wind beweging voor ALLE sprieten (consistent)
-        const windX = Math.sin(this.windPhase) * this.swayAmount;
+        // Gebruik Math.round met 1 decimaal precisie om sub-pixel flickering te voorkomen
+        const windX = Math.round(Math.sin(this.windPhase) * this.swayAmount * 10) / 10;
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        const baseX = baseXPos + (this.clusterOffset || 0);
+        // Bug fix: gebruik Math.round voor consistente positie (voorkomt sub-pixel flickering)
+        const baseX = Math.round((baseXPos + (this.clusterOffset || 0)) * 10) / 10;
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        const baseY = currentHeight || this.baseY || height;
+        // Bug fix: gebruik Math.round voor consistente positie (voorkomt sub-pixel flickering)
+        const baseY = Math.round((currentHeight || this.baseY || height) * 10) / 10;
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
@@ -1116,16 +1119,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      // Chrome fix: Verwijder achterste laag sprieten volledig
-      // 1. Verwijder eerste 30% van sprieten (achterste laag)
-      // 2. Filter ook alle dunne sprieten (width < 6) die knipperen
-      const totalBlades = grassRef.current.length;
-      const skipCount = Math.floor(totalBlades * 0.3);
-      const visibleBlades = grassRef.current
-        .slice(skipCount) // Skip eerste 30% (achterste laag)
-        .filter(blade => blade.width >= 6); // Filter dunne sprieten (width < 6)
-      
-      visibleBlades.forEach((blade) => {
+      // Teken ALLE sprieten - geen verwijdering meer
+      grassRef.current.forEach((blade) => {
         blade.update(animationTimeRef.current);
         // Geef altijd actuele height mee voor footer positie (consistent bij zoom/uitzoom)
         blade.draw(ctx, darkModeRef.current, dpr, resolutionScale, height);
