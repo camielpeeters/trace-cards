@@ -718,12 +718,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         if (!ctx) return;
         
         ctx.save();
-        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+        // Bug fix: gebruik integer scaling voor pixel-perfect rendering (voorkomt sub-pixel flickering)
+        const scale = Math.floor(dpr * resolutionScale);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
         
-        // Bug fix: gebruik requestAnimationFrame tijd voor consistente animatie
+        // Bug fix: gebruik integer windX voor pixel-perfect rendering (voorkomt sub-pixel flickering)
         // Bereken wind beweging voor ALLE sprieten (consistent)
-        // Gebruik Math.round met 1 decimaal precisie om sub-pixel flickering te voorkomen
-        const windX = Math.round(Math.sin(this.windPhase) * this.swayAmount * 10) / 10;
+        const windX = Math.round(Math.sin(this.windPhase) * this.swayAmount);
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
@@ -751,11 +752,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        // Bug fix: gebruik Math.round voor consistente posities (voorkomt sub-pixel flickering)
-        const controlX = Math.round((baseX + windX * 0.5) * 10) / 10;
-        const controlY = Math.round((baseY - this.height * 0.4) * 10) / 10;
-        const endX = Math.round((baseX + windX) * 10) / 10;
-        const endY = Math.round((baseY - this.height) * 10) / 10;
+        // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
+        const controlX = Math.round(baseX + windX * 0.5);
+        const controlY = Math.round(baseY - this.height * 0.4);
+        const endX = Math.round(baseX + windX);
+        const endY = Math.round(baseY - this.height);
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
