@@ -1116,9 +1116,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      // Chrome fix: Skip dunne achterste laag sprieten (width < 6) voor betere performance
-      // Dit voorkomt hakkelige beweging en lage frame rate
-      const visibleBlades = grassRef.current.filter(blade => blade.width >= 6);
+      // Chrome fix: Verwijder achterste laag sprieten volledig (eerste 30% van sprieten)
+      // Dit voorkomt knipperingen en hakkelige beweging
+      const totalBlades = grassRef.current.length;
+      const skipCount = Math.floor(totalBlades * 0.3);
+      const visibleBlades = grassRef.current.slice(skipCount);
       
       visibleBlades.forEach((blade) => {
         blade.update(animationTimeRef.current);
