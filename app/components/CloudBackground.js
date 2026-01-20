@@ -728,12 +728,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        // Bug fix: gebruik Math.round voor consistente positie (voorkomt sub-pixel flickering)
-        const baseX = Math.round((baseXPos + (this.clusterOffset || 0)) * 10) / 10;
+        // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
+        const baseX = Math.round(baseXPos + (this.clusterOffset || 0));
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        // Bug fix: gebruik Math.round voor consistente positie (voorkomt sub-pixel flickering)
-        const baseY = Math.round((currentHeight || this.baseY || height) * 10) / 10;
+        // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
+        const baseY = Math.round(currentHeight || this.baseY || height);
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
@@ -800,14 +800,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
           const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
-          // Bug fix: gebruik Math.round voor consistente animatie (voorkomt sub-pixel flickering)
-          const sideWindX = Math.round(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6) * 10) / 10;
+          // Bug fix: gebruik Math.round voor integer animatie (voorkomt sub-pixel flickering)
+          const sideWindX = Math.round(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6));
           
-          // Bug fix: gebruik Math.round voor consistente posities (voorkomt sub-pixel flickering)
-          const sideControlX = Math.round((sideBladeX + sideWindX * 0.4) * 10) / 10;
-          const sideControlY = Math.round((baseY - sideBladeHeight * 0.4) * 10) / 10;
-          const sideEndX = Math.round((sideBladeX + sideWindX * 0.7) * 10) / 10;
-          const sideEndY = Math.round((baseY - sideBladeHeight) * 10) / 10;
+          // Bug fix: gebruik Math.round voor integer posities (voorkomt sub-pixel flickering)
+          const sideControlX = Math.round(sideBladeX + sideWindX * 0.4);
+          const sideControlY = Math.round(baseY - sideBladeHeight * 0.4);
+          const sideEndX = Math.round(sideBladeX + sideWindX * 0.7);
+          const sideEndY = Math.round(baseY - sideBladeHeight);
           
           // Zijtak met echte puntige top
           const sideTipSharpness = lineWidth * 0.15;
