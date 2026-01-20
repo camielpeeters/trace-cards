@@ -544,45 +544,41 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         if (!ctx) return;
         
         const opacity = this.getOpacity(darkMode);
-        const baseBlur = darkMode ? 22 : 27; // Same blur values as desktop for consistency
         
-        // Debug: Log mobile cloud rendering (only first time)
         if (this.blobs.length === 0) {
-          if (!this._debugLogged) {
-            console.warn('⚠️ MobileCloud: No blobs to draw');
-            this._debugLogged = true;
-          }
           return;
         }
         
-        // Use direct rendering (same as desktop) - works reliably on mobile Safari/Firefox
-        // Off-screen canvas is optional and can cause issues on mobile browsers
-        // Direct rendering uses same technique as desktop for consistency
-        // Direct rendering (same technique as desktop) - PRIMARY method
-        // This works reliably on mobile Safari and Firefox
+        // MOBILE RENDERING - Use shadowBlur instead of ctx.filter (works on Safari/Firefox mobile)
+        // Mobile browsers don't support ctx.filter blur well, so we use shadowBlur per blob
+        // This creates the same blur effect as desktop but mobile-compatible
         ctx.save();
         
         // Scale context voor hoge resolutie (same as desktop)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Apply blur filter (same as desktop)
-        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-        
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
-        // Use opacity in fillStyle (same as desktop)
-        if (darkMode) {
-          ctx.fillStyle = `rgba(200, 210, 220, ${opacity})`;
-        } else {
-          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-        }
-
-        // Same bezier curve drawing as desktop (perfect technique)
+        // Mobile blur technique: use shadowBlur on each blob for realistic cloud effect
+        // shadowBlur works reliably on mobile Safari and Firefox
+        const shadowBlurAmount = darkMode ? 30 : 35; // Slightly more blur to compensate for no filter
+        
+        // Set colors based on dark mode
+        const fillColor = darkMode ? `rgba(200, 210, 220, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
+        const shadowColor = darkMode ? `rgba(200, 210, 220, ${opacity * 0.6})` : `rgba(255, 255, 255, ${opacity * 0.6})`;
+        
+        // Draw each blob with shadowBlur for blur effect (mobile-compatible technique)
         this.blobs.forEach(blob => {
           ctx.save();
           ctx.translate(blob.x, blob.y);
           ctx.rotate(blob.rotation);
+          
+          // Apply shadow blur for mobile cloud effect
+          ctx.shadowBlur = shadowBlurAmount;
+          ctx.shadowColor = shadowColor;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
           
           ctx.beginPath();
           const radiusX = blob.width / 2;
@@ -593,7 +589,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
           ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
           ctx.closePath();
+          
+          // Fill with main color (shadow creates blur effect)
+          ctx.fillStyle = fillColor;
           ctx.fill();
+          
+          // Draw additional layers with less shadow for depth
+          ctx.shadowBlur = shadowBlurAmount * 0.5;
+          ctx.fill(); // Fill again with less shadow for layered effect
           
           ctx.restore();
         });
