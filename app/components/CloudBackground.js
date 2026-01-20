@@ -49,6 +49,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     const WIND_SPEED = 0.5; // Snellere animatie (was 0.2)
     const STAR_COUNT = 250; // Meer sterren maar subtieler
     
+    // Simple seeded random number generator for deterministic cloud generation
+    function seededRandom(seed) {
+      let value = seed;
+      return function() {
+        value = (value * 9301 + 49297) % 233280;
+        return value / 233280;
+      };
+    }
+    
     // Force dark mode check from DOM (Safari compatibility)
     const getCurrentDarkMode = () => {
       return document.documentElement.classList.contains('dark');
@@ -392,49 +401,48 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
     }
 
-    // Cloud Class - Verbeterd met hogere resolutie
+    // Cloud Class - Verbeterd met deterministische wolken voor 1:1 mobile/desktop
     class SimpleCloud {
-      constructor(isInitial = false) {
-        // Store blob count at creation time for consistency across resets
-        const isMobile = (width || window.innerWidth) < 768;
-        this.blobCount = isMobile ? 18 : 12; // Fixed count per device type
-        this.isMobile = isMobile; // Store mobile flag
+      constructor(isInitial = false, cloudIndex = 0) {
+        // Store cloud index for deterministic generation
+        this.cloudIndex = cloudIndex;
+        // Use fixed seed based on cloud index for 1:1 identical clouds across devices
+        this.seed = cloudIndex * 1000 + (isInitial ? 0 : 5000);
+        this.random = seededRandom(this.seed);
+        
+        // Fixed blob count - same for mobile and desktop (12 blobs for consistent rendering)
+        this.blobCount = 12;
+        
         this.reset(isInitial);
       }
 
       reset(isInitial) {
         if (!width || !height) return;
-        this.x = isInitial ? Math.random() * width : -500;
-        this.y = Math.random() * (height * 0.4);
-        this.speed = WIND_SPEED + Math.random() * 0.1;
-        this.scale = 0.8 + Math.random() * 0.4;
+        
+        // Deterministic position based on seed
+        this.x = isInitial ? this.random() * width : -500;
+        this.y = this.random() * (height * 0.4);
+        this.speed = WIND_SPEED + this.random() * 0.1;
+        this.scale = 0.8 + this.random() * 0.4;
         
         // Opacity: light mode normaal, dark mode zeer transparant
         this.opacityLight = 0.35;
-        this.opacityDark = 0.15 + Math.random() * 0.1; // 0.15 - 0.25 (bijna onzichtbaar in nacht)
+        this.opacityDark = 0.15 + this.random() * 0.1; // 0.15 - 0.25 (bijna onzichtbaar in nacht)
         
-        // Use stored blob count for consistency (don't recalculate on reset)
-        // This ensures clouds look the same on Firefox mobile across different orientations
+        // Deterministic blob generation - same clouds on mobile and desktop
         this.blobs = [];
         
-        // Use stored isMobile flag and blob count
-        const blobCount = this.blobCount || (this.isMobile ? 18 : 12);
-        
-        for (let i = 0; i < blobCount; i++) {
-          // Consistent blob sizing based on stored mobile flag
-          const blobWidth = this.isMobile 
-            ? 60 + Math.random() * 140 // 60-200px op mobiel
-            : 80 + Math.random() * 120; // 80-200px op desktop
-          const blobHeight = this.isMobile
-            ? 40 + Math.random() * 90 // 40-130px op mobiel
-            : 50 + Math.random() * 70; // 50-120px op desktop
+        for (let i = 0; i < this.blobCount; i++) {
+          // Use deterministic random for consistent blob sizes across devices
+          const blobWidth = 80 + this.random() * 120; // 80-200px (same on all devices)
+          const blobHeight = 50 + this.random() * 70; // 50-120px (same on all devices)
           
           this.blobs.push({
-            x: (Math.random() - 0.5) * (this.isMobile ? 450 : 400),
-            y: (Math.random() - 0.5) * (this.isMobile ? 100 : 80),
+            x: (this.random() - 0.5) * 400,
+            y: (this.random() - 0.5) * 80,
             width: blobWidth,
             height: blobHeight,
-            rotation: (Math.random() - 0.5) * 0.3 // Consistente rotatie range
+            rotation: (this.random() - 0.5) * 0.3
           });
         }
       }
@@ -459,11 +467,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Scale context voor hoge resolutie (canvas is al geschaald in resize)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Extra blur: consistent tussen mobiel en desktop voor Firefox compatibiliteit
-        // Firefox mobile heeft soms problemen met verschillende blur waardes
-        // Gebruik dezelfde blur op beide platforms voor consistentie
-        const baseBlur = darkMode ? 22 : 27; // Consistente blur waardes
-        // Brightness filter alleen in dark mode (Firefox mobile compatible)
+        // Consistent blur across all devices for 1:1 identical clouds
+        // Same blur value on mobile and desktop for Firefox compatibility
+        const baseBlur = darkMode ? 22 : 27;
+        // Brightness filter alleen in dark mode
         ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
         
         ctx.translate(this.x, this.y);
@@ -542,8 +549,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       if (cloudsRef.current.length > 0) return; // Al geïnitialiseerd, skip
       
       cloudsRef.current = [];
+      // Use cloud index for deterministic generation - same clouds on mobile and desktop
       for (let i = 0; i < CLOUD_COUNT; i++) {
-        cloudsRef.current.push(new SimpleCloud(true));
+        cloudsRef.current.push(new SimpleCloud(true, i));
       }
     }
 
