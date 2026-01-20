@@ -494,8 +494,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     // MOBILE Cloud Class - Separate from desktop, based on desktop technique
     class MobileCloud {
       constructor(isInitial = false) {
-        // Mobile uses more blobs for better cloud effect
-        this.blobCount = 18;
         this.reset(isInitial);
       }
 
@@ -506,24 +504,25 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.speed = WIND_SPEED + Math.random() * 0.1;
         this.scale = 0.8 + Math.random() * 0.4;
         
-        // Opacity: light mode normaal, dark mode zeer transparant (same as desktop)
-        this.opacityLight = 0.35;
-        this.opacityDark = 0.15 + Math.random() * 0.1;
+        // Opacity: light mode normaal, dark mode zeer transparant
+        this.opacityLight = 0.4;
+        this.opacityDark = 0.2;
         
-        // Mobile blob generation - based on desktop but optimized for mobile
-        this.blobs = [];
+        // Simple children's book style: mix of 3-5 circles (large and small)
+        // No complex blur, just simple overlapping circles
+        this.circles = [];
+        const circleCount = 3 + Math.floor(Math.random() * 3); // 3-5 circles
         
-        for (let i = 0; i < this.blobCount; i++) {
-          // Mobile: similar to desktop but slightly adjusted for better mobile rendering
-          const blobWidth = 60 + Math.random() * 140; // 60-200px mobile
-          const blobHeight = 40 + Math.random() * 90;  // 40-130px mobile
+        for (let i = 0; i < circleCount; i++) {
+          const isLarge = i < 2; // First 2 are large, rest are small
+          const radius = isLarge 
+            ? 40 + Math.random() * 30  // Large: 40-70px
+            : 15 + Math.random() * 20; // Small: 15-35px
           
-          this.blobs.push({
-            x: (Math.random() - 0.5) * 450, // Slightly wider spread on mobile
-            y: (Math.random() - 0.5) * 100, // Slightly taller spread on mobile
-            width: blobWidth,
-            height: blobHeight,
-            rotation: (Math.random() - 0.5) * 0.3
+          this.circles.push({
+            x: (Math.random() - 0.5) * 200, // Simple spread
+            y: (Math.random() - 0.5) * 60,  // Simple spread
+            radius: radius
           });
         }
       }
@@ -545,60 +544,32 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         const opacity = this.getOpacity(darkMode);
         
-        if (this.blobs.length === 0) {
+        if (this.circles.length === 0) {
           return;
         }
         
-        // MOBILE RENDERING - Use shadowBlur instead of ctx.filter (works on Safari/Firefox mobile)
-        // Mobile browsers don't support ctx.filter blur well, so we use shadowBlur per blob
-        // This creates the same blur effect as desktop but mobile-compatible
+        // SIMPLE MOBILE RENDERING - No blur, just simple overlapping circles
+        // Like children's book clouds - works perfectly on all mobile browsers
         ctx.save();
         
-        // Scale context voor hoge resolutie (same as desktop)
+        // Scale context
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
-        // Mobile blur technique: use shadowBlur on each blob for realistic cloud effect
-        // shadowBlur works reliably on mobile Safari and Firefox
-        const shadowBlurAmount = darkMode ? 30 : 35; // Slightly more blur to compensate for no filter
+        // Simple fill color
+        if (darkMode) {
+          ctx.fillStyle = `rgba(200, 210, 220, ${opacity})`;
+        } else {
+          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        }
         
-        // Set colors based on dark mode
-        const fillColor = darkMode ? `rgba(200, 210, 220, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
-        const shadowColor = darkMode ? `rgba(200, 210, 220, ${opacity * 0.6})` : `rgba(255, 255, 255, ${opacity * 0.6})`;
-        
-        // Draw each blob with shadowBlur for blur effect (mobile-compatible technique)
-        this.blobs.forEach(blob => {
-          ctx.save();
-          ctx.translate(blob.x, blob.y);
-          ctx.rotate(blob.rotation);
-          
-          // Apply shadow blur for mobile cloud effect
-          ctx.shadowBlur = shadowBlurAmount;
-          ctx.shadowColor = shadowColor;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-          
+        // Draw simple circles - like children's book clouds
+        this.circles.forEach(circle => {
           ctx.beginPath();
-          const radiusX = blob.width / 2;
-          const radiusY = blob.height / 2;
-          
-          // Same bezier curve technique as desktop
-          ctx.moveTo(0, -radiusY);
-          ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
-          ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
-          ctx.closePath();
-          
-          // Fill with main color (shadow creates blur effect)
-          ctx.fillStyle = fillColor;
+          ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
           ctx.fill();
-          
-          // Draw additional layers with less shadow for depth
-          ctx.shadowBlur = shadowBlurAmount * 0.5;
-          ctx.fill(); // Fill again with less shadow for layered effect
-          
-          ctx.restore();
         });
 
         ctx.restore();
