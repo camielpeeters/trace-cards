@@ -549,6 +549,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.restore();
         });
 
+        // Reset shadow properties after drawing to prevent bleed
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+
         ctx.restore();
       }
     }
