@@ -484,11 +484,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       draw(darkMode, dpr = 1, resolutionScale = 1) {
         if (!ctx) return;
         
-        ctx.save();
-        
-        // Scale context voor hoge resolutie (canvas is al geschaald in resize)
-        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-        
         // Mobile gets more blur for softer, more natural cloud effect
         // Desktop keeps original blur for sharper clouds
         // Re-check mobile status in case of orientation change
@@ -500,26 +495,32 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ? (darkMode ? 25 : 30) // More blur on mobile for better effect
           : (darkMode ? 22 : 27); // Original blur on desktop
         
-        // Apply blur filter BEFORE transforms for Firefox compatibility
-        // Firefox mobile needs filter set before translate/scale
-        const filterString = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-        ctx.filter = filterString;
+        const opacity = this.getOpacity(darkMode);
         
-        // Verify filter is applied (for debugging)
-        if (!ctx.filter || ctx.filter === 'none') {
-          console.warn('⚠️ Filter not applied, fallback blur may be needed');
+        ctx.save();
+        
+        // Scale context voor hoge resolutie (canvas is al geschaald in resize)
+        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+        
+        // Apply filter BEFORE any transforms - critical for Firefox mobile
+        // Firefox mobile requires filter to be set before translate/scale/rotate
+        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+        
+        // Apply brightness adjustment separately if filter doesn't support it
+        if (darkMode) {
+          ctx.globalAlpha = opacity * 0.8;
+        } else {
+          ctx.globalAlpha = opacity;
         }
         
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
-        const opacity = this.getOpacity(darkMode);
-        
         // Kleur afhankelijk van dark mode
         if (darkMode) {
-          ctx.fillStyle = `rgba(200, 210, 220, ${opacity})`;
+          ctx.fillStyle = `rgba(200, 210, 220, 1)`; // Full opacity, alpha handled by globalAlpha
         } else {
-          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx.fillStyle = `rgba(255, 255, 255, 1)`; // Full opacity, alpha handled by globalAlpha
         }
 
         // Teken alle blobs als ellipsen - Safari compatible met arc() in plaats van ellipse()
