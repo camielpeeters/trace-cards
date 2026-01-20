@@ -681,12 +681,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.height = 50 + Math.random() * 30; // Lang: 50-80px (30%)
         }
         
-        // Variatie in wind snelheid - ALLE sprieten bewegen normaal
-        // Geen dunne sprieten meer (allemaal dikker gemaakt om render probleem te voorkomen)
-        const isThin = false; // Geen dunne sprieten meer - alle sprieten bewegen normaal
-        this.windSpeed = 0.3 + Math.random() * 0.4; // 0.3-0.7 (normaal voor alle sprieten)
+        // Variatie in wind snelheid - CONSISTENT voor alle sprieten
+        // Chrome fix: gebruik exact dezelfde wind snelheid voor alle sprieten om flickering te voorkomen
+        const baseWindSpeed = 0.4; // Vaste basis snelheid (geen variatie)
+        const baseSwayAmount = 12; // Vaste basis beweging (geen variatie)
+        
+        this.windSpeed = baseWindSpeed + (Math.random() - 0.5) * 0.1; // Zeer kleine variatie (0.35-0.45)
         this.windOffset = Math.random() * Math.PI * 2; // Random start fase
-        this.swayAmount = 10 + Math.random() * 18; // 10-28px (normaal voor alle sprieten)
+        this.swayAmount = baseSwayAmount + (Math.random() - 0.5) * 4; // Zeer kleine variatie (10-14px)
         this.isThick = this.width > 7; // Dikke sprieten zijn automatisch thick
         this.isThin = isThin; // Geen dunne sprieten meer
         this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
