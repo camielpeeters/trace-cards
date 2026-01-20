@@ -48,8 +48,8 @@ export async function GET(request, { params }) {
           include: {
             pricing: true
           }
-        });
-        
+    });
+    
         // Build TCGPlayer price data structure - try Card record first, then fallback to Pokémon TCG API
         let tcgplayer = null;
         let exchangeRate = 0.92; // Default fallback rate
@@ -155,7 +155,7 @@ export async function GET(request, { params }) {
         }
         
         return {
-          ...card,
+      ...card,
           images: JSON.parse(card.images),
           tcgplayer: tcgplayer,
           // Include pricing info for display
