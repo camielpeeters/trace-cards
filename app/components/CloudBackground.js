@@ -512,9 +512,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           // MOBILE: Use off-screen canvas for blur (same rendering as desktop)
           const baseBlur = darkMode ? 22 : 27;
           
-          // Ensure mobile clouds are drawn - debug
-          console.log('📱 Mobile cloud rendering - blob count:', this.blobs.length);
-          
           if (offScreenCanvas && offScreenCtx) {
             // Calculate cloud bounds
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
