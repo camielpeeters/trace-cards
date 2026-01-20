@@ -664,33 +664,18 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.x = x;
         this.baseY = grassHeight; // Y positie op footer
         // Meer variatie in breedte - WILDER GRAS (eerst breedte bepalen)
+        // Firefox is perfect - use same distribution for Chrome too
         const widthType = Math.random();
         let isExtraThick = false;
-        // IMPORTANT: keep Safari/Firefox/Cursor consistent; only apply "extra thick" styling on real Chrome.
-        if (IS_CHROME) {
-          // Chrome: a bit more thick presence
-          if (widthType < 0.22) {
-            this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (22%)
-          } else if (widthType < 0.55) {
-            this.width = 4 + Math.random() * 3; // Medium: 4-7px (33%)
-          } else if (widthType < 0.85) {
-            this.width = 7 + Math.random() * 4; // Dik: 7-11px (30%)
-          } else {
-            this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (15%)
-            isExtraThick = true;
-          }
+        if (widthType < 0.3) {
+          this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (30%)
+        } else if (widthType < 0.7) {
+          this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
+        } else if (widthType < 0.9) {
+          this.width = 7 + Math.random() * 4; // Dik: 7-11px (20%)
         } else {
-          // Default (Safari/Firefox/Cursor): original distribution
-          if (widthType < 0.3) {
-            this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (30%)
-          } else if (widthType < 0.7) {
-            this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
-          } else if (widthType < 0.9) {
-            this.width = 7 + Math.random() * 4; // Dik: 7-11px (20%)
-          } else {
-            this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (10%)
-            isExtraThick = true;
-          }
+          this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (10%)
+          isExtraThick = true;
         }
         
         // Meer variatie in hoogte: mix van kort, medium en lang
@@ -729,9 +714,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         }
 
         // Tip style: not every blade should have the angled "piekje".
-        // Only on real Chrome (requested); keep Safari/Firefox consistent.
+        // Chrome/Firefox: some round tips for variety
         this.tipStyle =
-          (IS_CHROME && !IS_SAFE_GRASS && !isThin && Math.random() < 0.28) ? 'round' : 'sharp';
+          (!IS_SAFE_GRASS && !isThin && Math.random() < 0.28) ? 'round' : 'sharp';
 
         // Side-blade parameters: precompute ONCE (no Math.random in draw -> prevents "glitch" flicker)
         if (this.hasExtraBlade) {
