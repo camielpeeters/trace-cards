@@ -39,6 +39,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
+    // Chromium/Chrome has known canvas sub-pixel / thin-stroke flicker issues (seen in Cursor browser).
+    // We apply a safe fallback for Chromium only: avoid outline strokes + avoid tiny outgrowth details.
+    const IS_CHROMIUM =
+      typeof navigator !== 'undefined' &&
+      /Chrome/i.test(navigator.userAgent) &&
+      !/Edg|OPR/i.test(navigator.userAgent);
     let width, height;
     let animationId;
     let dpr = window.devicePixelRatio || 1;
@@ -788,14 +794,17 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.fill();
         
         // Teken outline voor duidelijkheid (met puntige top)
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.moveTo(baseX, baseY);
-        ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
-        // Outline loopt ook naar punt
-        ctx.lineTo(tipX, tipY + tipHeight); // Tot aan de punt
-        ctx.lineWidth = lineWidth * 0.2;
-        ctx.stroke();
+        // Chromium-safe: outline strokes can shimmer/flicker; skip on Chromium.
+        if (!IS_CHROMIUM) {
+          ctx.globalAlpha = 1;
+          ctx.beginPath();
+          ctx.moveTo(baseX, baseY);
+          ctx.quadraticCurveTo(controlX, controlY, tipX, tipY);
+          // Outline loopt ook naar punt
+          ctx.lineTo(tipX, tipY + tipHeight); // Tot aan de punt
+          ctx.lineWidth = lineWidth * 0.2;
+          ctx.stroke();
+        }
         
         // Geen extra lijn meer - voorkomt trillen
         
@@ -829,7 +838,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         // Uitstekers voor wild gras - meerdere puntige zijtakken
         // GEEN uitstekers voor dunne sprieten (voorkomt glitch/flicker)
-        if (this.outgrowths && this.outgrowths.length > 0 && !isThin) {
+        // Chromium-safe: outgrowth micro-details flicker in Chromium; disable entirely there.
+        if (!IS_CHROMIUM && this.outgrowths && this.outgrowths.length > 0 && !isThin) {
           this.outgrowths.forEach(outgrowth => {
             ctx.globalAlpha = darkMode ? 0.5 : 0.6;
             
@@ -839,7 +849,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             
             // Bereken uitsteker positie en beweging
             const outgrowthHeight = outgrowth.height;
-            const outgrowthWindX = Math.round(Math.sin(this.windPhase * 1.1) * (this.swayAmount * 0.5) * 100) / 100;
+            const outgrowthWindX = Math.sin(this.windPhase * 1.1) * (this.swayAmount * 0.5);
             const outgrowthX = startX + (outgrowth.side * 4); // Offset van hoofdspriet
             const outgrowthEndX = outgrowthX + outgrowthWindX * 0.6 + (outgrowth.side * outgrowth.angle * 10);
             const outgrowthEndY = startY - outgrowthHeight;
@@ -865,17 +875,20 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             ctx.fill();
             
             // Outline voor duidelijkheid
-            ctx.globalAlpha = darkMode ? 0.7 : 0.8;
-            ctx.beginPath();
-            ctx.moveTo(outgrowthX, startY);
-            ctx.quadraticCurveTo(
-              outgrowthX + outgrowthWindX * 0.3,
-              startY - outgrowthHeight * 0.4,
-              outgrowthEndX,
-              outgrowthEndY
-            );
-            ctx.lineWidth = outgrowthWidth * 0.2;
-            ctx.stroke();
+            // Chromium-safe: skip outgrowth outlines (can shimmer)
+            if (!IS_CHROMIUM) {
+              ctx.globalAlpha = darkMode ? 0.7 : 0.8;
+              ctx.beginPath();
+              ctx.moveTo(outgrowthX, startY);
+              ctx.quadraticCurveTo(
+                outgrowthX + outgrowthWindX * 0.3,
+                startY - outgrowthHeight * 0.4,
+                outgrowthEndX,
+                outgrowthEndY
+              );
+              ctx.lineWidth = outgrowthWidth * 0.2;
+              ctx.stroke();
+            }
           });
         }
         
