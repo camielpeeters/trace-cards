@@ -721,17 +721,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       draw(ctx, darkMode, dpr = 1, resolutionScale = 1, currentHeight = null) {
         if (!ctx) return;
         
-        // Dunne sprieten: normale resolutie (geen 1.5x meer voor performance)
+        // Dunne sprieten: GEEN beweging (stil)
         const isThin = this.isThin || this.width < 5;
         
         ctx.save();
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Geen blur meer voor dunne sprieten (te zwaar voor performance)
-        // Alleen langzamere beweging voor kalmer effect
-        
-        // Dunne sprieten: GEEN beweging (stil)
-        const isThin = this.isThin || this.width < 5;
+        // Bereken wind beweging - alleen voor dikke sprieten
         let windX = 0;
         
         // Alleen dikke sprieten bewegen
