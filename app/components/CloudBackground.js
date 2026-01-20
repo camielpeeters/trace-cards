@@ -503,11 +503,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         ctx.save();
         
-        // Scale context voor hoge resolutie (canvas is al geschaald in resize)
-        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-        ctx.translate(this.x, this.y);
-        ctx.scale(this.scale, this.scale);
-        
         if (effectiveMobile) {
           // MOBILE: Use off-screen canvas for blur (same rendering as desktop)
           const baseBlur = darkMode ? 22 : 27;
@@ -561,21 +556,29 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             });
             
             // Draw blurred cloud from off-screen canvas to main canvas (mobile)
-            // Restore main context first
-            ctx.restore();
+            ctx.restore(); // Restore from initial ctx.save()
             ctx.save();
             ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
             
-            // Draw at correct position - need to account for cloud position and blob min/max
+            // Draw at correct position - account for cloud position and blob min/max
             const drawX = this.x + minX - baseBlur * 2;
             const drawY = this.y + minY - baseBlur * 2;
-            ctx.drawImage(offScreenCanvas, drawX, drawY);
             
+            // Ensure image smoothing for mobile
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            ctx.drawImage(offScreenCanvas, drawX, drawY);
             ctx.restore();
             return;
           }
           
-          // Fallback for mobile
+          // Fallback for mobile - draw directly with filter
+          // Scale context voor hoge resolutie
+          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+          ctx.translate(this.x, this.y);
+          ctx.scale(this.scale, this.scale);
+          
           ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
           ctx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
           
@@ -605,6 +608,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         } else {
           // DESKTOP: Softer blur for better cloud effect - high quality blur
           const baseBlur = darkMode ? 30 : 38; // Increased blur for softer, more realistic clouds (was 22/27)
+          
+          // Scale context voor hoge resolutie (canvas is al geschaald in resize)
+          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+          ctx.translate(this.x, this.y);
+          ctx.scale(this.scale, this.scale);
           
           // Use off-screen canvas for blur if available (better Firefox support)
           if (offScreenCanvas && offScreenCtx) {
