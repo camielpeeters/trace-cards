@@ -795,17 +795,19 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Geen extra lijn meer - voorkomt trillen
         
         // Extra zijtak voor meer variatie (50% van sprieten) - ook puntig
-        // GEEN zijtakken voor dunne sprieten (voorkomt beweging)
-        if (this.hasExtraBlade && !isThin) {
+        // ALLE sprieten kunnen zijtakken hebben (consistent)
+        if (this.hasExtraBlade) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
           const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
-          const sideWindX = Math.round(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6) * 100) / 100;
+          // Chrome fix: gebruik Math.floor voor pixel-perfect rendering
+          const sideWindX = Math.floor(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6));
           
-          const sideControlX = sideBladeX + sideWindX * 0.4;
-          const sideControlY = baseY - sideBladeHeight * 0.4;
-          const sideEndX = sideBladeX + sideWindX * 0.7;
-          const sideEndY = baseY - sideBladeHeight;
+          // Chrome fix: gebruik Math.floor voor pixel-perfect rendering
+          const sideControlX = Math.floor(sideBladeX + sideWindX * 0.4);
+          const sideControlY = Math.floor(baseY - sideBladeHeight * 0.4);
+          const sideEndX = Math.floor(sideBladeX + sideWindX * 0.7);
+          const sideEndY = Math.floor(baseY - sideBladeHeight);
           
           // Zijtak met echte puntige top
           const sideTipSharpness = lineWidth * 0.15;
