@@ -56,12 +56,12 @@ export default function PublicUserPage() {
   // Global card size
   const [cardSize, setCardSize] = useState('medium');
 
-  // Sync activeTab with URL on initial mount and pathname changes
+  // Sync activeTab with URL on initial mount only (not on pathname changes to prevent refresh)
   useEffect(() => {
     const isShop = pathname === `/${username}/shop` || pathname?.endsWith('/shop');
     const initialTab = isShop ? 'shop' : 'purchase';
     setActiveTab(initialTab);
-  }, [username, pathname]); // Run when username or pathname changes
+  }, [username]); // Only run when username changes (initial mount), not on pathname changes
 
   useEffect(() => {
     const checkAuth = () => {
@@ -454,15 +454,9 @@ export default function PublicUserPage() {
   };
 
   const handleTabChange = (tab) => {
-    // Update state immediately
+    // Update state only - no URL change to prevent page refresh
     setActiveTab(tab);
     setSelectedCards([]);
-    
-    // Update URL using Next.js router
-    const newPath = tab === 'shop' ? `/${username}/shop` : `/${username}`;
-    if (pathname !== newPath) {
-      router.push(newPath);
-    }
   };
 
   const handleSubmitOffer = (e) => {
