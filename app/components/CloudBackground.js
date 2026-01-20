@@ -512,6 +512,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           // MOBILE: Use off-screen canvas for blur (same rendering as desktop)
           const baseBlur = darkMode ? 22 : 27;
           
+          // Ensure mobile clouds are drawn - debug
+          console.log('📱 Mobile cloud rendering - blob count:', this.blobs.length);
+          
           if (offScreenCanvas && offScreenCtx) {
             // Calculate cloud bounds
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -600,8 +603,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             ctx.restore();
           });
         } else {
-          // DESKTOP: Original styling with blur filter - UNCHANGED from original
-          const baseBlur = darkMode ? 22 : 27;
+          // DESKTOP: Softer blur for better cloud effect (was 22/27, now higher for softer clouds)
+          const baseBlur = darkMode ? 28 : 35; // Increased blur for softer, more realistic clouds
           
           // Use off-screen canvas for blur if available (better Firefox support)
           if (offScreenCanvas && offScreenCtx) {
