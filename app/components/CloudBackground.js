@@ -508,21 +508,47 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.opacityLight = 0.4;
         this.opacityDark = 0.2;
         
-        // Simple children's book style: mix of 3-5 circles (large and small)
-        // No complex blur, just simple overlapping circles
-        this.circles = [];
-        const circleCount = 3 + Math.floor(Math.random() * 3); // 3-5 circles
+        // SVG-style cloud: multiple bubbles that form a cloud shape
+        // Mix of large and small bubbles positioned to form cloud contours
+        this.bubbles = [];
         
-        for (let i = 0; i < circleCount; i++) {
-          const isLarge = i < 2; // First 2 are large, rest are small
-          const radius = isLarge 
-            ? 40 + Math.random() * 30  // Large: 40-70px
-            : 15 + Math.random() * 20; // Small: 15-35px
-          
-          this.circles.push({
-            x: (Math.random() - 0.5) * 200, // Simple spread
-            y: (Math.random() - 0.5) * 60,  // Simple spread
-            radius: radius
+        // Create cloud shape with bubbles (like SVG cloud path)
+        // Base bubble (center, large)
+        this.bubbles.push({
+          x: 0,
+          y: 0,
+          radius: 35 + Math.random() * 15 // 35-50px base
+        });
+        
+        // Top bubbles (2-3)
+        const topCount = 2 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < topCount; i++) {
+          this.bubbles.push({
+            x: -30 + (i * 30) + Math.random() * 20 - 10,
+            y: -25 - Math.random() * 15,
+            radius: 20 + Math.random() * 15 // 20-35px
+          });
+        }
+        
+        // Side bubbles (2 each side)
+        this.bubbles.push({
+          x: -40 - Math.random() * 15,
+          y: -5 + Math.random() * 10,
+          radius: 25 + Math.random() * 10
+        });
+        this.bubbles.push({
+          x: 40 + Math.random() * 15,
+          y: -5 + Math.random() * 10,
+          radius: 25 + Math.random() * 10
+        });
+        
+        // Bottom bubbles (2-3, smaller)
+        const bottomCount = 2 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < bottomCount; i++) {
+          this.bubbles.push({
+            x: -25 + (i * 25) + Math.random() * 15 - 7,
+            y: 20 + Math.random() * 10,
+            radius: 15 + Math.random() * 10 // 15-25px
           });
         }
       }
@@ -544,12 +570,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         const opacity = this.getOpacity(darkMode);
         
-        if (this.circles.length === 0) {
+        if (this.bubbles.length === 0) {
           return;
         }
         
-        // SIMPLE MOBILE RENDERING - No blur, just simple overlapping circles
-        // Like children's book clouds - works perfectly on all mobile browsers
+        // SVG-STYLE CLOUD RENDERING - Real cloud shape from multiple bubbles
+        // Draw as a connected cloud shape, not separate circles
         ctx.save();
         
         // Scale context
@@ -558,20 +584,42 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
-        // Simple fill color
+        // Set fill color
         if (darkMode) {
           ctx.fillStyle = `rgba(200, 210, 220, ${opacity})`;
         } else {
           ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
         }
         
-        // Draw simple circles - like children's book clouds
-        this.circles.forEach(circle => {
-          ctx.beginPath();
-          ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-          ctx.fill();
+        // Draw SVG-style cloud: start with first bubble, then connect others
+        ctx.beginPath();
+        
+        // Start with the base (largest) bubble
+        const base = this.bubbles[0];
+        ctx.arc(base.x, base.y, base.radius, 0, Math.PI * 2);
+        
+        // Add all other bubbles as arcs (they will merge visually)
+        for (let i = 1; i < this.bubbles.length; i++) {
+          const bubble = this.bubbles[i];
+          // Use moveTo to create separate arcs that merge into cloud shape
+          ctx.moveTo(bubble.x + bubble.radius, bubble.y);
+          ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+        }
+        
+        // Fill the entire cloud shape
+        ctx.fill();
+        
+        // Optional: draw bubbles again slightly more opaque for depth
+        // This creates a layered cloud effect without blur
+        ctx.globalAlpha = opacity * 0.3;
+        this.bubbles.forEach((bubble, i) => {
+          if (i === 0 || Math.random() > 0.6) { // Draw some bubbles again for depth
+            ctx.beginPath();
+            ctx.arc(bubble.x, bubble.y, bubble.radius * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
         });
-
+        
         ctx.restore();
       }
     }
