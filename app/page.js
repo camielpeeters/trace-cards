@@ -86,13 +86,8 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-500/10 to-transparent animate-glow"></div>
           
           <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 lg:py-6 flex items-center justify-between">
-            {/* Mobile: Logo + Pokeball naast elkaar, kleiner */}
+            {/* Mobile: Pokeball + Titel (geen TCG logo) */}
             <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-              <img 
-                src="/pokemon-logo.svg" 
-                alt="Pokemon Logo" 
-                className="w-8 h-8 sm:w-10 md:w-12 lg:w-14 h-auto"
-              />
               <img 
                 src="/pokeball-icon.png" 
                 alt="Pokeball" 

@@ -654,15 +654,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.x = x;
         this.baseY = grassHeight; // Y positie op footer
         // Meer variatie in breedte - WILDER GRAS (eerst breedte bepalen)
-        // Dunne sprieten dikker maken om render probleem te voorkomen
+        // GEEN dunne sprieten meer - alleen medium en dik om Chrome render probleem te voorkomen
         const widthType = Math.random();
         let isExtraThick = false;
-        if (widthType < 0.3) {
-          this.width = 4 + Math.random() * 2; // Dun: 4-6px (30%) - DIKKER om render probleem te voorkomen
-        } else if (widthType < 0.7) {
-          this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
+        // Skip dunne sprieten (0-30%) - alleen medium en dik
+        if (widthType < 0.5) {
+          this.width = 5 + Math.random() * 3; // Medium: 5-8px (50%)
         } else if (widthType < 0.9) {
-          this.width = 7 + Math.random() * 4; // Dik: 7-11px (20%)
+          this.width = 7 + Math.random() * 4; // Dik: 7-11px (40%)
         } else {
           this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (10%)
           isExtraThick = true;
