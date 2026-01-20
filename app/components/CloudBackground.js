@@ -799,8 +799,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.fillStyle = `rgba(80, 150, 80, 0.88)`; // slightly more opaque to avoid "floating" look
         }
         
-        // Dikkere lijn voor vollere sprieten (match Firefox - no extra thick multiplier)
-        const lineWidth = this.isThick ? this.width * 1.2 : this.width;
+        // Dikkere lijn voor vollere sprieten
+        const lineWidth = this.isThick ? this.width * 1.5 : this.width;
         ctx.lineWidth = lineWidth;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
