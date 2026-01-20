@@ -423,9 +423,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.seed = baseSeed;
         this.random = seededRandom(this.seed);
         
-        // Mobile gets more blobs for better cloud effect on smaller screens
-        // Desktop keeps original styling
-        this.blobCount = this.isMobile ? 18 : 12;
+        // Mobile gets more blobs for realistic layered clouds WITHOUT blur
+        // Desktop keeps original styling with blur
+        this.blobCount = this.isMobile ? 24 : 12; // More blobs on mobile for layered effect
         
         this.reset(isInitial);
       }
@@ -444,23 +444,29 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.opacityDark = 0.15 + this.random() * 0.1; // 0.15 - 0.25 (bijna onzichtbaar in nacht)
         
         // Mobile-specific blob generation (separate from desktop)
+        // Mobile uses realistic clouds WITHOUT blur - uses gradients and layered opacity
         this.blobs = [];
         
         for (let i = 0; i < this.blobCount; i++) {
-          let blobWidth, blobHeight, blobSpreadX, blobSpreadY;
+          let blobWidth, blobHeight, blobSpreadX, blobSpreadY, blobOpacity;
           
           if (this.isMobile) {
-            // Mobile: more blobs, slightly smaller sizes, more spread for natural effect
-            blobWidth = 60 + this.random() * 140; // 60-200px on mobile
-            blobHeight = 40 + this.random() * 90; // 40-130px on mobile
-            blobSpreadX = 450; // Wider spread on mobile
-            blobSpreadY = 100; // Taller spread on mobile
+            // Mobile: realistic clouds WITHOUT blur
+            // More blobs, smaller sizes, varied opacities for natural layered effect
+            blobWidth = 50 + this.random() * 100; // 50-150px on mobile (smaller for better overlap)
+            blobHeight = 35 + this.random() * 65; // 35-100px on mobile
+            blobSpreadX = 380; // Tighter spread for better overlap
+            blobSpreadY = 85; // Taller spread on mobile
+            // Varied opacity for depth - outer blobs more transparent, center more opaque
+            const distanceFromCenter = Math.abs((this.random() - 0.5)) * 2; // 0-1
+            blobOpacity = 0.4 + (1 - distanceFromCenter) * 0.3; // 0.4-0.7, center is more opaque
           } else {
-            // Desktop: original styling
+            // Desktop: original styling with blur support
             blobWidth = 80 + this.random() * 120; // 80-200px on desktop
             blobHeight = 50 + this.random() * 70; // 50-120px on desktop
             blobSpreadX = 400; // Original spread on desktop
             blobSpreadY = 80; // Original spread on desktop
+            blobOpacity = 1.0; // Desktop uses globalAlpha
           }
           
           this.blobs.push({
@@ -468,7 +474,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             y: (this.random() - 0.5) * blobSpreadY,
             width: blobWidth,
             height: blobHeight,
-            rotation: (this.random() - 0.5) * 0.3
+            rotation: (this.random() - 0.5) * 0.3,
+            opacity: blobOpacity // Store individual opacity for mobile
           });
         }
       }
@@ -488,122 +495,156 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       draw(darkMode, dpr = 1, resolutionScale = 1, offScreenCanvas = null, offScreenCtx = null) {
         if (!ctx) return;
         
-        // Mobile gets more blur for softer, more natural cloud effect
-        // Desktop keeps original blur for sharper clouds
         // Re-check mobile status in case of orientation change
         const currentWidth = width || window.innerWidth;
         const isMobileNow = currentWidth < 768;
         const effectiveMobile = this.isMobile || isMobileNow;
         
-        const baseBlur = effectiveMobile
-          ? (darkMode ? 25 : 30) // More blur on mobile for better effect
-          : (darkMode ? 22 : 27); // Original blur on desktop
-        
         const opacity = this.getOpacity(darkMode);
         
-        // Use off-screen canvas for blur if available (better Firefox mobile support)
-        if (offScreenCanvas && offScreenCtx) {
-          // Calculate cloud bounds for off-screen canvas
-          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-          this.blobs.forEach(blob => {
-            const blobX = this.x + blob.x - blob.width / 2;
-            const blobY = this.y + blob.y - blob.height / 2;
-            minX = Math.min(minX, blobX - baseBlur * 2);
-            maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
-            minY = Math.min(minY, blobY - baseBlur * 2);
-            maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
-          });
-          
-          const cloudWidth = (maxX - minX) * this.scale + baseBlur * 4;
-          const cloudHeight = (maxY - minY) * this.scale + baseBlur * 4;
-          
-          offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
-          offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
-          offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-          
-          // Clear and draw cloud on off-screen canvas
-          offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
-          offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-          offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
-          offScreenCtx.translate(-minX * this.scale + baseBlur * 2, -minY * this.scale + baseBlur * 2);
-          offScreenCtx.scale(this.scale, this.scale);
-          offScreenCtx.translate(this.x - minX, this.y - minY);
-          
-          // Draw blobs on off-screen canvas
-          if (darkMode) {
-            offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
-          } else {
-            offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
-          }
-          
-          this.blobs.forEach(blob => {
-            offScreenCtx.save();
-            offScreenCtx.translate(blob.x, blob.y);
-            offScreenCtx.rotate(blob.rotation);
-            
-            offScreenCtx.beginPath();
-            const radiusX = blob.width / 2;
-            const radiusY = blob.height / 2;
-            offScreenCtx.moveTo(0, -radiusY);
-            offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
-            offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
-            offScreenCtx.closePath();
-            offScreenCtx.fill();
-            offScreenCtx.restore();
-          });
-          
-          // Draw blurred cloud from off-screen canvas to main canvas
-          ctx.save();
-          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-          ctx.drawImage(offScreenCanvas, minX * this.scale - baseBlur * 2, minY * this.scale - baseBlur * 2);
-          ctx.restore();
-          return;
-        }
-        
-        // Fallback: draw directly with filter
         ctx.save();
         
         // Scale context voor hoge resolutie (canvas is al geschaald in resize)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-        
-        // Apply filter BEFORE transforms - critical for Firefox mobile
-        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-        
-        // Apply brightness adjustment for dark mode
-        if (darkMode) {
-          ctx.globalAlpha = opacity * 0.8;
-        } else {
-          ctx.globalAlpha = opacity;
-        }
-        
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
-        // Kleur afhankelijk van dark mode
-        if (darkMode) {
-          ctx.fillStyle = `rgba(200, 210, 220, 1)`;
+        if (effectiveMobile) {
+          // MOBILE: Realistic clouds WITHOUT blur - uses gradients and layered opacity
+          // Best practice: Multiple semi-transparent layers with radial gradients for soft edges
+          
+          // Apply brightness adjustment for dark mode
+          const baseAlpha = darkMode ? opacity * 0.8 : opacity;
+          
+          // Draw each blob with individual opacity and gradient for realistic soft edges
+          this.blobs.forEach(blob => {
+            ctx.save();
+            ctx.translate(blob.x, blob.y);
+            ctx.rotate(blob.rotation);
+            
+            const radiusX = blob.width / 2;
+            const radiusY = blob.height / 2;
+            const blobOpacity = (blob.opacity || 1.0) * baseAlpha;
+            
+            // Create radial gradient for soft, realistic cloud edges (no blur needed)
+            const gradient = ctx.createRadialGradient(
+              0, 0, 0,  // Center
+              0, 0, Math.max(radiusX, radiusY) * 1.2  // Outer radius (larger for softer edge)
+            );
+            
+            // Color based on dark mode
+            if (darkMode) {
+              gradient.addColorStop(0, `rgba(200, 210, 220, ${blobOpacity})`);
+              gradient.addColorStop(0.5, `rgba(200, 210, 220, ${blobOpacity * 0.8})`);
+              gradient.addColorStop(0.8, `rgba(200, 210, 220, ${blobOpacity * 0.4})`);
+              gradient.addColorStop(1, `rgba(200, 210, 220, 0)`);
+            } else {
+              gradient.addColorStop(0, `rgba(255, 255, 255, ${blobOpacity})`);
+              gradient.addColorStop(0.5, `rgba(255, 255, 255, ${blobOpacity * 0.8})`);
+              gradient.addColorStop(0.8, `rgba(255, 255, 255, ${blobOpacity * 0.4})`);
+              gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            
+            // Draw ellipse with bezier curves (Safari compatible)
+            ctx.moveTo(0, -radiusY);
+            ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+            ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+          });
         } else {
-          ctx.fillStyle = `rgba(255, 255, 255, 1)`;
-        }
+          // DESKTOP: Original styling with blur filter
+          const baseBlur = darkMode ? 22 : 27;
+          
+          // Use off-screen canvas for blur if available (better Firefox support)
+          if (offScreenCanvas && offScreenCtx) {
+            // Calculate cloud bounds for off-screen canvas
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            this.blobs.forEach(blob => {
+              const blobX = blob.x - blob.width / 2;
+              const blobY = blob.y - blob.height / 2;
+              minX = Math.min(minX, blobX - baseBlur * 2);
+              maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
+              minY = Math.min(minY, blobY - baseBlur * 2);
+              maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
+            });
+            
+            const cloudWidth = (maxX - minX) * this.scale + baseBlur * 4;
+            const cloudHeight = (maxY - minY) * this.scale + baseBlur * 4;
+            
+            offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
+            offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
+            offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            
+            offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
+            offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+            offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+            offScreenCtx.translate(-minX * this.scale + baseBlur * 2, -minY * this.scale + baseBlur * 2);
+            offScreenCtx.scale(this.scale, this.scale);
+            
+            if (darkMode) {
+              offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
+            } else {
+              offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+            }
+            
+            this.blobs.forEach(blob => {
+              offScreenCtx.save();
+              offScreenCtx.translate(blob.x, blob.y);
+              offScreenCtx.rotate(blob.rotation);
+              
+              offScreenCtx.beginPath();
+              const radiusX = blob.width / 2;
+              const radiusY = blob.height / 2;
+              offScreenCtx.moveTo(0, -radiusY);
+              offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+              offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+              offScreenCtx.closePath();
+              offScreenCtx.fill();
+              offScreenCtx.restore();
+            });
+            
+            ctx.restore();
+            ctx.save();
+            ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            ctx.drawImage(offScreenCanvas, (this.x + minX) * this.scale - baseBlur * 2, (this.y + minY) * this.scale - baseBlur * 2);
+            ctx.restore();
+            return;
+          }
+          
+          // Fallback: draw directly with filter
+          ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+          ctx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+          
+          if (darkMode) {
+            ctx.fillStyle = `rgba(200, 210, 220, 1)`;
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+          }
 
-        // Teken alle blobs als ellipsen - Safari compatible
-        this.blobs.forEach(blob => {
-          ctx.save();
-          ctx.translate(blob.x, blob.y);
-          ctx.rotate(blob.rotation);
-          
-          ctx.beginPath();
-          const radiusX = blob.width / 2;
-          const radiusY = blob.height / 2;
-          
-          ctx.moveTo(0, -radiusY);
-          ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
-          ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
-          ctx.closePath();
-          ctx.fill();
-          
-          ctx.restore();
-        });
+          this.blobs.forEach(blob => {
+            ctx.save();
+            ctx.translate(blob.x, blob.y);
+            ctx.rotate(blob.rotation);
+            
+            ctx.beginPath();
+            const radiusX = blob.width / 2;
+            const radiusY = blob.height / 2;
+            
+            ctx.moveTo(0, -radiusY);
+            ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+            ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+          });
+        }
 
         ctx.restore();
       }
