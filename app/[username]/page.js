@@ -1132,7 +1132,6 @@ export default function PublicUserPage() {
                                         WebkitTransform: 'translate3d(0, 0, 0) scale(1)',
                                         backfaceVisibility: 'hidden',
                                         WebkitBackfaceVisibility: 'hidden',
-,
                                         transformOrigin: 'center center',
                                         WebkitTransformOrigin: 'center center'
                                       }}
@@ -1783,7 +1782,6 @@ export default function PublicUserPage() {
                                         WebkitTransform: 'translate3d(0, 0, 0) scale(1)',
                                         backfaceVisibility: 'hidden',
                                         WebkitBackfaceVisibility: 'hidden',
-,
                                         transformOrigin: 'center center',
                                         WebkitTransformOrigin: 'center center'
                                       }}
