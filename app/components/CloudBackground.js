@@ -654,10 +654,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.x = x;
         this.baseY = grassHeight; // Y positie op footer
         // Meer variatie in breedte - WILDER GRAS (eerst breedte bepalen)
+        // Dunne sprieten dikker maken om render probleem te voorkomen
         const widthType = Math.random();
         let isExtraThick = false;
         if (widthType < 0.3) {
-          this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (30%) - iets dikker
+          this.width = 4 + Math.random() * 2; // Dun: 4-6px (30%) - DIKKER om render probleem te voorkomen
         } else if (widthType < 0.7) {
           this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
         } else if (widthType < 0.9) {
@@ -681,18 +682,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.height = 50 + Math.random() * 30; // Lang: 50-80px (30%)
         }
         
-        // Variatie in wind snelheid - DUNNE SPRIETEN ZIJN STIL
-        // Dunne sprieten bewegen NIET (geen knipperingen)
-        const isThin = this.width < 5;
-        this.windSpeed = isThin 
-          ? 0  // Dun: 0 (STIL, geen beweging)
-          : 0.3 + Math.random() * 0.4; // Dik: 0.3-0.7 (normaal)
+        // Variatie in wind snelheid - ALLE sprieten bewegen normaal
+        // Geen dunne sprieten meer (allemaal dikker gemaakt om render probleem te voorkomen)
+        const isThin = false; // Geen dunne sprieten meer - alle sprieten bewegen normaal
+        this.windSpeed = 0.3 + Math.random() * 0.4; // 0.3-0.7 (normaal voor alle sprieten)
         this.windOffset = Math.random() * Math.PI * 2; // Random start fase
-        this.swayAmount = isThin
-          ? 0   // Dun: 0 (STIL, geen beweging)
-          : 10 + Math.random() * 18; // Dik: 10-28px (normaal)
+        this.swayAmount = 10 + Math.random() * 18; // 10-28px (normaal voor alle sprieten)
         this.isThick = this.width > 7; // Dikke sprieten zijn automatisch thick
-        this.isThin = isThin; // Markeer dunne sprieten
+        this.isThin = isThin; // Geen dunne sprieten meer
         this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
         
         // Uitstekers voor wild gras (meerdere zijtakken)
