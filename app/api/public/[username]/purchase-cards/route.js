@@ -97,18 +97,24 @@ export async function GET(request, { params }) {
           // Only try if we have the Pokémon TCG API format (e.g., "me1-1")
           try {
             const pokemonApiKey = process.env.POKEMON_TCG_API_KEY;
-            if (pokemonApiKey && card.cardId) {
+            if (!pokemonApiKey) {
+              console.log(`⚠️ POKEMON_TCG_API_KEY not set in environment variables for ${card.cardName}`);
+            } else if (card.cardId) {
               const apiUrl = `https://api.pokemontcg.io/v2/cards/${card.cardId}`;
+              console.log(`🔄 Attempting to fetch pricing from Pokémon TCG API for ${card.cardId}`);
+              
               const apiResponse = await fetch(apiUrl, {
                 headers: { 'X-Api-Key': pokemonApiKey }
               });
               
-              if (apiResponse.ok) {
+              if (!apiResponse.ok) {
+                console.log(`⚠️ Pokémon TCG API returned ${apiResponse.status} for ${card.cardId}`);
+              } else {
                 const apiData = await apiResponse.json();
                 const apiCard = apiData.data;
                 
                 // Use tcgplayer data directly from Pokémon TCG API
-                if (apiCard.tcgplayer?.prices) {
+                if (apiCard?.tcgplayer?.prices) {
                   // Get exchange rate
                   exchangeRate = await getUSDtoEURRate().catch(() => 0.92);
                   
@@ -136,13 +142,15 @@ export async function GET(request, { params }) {
                     lastUpdated: new Date().toISOString()
                   };
                   
-                  console.log(`✅ Fetched pricing from Pokémon TCG API for ${card.cardName}`);
+                  console.log(`✅ Fetched pricing from Pokémon TCG API for ${card.cardName} - ${Object.keys(convertedPrices).length} variants`);
+                } else {
+                  console.log(`⚠️ Pokémon TCG API returned card but no tcgplayer.prices for ${card.cardId}`);
                 }
               }
             }
           } catch (error) {
-            // Silently fail - no pricing available
-            console.log(`⚠️ Could not fetch pricing for ${card.cardName}: ${error.message}`);
+            // Log error for debugging
+            console.log(`❌ Error fetching pricing from Pokémon TCG API for ${card.cardName}: ${error.message}`);
           }
         }
         
