@@ -107,17 +107,18 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <ThemeToggle />
               
               {!authenticated ? (
                 <button
                   onClick={() => setShowLoginModal(true)}
-                  className="relative flex items-center gap-2 bg-white dark:bg-red-50 text-red-600 dark:text-red-700 px-5 py-3 rounded-full font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all group overflow-hidden"
+                  className="relative flex items-center gap-1 sm:gap-2 bg-white dark:bg-red-50 text-red-600 dark:text-red-700 px-3 py-2 sm:px-5 sm:py-3 rounded-full font-bold text-sm sm:text-base shadow-xl hover:shadow-2xl hover:scale-105 transition-all group overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/20 to-red-500/0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  <LogIn className="w-5 h-5 relative z-10" />
-                  <span className="relative z-10">Inloggen</span>
+                  <LogIn className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
+                  <span className="relative z-10 hidden sm:inline">Inloggen</span>
+                  <span className="relative z-10 sm:hidden">Login</span>
                 </button>
               ) : (
                 <UserProfile />

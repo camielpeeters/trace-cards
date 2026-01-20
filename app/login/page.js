@@ -149,15 +149,7 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Setup Admin Link */}
-          <div className="mt-4 text-center">
-            <Link
-              href="/setup-admin"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm underline"
-            >
-              Admin gebruiker aanmaken/resetten
-            </Link>
-          </div>
+          {/* Setup Admin Link - REMOVED for security (admin already created) */}
 
           {/* Back to Home */}
           <div className="mt-6 text-center">
