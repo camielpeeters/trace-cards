@@ -726,9 +726,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Geen blur meer voor dunne sprieten (te zwaar voor performance)
         // Alleen langzamere beweging voor kalmer effect
         
-        // Bereken wind beweging (sin wave) - LANGZAMER
-        // Gebruik Math.floor voor alle bewegingen om knipperingen te voorkomen
-        const windX = Math.floor(Math.sin(this.windPhase) * this.swayAmount * 10) / 10;
+        // Dunne sprieten: GEEN beweging (stil)
+        const isThin = this.isThin || this.width < 5;
+        let windX = 0;
+        
+        // Alleen dikke sprieten bewegen
+        if (!isThin) {
+          // Bereken wind beweging (sin wave) - alleen voor dikke sprieten
+          windX = Math.floor(Math.sin(this.windPhase) * this.swayAmount * 10) / 10;
+        }
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
@@ -796,7 +802,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Geen extra lijn meer - voorkomt trillen
         
         // Extra zijtak voor meer variatie (50% van sprieten) - ook puntig
-        if (this.hasExtraBlade) {
+        // GEEN zijtakken voor dunne sprieten (voorkomt beweging)
+        if (this.hasExtraBlade && !isThin) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
           const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
@@ -823,7 +830,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         }
         
         // Uitstekers voor wild gras - meerdere puntige zijtakken
-        if (this.outgrowths && this.outgrowths.length > 0) {
+        // GEEN uitstekers voor dunne sprieten (voorkomt beweging)
+        if (this.outgrowths && this.outgrowths.length > 0 && !isThin) {
           this.outgrowths.forEach(outgrowth => {
             ctx.globalAlpha = darkMode ? 0.5 : 0.6;
             
