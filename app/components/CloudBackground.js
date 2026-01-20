@@ -719,31 +719,21 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       draw(ctx, darkMode, dpr = 1, resolutionScale = 1, currentHeight = null) {
         if (!ctx) return;
         
-        // Dunne sprieten: GEEN beweging (stil)
-        const isThin = this.isThin || this.width < 5;
-        
         ctx.save();
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Bereken wind beweging - alleen voor dikke sprieten
-        // Chrome fix: gebruik Math.round in plaats van Math.floor voor betere rendering
-        let windX = 0;
-        
-        // Alleen dikke sprieten bewegen
-        if (!isThin) {
-          // Bereken wind beweging (sin wave) - alleen voor dikke sprieten
-          // Chrome fix: gebruik Math.round voor vloeiendere rendering
-          windX = Math.round(Math.sin(this.windPhase) * this.swayAmount * 100) / 100;
-        }
+        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering (voorkomt sub-pixel flickering)
+        // Bereken wind beweging voor ALLE sprieten (consistent)
+        const windX = Math.floor(Math.sin(this.windPhase) * this.swayAmount);
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        // Chrome fix: gebruik Math.round voor vloeiendere rendering
-        const baseX = Math.round((baseXPos + (this.clusterOffset || 0)) * 100) / 100;
+        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering (voorkomt sub-pixel flickering)
+        const baseX = Math.floor(baseXPos + (this.clusterOffset || 0));
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        // Chrome fix: gebruik Math.round voor vloeiendere rendering
-        const baseY = Math.round((currentHeight || this.baseY || height) * 100) / 100;
+        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering (voorkomt sub-pixel flickering)
+        const baseY = Math.floor(currentHeight || this.baseY || height);
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
