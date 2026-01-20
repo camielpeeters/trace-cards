@@ -560,14 +560,17 @@ function CloudBackgroundCanvas({ darkMode = false }) {
               offScreenCtx.restore();
             });
             
+            // Draw blurred cloud from off-screen canvas to main canvas (mobile)
+            // Restore main context first
             ctx.restore();
             ctx.save();
             ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-            ctx.drawImage(
-              offScreenCanvas,
-              this.x + minX - baseBlur * 2,
-              this.y + minY - baseBlur * 2
-            );
+            
+            // Draw at correct position - need to account for cloud position and blob min/max
+            const drawX = this.x + minX - baseBlur * 2;
+            const drawY = this.y + minY - baseBlur * 2;
+            ctx.drawImage(offScreenCanvas, drawX, drawY);
+            
             ctx.restore();
             return;
           }
