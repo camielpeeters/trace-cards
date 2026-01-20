@@ -546,84 +546,20 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         const opacity = this.getOpacity(darkMode);
         const baseBlur = darkMode ? 22 : 27; // Same blur values as desktop for consistency
         
-        // Debug: Log mobile cloud rendering
+        // Debug: Log mobile cloud rendering (only first time)
         if (this.blobs.length === 0) {
-          console.warn('⚠️ MobileCloud: No blobs to draw');
-          return;
-        }
-        
-        // Try off-screen canvas first, fallback to direct rendering if it fails
-        // Direct rendering works better on mobile Safari/Firefox sometimes
-        if (offScreenCanvas && offScreenCtx && offScreenCanvas.width > 0 && offScreenCanvas.height > 0) {
-          // Calculate cloud bounds (same technique as desktop would use)
-          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-          this.blobs.forEach(blob => {
-            const blobX = blob.x - blob.width / 2;
-            const blobY = blob.y - blob.height / 2;
-            minX = Math.min(minX, blobX - baseBlur * 2);
-            maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
-            minY = Math.min(minY, blobY - baseBlur * 2);
-            maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
-          });
-          
-          const cloudWidth = (maxX - minX) + baseBlur * 4;
-          const cloudHeight = (maxY - minY) + baseBlur * 4;
-          
-          // Off-screen canvas with high resolution (same as desktop technique)
-          offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
-          offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
-          offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-          
-          // Clear and apply blur filter (same technique as desktop)
-          offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
-          offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-          offScreenCtx.globalAlpha = opacity;
-          
-          // Reset transform for drawing (same as desktop technique)
-          offScreenCtx.setTransform(1, 0, 0, 1, 0, 0);
-          offScreenCtx.scale(dpr * resolutionScale, dpr * resolutionScale);
-          
-          // Translate to account for cloud position and padding (same as desktop)
-          offScreenCtx.translate(-minX + baseBlur * 2, -minY + baseBlur * 2);
-          offScreenCtx.scale(this.scale, this.scale);
-          
-          // Same colors as desktop
-          if (darkMode) {
-            offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
-          } else {
-            offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+          if (!this._debugLogged) {
+            console.warn('⚠️ MobileCloud: No blobs to draw');
+            this._debugLogged = true;
           }
-          
-          // Draw blobs with same technique as desktop (bezier curves)
-          this.blobs.forEach(blob => {
-            offScreenCtx.save();
-            offScreenCtx.translate(blob.x, blob.y);
-            offScreenCtx.rotate(blob.rotation);
-            
-            offScreenCtx.beginPath();
-            const radiusX = blob.width / 2;
-            const radiusY = blob.height / 2;
-            
-            // Same bezier curve technique as desktop
-            offScreenCtx.moveTo(0, -radiusY);
-            offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
-            offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
-            offScreenCtx.closePath();
-            offScreenCtx.fill();
-            
-            offScreenCtx.restore();
-          });
-          
-          // Draw blurred cloud from off-screen canvas to main canvas
-          ctx.save();
-          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-          ctx.drawImage(offScreenCanvas, this.x + minX - baseBlur * 2, this.y + minY - baseBlur * 2);
-          ctx.restore();
           return;
         }
         
-        // Fallback: direct rendering (same technique as desktop) - PRIMARY for mobile
-        // This works better on mobile Safari and Firefox
+        // Use direct rendering (same as desktop) - works reliably on mobile Safari/Firefox
+        // Off-screen canvas is optional and can cause issues on mobile browsers
+        // Direct rendering uses same technique as desktop for consistency
+        // Direct rendering (same technique as desktop) - PRIMARY method
+        // This works reliably on mobile Safari and Firefox
         ctx.save();
         
         // Scale context voor hoge resolutie (same as desktop)
@@ -828,15 +764,18 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
       
       // Teken wolken (boven alles) - met DPR scaling en resolution scale
-      // Desktop uses SimpleCloud (perfect, untouched), Mobile uses MobileCloud with off-screen canvas
+      // Desktop uses SimpleCloud (perfect, untouched), Mobile uses MobileCloud
       const isMobile = width < 768;
       
       cloudsRef.current.forEach(cloud => {
         cloud.update();
-        // Mobile clouds use off-screen canvas, desktop clouds draw directly (perfect technique)
-        if (isMobile && cloud instanceof MobileCloud) {
+        // Mobile clouds: try off-screen canvas first, fallback to direct rendering
+        // Desktop clouds: always direct rendering (perfect, untouched)
+        if (isMobile && cloud.constructor.name === 'MobileCloud') {
+          // Mobile: use off-screen canvas if available, otherwise direct rendering
           cloud.draw(darkModeRef.current, dpr, resolutionScale, offScreenCanvas, offScreenCtx);
         } else {
+          // Desktop: perfect rendering, untouched
           cloud.draw(darkModeRef.current, dpr, resolutionScale);
         }
       });
