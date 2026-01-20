@@ -696,6 +696,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.isThin = isThin;
         this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
 
+        // Chromium/Cursor: reduce motion amplitude and speed to avoid shimmer/flicker during movement.
+        if (IS_CHROMIUM && !isThin) {
+          this.windSpeed = 0.12 + Math.random() * 0.08; // 0.12-0.20 (very gentle)
+          this.swayAmount = 4 + Math.random() * 4; // 4-8px (small sway)
+        }
+
         // Side-blade parameters: precompute ONCE (no Math.random in draw -> prevents "glitch" flicker)
         if (this.hasExtraBlade) {
           this.sideBladeHeightFactor = 0.4 + Math.random() * 0.3; // 0.4-0.7
@@ -706,17 +712,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         }
         
         // Uitstekers voor wild gras (meerdere zijtakken)
+        // NOTE: these start mid-stem and can look like "floating blades".
+        // Safe design: disable them to avoid detached-looking blades across browsers.
         this.outgrowths = [];
-        const outgrowthCount = Math.random() > 0.6 ? Math.floor(Math.random() * 3) : 0; // 0-2 uitstekers (40% kans)
-        for (let i = 0; i < outgrowthCount; i++) {
-          this.outgrowths.push({
-            height: this.height * (0.3 + Math.random() * 0.4), // 30-70% van hoofdhoogte
-            position: 0.3 + Math.random() * 0.5, // Positie op spriet (30-80% vanaf bodem)
-            side: Math.random() > 0.5 ? 1 : -1, // Links of rechts
-            angle: (Math.random() - 0.5) * 0.8, // Hoek variatie
-            width: this.width * (0.5 + Math.random() * 0.3) // 50-80% van hoofdbreedte
-          });
-        }
       }
 
       update(time) {
@@ -753,11 +751,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         if (darkMode) {
           // Dark mode: donkergroen tot bijna zwart
           ctx.strokeStyle = `rgba(30, 50, 30, 0.9)`;
-          ctx.fillStyle = `rgba(20, 40, 20, 0.7)`;
+          // Chromium/Cursor: slightly less transparency reduces perceived shimmer
+          ctx.fillStyle = IS_CHROMIUM ? `rgba(20, 40, 20, 0.88)` : `rgba(20, 40, 20, 0.7)`;
         } else {
           // Light mode: groenig
           ctx.strokeStyle = `rgba(60, 120, 60, 1)`;
-          ctx.fillStyle = `rgba(80, 150, 80, 0.8)`;
+          // Chromium/Cursor: slightly less transparency reduces perceived shimmer
+          ctx.fillStyle = IS_CHROMIUM ? `rgba(80, 150, 80, 0.92)` : `rgba(80, 150, 80, 0.8)`;
         }
         
         // Dikkere lijn voor vollere sprieten
