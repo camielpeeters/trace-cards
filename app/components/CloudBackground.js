@@ -825,8 +825,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         }
         
         // Uitstekers voor wild gras - meerdere puntige zijtakken
-        // GEEN uitstekers voor dunne sprieten (voorkomt beweging)
-        if (this.outgrowths && this.outgrowths.length > 0 && !isThin) {
+        // ALLE sprieten kunnen uitstekers hebben (consistent)
+        if (this.outgrowths && this.outgrowths.length > 0) {
           this.outgrowths.forEach(outgrowth => {
             ctx.globalAlpha = darkMode ? 0.5 : 0.6;
             
