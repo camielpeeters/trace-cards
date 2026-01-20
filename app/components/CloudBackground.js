@@ -733,19 +733,21 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
 
         const isThin = this.isThin || this.width < 5;
+        // Chromium/Cursor: quantize to 0.5px to avoid shimmer/flicker from sub-pixel rasterization.
+        const q = (v) => (IS_CHROMIUM ? Math.round(v * 2) / 2 : v);
 
         // Bereken wind beweging - alleen voor dikke sprieten
         let windX = 0;
         if (!isThin) {
-          windX = Math.sin(this.windPhase) * this.swayAmount;
+          windX = q(Math.sin(this.windPhase) * this.swayAmount);
         }
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        const baseX = baseXPos + (this.clusterOffset || 0);
+        const baseX = q(baseXPos + (this.clusterOffset || 0));
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        const baseY = currentHeight || this.baseY || height;
+        const baseY = q(currentHeight || this.baseY || height);
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
@@ -764,10 +766,10 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        const controlX = baseX + windX * 0.5;
-        const controlY = baseY - this.height * 0.4;
-        const endX = baseX + windX;
-        const endY = baseY - this.height;
+        const controlX = q(baseX + windX * 0.5);
+        const controlY = q(baseY - this.height * 0.4);
+        const endX = q(baseX + windX);
+        const endY = q(baseY - this.height);
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
@@ -810,7 +812,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         // Extra zijtak voor meer variatie (50% van sprieten) - ook puntig
         // GEEN zijtakken voor dunne sprieten (voorkomt glitch/flicker)
-        if (this.hasExtraBlade && !isThin) {
+        // Chromium/Cursor: disable side-blades (still shimmer in Chromium)
+        if (this.hasExtraBlade && !isThin && !IS_CHROMIUM) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * this.sideBladeHeightFactor;
           const sideBladeX = baseX + this.sideBladeOffsetX;
@@ -1145,22 +1148,26 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       // - Do NOT render thin back-layer blades (they flicker/glitch across browsers)
       // - Render only the thicker blades on top (smooth + stable)
       {
-        const grassBaseHeight = 46; // px (CSS pixels)
-        ctx.save();
-        ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+        // Firefox: this can show as a visible band because blade fills are semi-transparent.
+        // Keep only for Chromium/Cursor, where we want a guaranteed filled footer without thin strokes.
+        if (IS_CHROMIUM) {
+          const grassBaseHeight = 34; // px (CSS pixels) - smaller to avoid banding
+          ctx.save();
+          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
 
-        const y0 = height - grassBaseHeight;
-        const gradient = ctx.createLinearGradient(0, y0, 0, height);
-        if (darkModeRef.current) {
-          gradient.addColorStop(0, 'rgba(18, 35, 18, 0.92)');
-          gradient.addColorStop(1, 'rgba(8, 20, 8, 0.98)');
-        } else {
-          gradient.addColorStop(0, 'rgba(90, 165, 90, 0.95)');
-          gradient.addColorStop(1, 'rgba(55, 120, 55, 1)');
+          const y0 = height - grassBaseHeight;
+          const gradient = ctx.createLinearGradient(0, y0, 0, height);
+          if (darkModeRef.current) {
+            gradient.addColorStop(0, 'rgba(12, 28, 12, 0.65)');
+            gradient.addColorStop(1, 'rgba(6, 16, 6, 0.85)');
+          } else {
+            gradient.addColorStop(0, 'rgba(70, 145, 70, 0.65)');
+            gradient.addColorStop(1, 'rgba(45, 105, 45, 0.9)');
+          }
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, y0, width, grassBaseHeight);
+          ctx.restore();
         }
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, y0, width, grassBaseHeight);
-        ctx.restore();
       }
 
       grassRef.current.forEach((blade) => {
