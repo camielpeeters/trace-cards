@@ -508,101 +508,195 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
-        // Mobile and desktop now use EXACT same rendering - no differences
-        // This ensures 1:1 identical clouds on both platforms
-        const baseBlur = darkMode ? 22 : 27;
-        
-        // Use off-screen canvas for blur (works on both mobile and desktop)
-        if (offScreenCanvas && offScreenCtx) {
-          // Calculate cloud bounds (same as desktop)
-          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-          this.blobs.forEach(blob => {
-            const blobX = blob.x - blob.width / 2;
-            const blobY = blob.y - blob.height / 2;
-            minX = Math.min(minX, blobX - baseBlur * 2);
-            maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
-            minY = Math.min(minY, blobY - baseBlur * 2);
-            maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
-          });
+        if (effectiveMobile) {
+          // MOBILE: Use off-screen canvas for blur (same rendering as desktop)
+          const baseBlur = darkMode ? 22 : 27;
           
-          const cloudWidth = (maxX - minX) + baseBlur * 4;
-          const cloudHeight = (maxY - minY) + baseBlur * 4;
-          
-          offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
-          offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
-          offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-          
-          // Clear and draw cloud on off-screen canvas (same as desktop)
-          offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
-          offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-          offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
-          offScreenCtx.translate(-minX + baseBlur * 2, -minY + baseBlur * 2);
-          offScreenCtx.scale(this.scale, this.scale);
-          
-          if (darkMode) {
-            offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
-          } else {
-            offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+          if (offScreenCanvas && offScreenCtx) {
+            // Calculate cloud bounds
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            this.blobs.forEach(blob => {
+              const blobX = blob.x - blob.width / 2;
+              const blobY = blob.y - blob.height / 2;
+              minX = Math.min(minX, blobX - baseBlur * 2);
+              maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
+              minY = Math.min(minY, blobY - baseBlur * 2);
+              maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
+            });
+            
+            const cloudWidth = (maxX - minX) + baseBlur * 4;
+            const cloudHeight = (maxY - minY) + baseBlur * 4;
+            
+            offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
+            offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
+            offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            
+            offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
+            offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+            offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+            offScreenCtx.translate(-minX + baseBlur * 2, -minY + baseBlur * 2);
+            offScreenCtx.scale(this.scale, this.scale);
+            
+            if (darkMode) {
+              offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
+            } else {
+              offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+            }
+            
+            this.blobs.forEach(blob => {
+              offScreenCtx.save();
+              offScreenCtx.translate(blob.x, blob.y);
+              offScreenCtx.rotate(blob.rotation);
+              
+              offScreenCtx.beginPath();
+              const radiusX = blob.width / 2;
+              const radiusY = blob.height / 2;
+              offScreenCtx.moveTo(0, -radiusY);
+              offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+              offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+              offScreenCtx.closePath();
+              offScreenCtx.fill();
+              
+              offScreenCtx.restore();
+            });
+            
+            ctx.restore();
+            ctx.save();
+            ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            ctx.drawImage(
+              offScreenCanvas,
+              this.x + minX - baseBlur * 2,
+              this.y + minY - baseBlur * 2
+            );
+            ctx.restore();
+            return;
           }
           
-          // Draw blobs exactly like desktop
+          // Fallback for mobile
+          ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+          ctx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+          
+          if (darkMode) {
+            ctx.fillStyle = `rgba(200, 210, 220, 1)`;
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+          }
+
           this.blobs.forEach(blob => {
-            offScreenCtx.save();
-            offScreenCtx.translate(blob.x, blob.y);
-            offScreenCtx.rotate(blob.rotation);
+            ctx.save();
+            ctx.translate(blob.x, blob.y);
+            ctx.rotate(blob.rotation);
             
-            offScreenCtx.beginPath();
+            ctx.beginPath();
             const radiusX = blob.width / 2;
             const radiusY = blob.height / 2;
-            offScreenCtx.moveTo(0, -radiusY);
-            offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
-            offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
-            offScreenCtx.closePath();
-            offScreenCtx.fill();
             
-            offScreenCtx.restore();
+            ctx.moveTo(0, -radiusY);
+            ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+            ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
           });
-          
-          // Draw blurred cloud from off-screen canvas to main canvas (same as desktop)
-          ctx.restore();
-          ctx.save();
-          ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-          ctx.drawImage(
-            offScreenCanvas,
-            this.x + minX - baseBlur * 2,
-            this.y + minY - baseBlur * 2
-          );
-          ctx.restore();
-          return;
-        }
-        
-        // Fallback: draw directly with filter (same as desktop fallback)
-        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
-        ctx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
-        
-        if (darkMode) {
-          ctx.fillStyle = `rgba(200, 210, 220, 1)`;
         } else {
-          ctx.fillStyle = `rgba(255, 255, 255, 1)`;
-        }
+          // DESKTOP: Original styling with blur filter - UNCHANGED from original
+          const baseBlur = darkMode ? 22 : 27;
+          
+          // Use off-screen canvas for blur if available (better Firefox support)
+          if (offScreenCanvas && offScreenCtx) {
+            // Calculate cloud bounds for off-screen canvas - use cloud position correctly
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            this.blobs.forEach(blob => {
+              // Blobs are relative to cloud position (this.x, this.y), so account for that
+              const blobX = blob.x - blob.width / 2;
+              const blobY = blob.y - blob.height / 2;
+              minX = Math.min(minX, blobX - baseBlur * 2);
+              maxX = Math.max(maxX, blobX + blob.width + baseBlur * 2);
+              minY = Math.min(minY, blobY - baseBlur * 2);
+              maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
+            });
+            
+            const cloudWidth = (maxX - minX) + baseBlur * 4;
+            const cloudHeight = (maxY - minY) + baseBlur * 4;
+            
+            offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
+            offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
+            offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            
+            // Clear and draw cloud on off-screen canvas
+            offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
+            offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+            offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+            
+            // Reset transform for drawing
+            offScreenCtx.setTransform(1, 0, 0, 1, 0, 0);
+            offScreenCtx.scale(dpr * resolutionScale, dpr * resolutionScale);
+            
+            // Translate to account for cloud position and padding
+            offScreenCtx.translate(-minX + baseBlur * 2, -minY + baseBlur * 2);
+            offScreenCtx.scale(this.scale, this.scale);
+            
+            if (darkMode) {
+              offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
+            } else {
+              offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+            }
+            
+            this.blobs.forEach(blob => {
+              offScreenCtx.save();
+              offScreenCtx.translate(blob.x, blob.y);
+              offScreenCtx.rotate(blob.rotation);
+              
+              offScreenCtx.beginPath();
+              const radiusX = blob.width / 2;
+              const radiusY = blob.height / 2;
+              offScreenCtx.moveTo(0, -radiusY);
+              offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+              offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+              offScreenCtx.closePath();
+              offScreenCtx.fill();
+              offScreenCtx.restore();
+            });
+            
+            // Draw blurred cloud from off-screen canvas to main canvas at correct position
+            ctx.restore(); // Restore from earlier save
+            ctx.save();
+            ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            // Position: cloud x/y + blob min x/y - padding
+            ctx.drawImage(offScreenCanvas, this.x + minX - baseBlur * 2, this.y + minY - baseBlur * 2);
+            ctx.restore();
+            return;
+          }
+          
+          // Fallback: draw directly with filter (original desktop method)
+          ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+          ctx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
+          
+          if (darkMode) {
+            ctx.fillStyle = `rgba(200, 210, 220, 1)`;
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+          }
 
-        this.blobs.forEach(blob => {
-          ctx.save();
-          ctx.translate(blob.x, blob.y);
-          ctx.rotate(blob.rotation);
-          
-          ctx.beginPath();
-          const radiusX = blob.width / 2;
-          const radiusY = blob.height / 2;
-          
-          ctx.moveTo(0, -radiusY);
-          ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
-          ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
-          ctx.closePath();
-          ctx.fill();
-          
-          ctx.restore();
-        });
+          this.blobs.forEach(blob => {
+            ctx.save();
+            ctx.translate(blob.x, blob.y);
+            ctx.rotate(blob.rotation);
+            
+            ctx.beginPath();
+            const radiusX = blob.width / 2;
+            const radiusY = blob.height / 2;
+            
+            ctx.moveTo(0, -radiusY);
+            ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+            ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+          });
+        }
 
         ctx.restore();
       }
