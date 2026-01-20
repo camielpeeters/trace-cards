@@ -502,53 +502,55 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.x = isInitial ? Math.random() * width : -500;
         this.y = Math.random() * (height * 0.4);
         this.speed = WIND_SPEED + Math.random() * 0.1;
-        this.scale = 0.8 + Math.random() * 0.4;
+        // Smaller scale for mobile clouds
+        this.scale = 0.4 + Math.random() * 0.3; // 0.4-0.7 (was 0.8-1.2)
         
-        // Opacity: light mode normaal, dark mode zeer transparant
-        this.opacityLight = 0.4;
-        this.opacityDark = 0.2;
+        // Different opacity per cloud (variety)
+        const opacityVariation = 0.1 + Math.random() * 0.2; // 0.1-0.3 variation
+        this.opacityLight = 0.3 + opacityVariation; // 0.3-0.6
+        this.opacityDark = 0.15 + opacityVariation * 0.5; // 0.15-0.3
         
         // SVG-style cloud: multiple bubbles that form a cloud shape
-        // Mix of large and small bubbles positioned to form cloud contours
+        // SMALLER bubbles for mobile
         this.bubbles = [];
         
         // Create cloud shape with bubbles (like SVG cloud path)
-        // Base bubble (center, large)
+        // Base bubble (center, smaller for mobile)
         this.bubbles.push({
           x: 0,
           y: 0,
-          radius: 35 + Math.random() * 15 // 35-50px base
+          radius: 18 + Math.random() * 8 // 18-26px base (was 35-50px)
         });
         
-        // Top bubbles (2-3)
+        // Top bubbles (2-3, smaller)
         const topCount = 2 + Math.floor(Math.random() * 2);
         for (let i = 0; i < topCount; i++) {
           this.bubbles.push({
-            x: -30 + (i * 30) + Math.random() * 20 - 10,
-            y: -25 - Math.random() * 15,
-            radius: 20 + Math.random() * 15 // 20-35px
+            x: -20 + (i * 20) + Math.random() * 10 - 5,
+            y: -15 - Math.random() * 8,
+            radius: 10 + Math.random() * 8 // 10-18px (was 20-35px)
           });
         }
         
-        // Side bubbles (2 each side)
+        // Side bubbles (2 each side, smaller)
         this.bubbles.push({
-          x: -40 - Math.random() * 15,
-          y: -5 + Math.random() * 10,
-          radius: 25 + Math.random() * 10
+          x: -25 - Math.random() * 8,
+          y: -3 + Math.random() * 5,
+          radius: 12 + Math.random() * 6 // 12-18px
         });
         this.bubbles.push({
-          x: 40 + Math.random() * 15,
-          y: -5 + Math.random() * 10,
-          radius: 25 + Math.random() * 10
+          x: 25 + Math.random() * 8,
+          y: -3 + Math.random() * 5,
+          radius: 12 + Math.random() * 6 // 12-18px
         });
         
         // Bottom bubbles (2-3, smaller)
         const bottomCount = 2 + Math.floor(Math.random() * 2);
         for (let i = 0; i < bottomCount; i++) {
           this.bubbles.push({
-            x: -25 + (i * 25) + Math.random() * 15 - 7,
-            y: 20 + Math.random() * 10,
-            radius: 15 + Math.random() * 10 // 15-25px
+            x: -15 + (i * 15) + Math.random() * 8 - 4,
+            y: 12 + Math.random() * 6,
+            radius: 8 + Math.random() * 6 // 8-14px (was 15-25px)
           });
         }
       }
@@ -574,15 +576,26 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           return;
         }
         
-        // SVG-STYLE CLOUD RENDERING - Real cloud shape from multiple bubbles
-        // Draw as a connected cloud shape, not separate circles
+        // SVG-STYLE CLOUD RENDERING - Real cloud shape with shadow
+        // Fixed transform to prevent flickering/shaking
         ctx.save();
         
-        // Scale context
+        // Scale context (fixed transform, no random changes)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        ctx.translate(this.x, this.y);
+        // Translate to cloud position (use Math.floor to prevent sub-pixel rendering issues)
+        ctx.translate(Math.floor(this.x), Math.floor(this.y));
         ctx.scale(this.scale, this.scale);
+        
+        // Set shadow for depth (mobile-compatible)
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        if (darkMode) {
+          ctx.shadowColor = `rgba(0, 0, 0, ${opacity * 0.3})`;
+        } else {
+          ctx.shadowColor = `rgba(0, 0, 0, ${opacity * 0.2})`;
+        }
         
         // Set fill color
         if (darkMode) {
@@ -606,16 +619,20 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
         }
         
-        // Fill the entire cloud shape
+        // Fill the entire cloud shape (with shadow)
         ctx.fill();
         
-        // Optional: draw bubbles again slightly more opaque for depth
-        // This creates a layered cloud effect without blur
-        ctx.globalAlpha = opacity * 0.3;
+        // Remove shadow for inner layers
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        // Draw some bubbles again for depth (lighter)
+        ctx.globalAlpha = opacity * 0.4;
         this.bubbles.forEach((bubble, i) => {
-          if (i === 0 || Math.random() > 0.6) { // Draw some bubbles again for depth
+          if (i === 0 || i % 2 === 0) { // Draw base and every other bubble for depth
             ctx.beginPath();
-            ctx.arc(bubble.x, bubble.y, bubble.radius * 0.8, 0, Math.PI * 2);
+            ctx.arc(bubble.x, bubble.y, bubble.radius * 0.7, 0, Math.PI * 2);
             ctx.fill();
           }
         });
