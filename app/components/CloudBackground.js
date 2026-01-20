@@ -747,17 +747,40 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
         const baseY = q(currentHeight || this.baseY || height);
         
+        // Chromium/Cursor SAFE MODE:
+        // Filled shapes with sharp tips can still shimmer in Chromium. Use a simple stroked curve.
+        if (IS_CHROMIUM) {
+          // Colors (more opaque to reduce shimmer)
+          ctx.strokeStyle = darkMode ? 'rgba(24, 48, 24, 0.95)' : 'rgba(70, 140, 70, 0.95)';
+          const lineWidth = this.isThick ? this.width * 1.4 : this.width * 1.15;
+          ctx.lineWidth = Math.max(3, lineWidth);
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+
+          // Gentle curve
+          const controlX = q(baseX + windX * 0.4);
+          const controlY = q(baseY - this.height * 0.45);
+          const endX = q(baseX + windX);
+          const endY = q(baseY - this.height);
+
+          ctx.beginPath();
+          ctx.moveTo(baseX, baseY);
+          ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+          ctx.stroke();
+
+          ctx.restore();
+          return;
+        }
+
         // Kleur afhankelijk van dark mode
         if (darkMode) {
           // Dark mode: donkergroen tot bijna zwart
           ctx.strokeStyle = `rgba(30, 50, 30, 0.9)`;
-          // Chromium/Cursor: slightly less transparency reduces perceived shimmer
-          ctx.fillStyle = IS_CHROMIUM ? `rgba(20, 40, 20, 0.88)` : `rgba(20, 40, 20, 0.7)`;
+          ctx.fillStyle = `rgba(20, 40, 20, 0.78)`; // slightly more opaque to avoid "floating" look
         } else {
           // Light mode: groenig
           ctx.strokeStyle = `rgba(60, 120, 60, 1)`;
-          // Chromium/Cursor: slightly less transparency reduces perceived shimmer
-          ctx.fillStyle = IS_CHROMIUM ? `rgba(80, 150, 80, 0.92)` : `rgba(80, 150, 80, 0.8)`;
+          ctx.fillStyle = `rgba(80, 150, 80, 0.88)`; // slightly more opaque to avoid "floating" look
         }
         
         // Dikkere lijn voor vollere sprieten
@@ -1148,9 +1171,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       // - Do NOT render thin back-layer blades (they flicker/glitch across browsers)
       // - Render only the thicker blades on top (smooth + stable)
       {
-        // Firefox: this can show as a visible band because blade fills are semi-transparent.
-        // Keep only for Chromium/Cursor, where we want a guaranteed filled footer without thin strokes.
-        if (IS_CHROMIUM) {
+        // Firefox: use a VERY subtle strip (prevents "floating blade" illusion without a visible bar).
+        // Chromium/Cursor: keep a slightly stronger strip to avoid any perceived gaps (thin blades are hidden).
+        const isChromium = IS_CHROMIUM;
+        const grassBaseHeight = isChromium ? 34 : 10; // px (CSS pixels)
+        const topAlpha = isChromium ? 0.65 : 0.12;
+        const bottomAlpha = isChromium ? 0.9 : 0.0;
+
+        if (grassBaseHeight > 0) {
           const grassBaseHeight = 34; // px (CSS pixels) - smaller to avoid banding
           ctx.save();
           ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
@@ -1158,11 +1186,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           const y0 = height - grassBaseHeight;
           const gradient = ctx.createLinearGradient(0, y0, 0, height);
           if (darkModeRef.current) {
-            gradient.addColorStop(0, 'rgba(12, 28, 12, 0.65)');
-            gradient.addColorStop(1, 'rgba(6, 16, 6, 0.85)');
+            gradient.addColorStop(0, `rgba(12, 28, 12, ${topAlpha})`);
+            gradient.addColorStop(1, `rgba(6, 16, 6, ${bottomAlpha})`);
           } else {
-            gradient.addColorStop(0, 'rgba(70, 145, 70, 0.65)');
-            gradient.addColorStop(1, 'rgba(45, 105, 45, 0.9)');
+            gradient.addColorStop(0, `rgba(70, 145, 70, ${topAlpha})`);
+            gradient.addColorStop(1, `rgba(45, 105, 45, ${bottomAlpha})`);
           }
           ctx.fillStyle = gradient;
           ctx.fillRect(0, y0, width, grassBaseHeight);
