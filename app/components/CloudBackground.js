@@ -713,11 +713,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.isThick = this.width > 7; // recompute (will be false after clamp)
         }
 
-        // Tip style: not every blade should have the angled "piekje".
-        // Chrome/Firefox: some round tips for variety
-        this.tipStyle =
-          (!IS_SAFE_GRASS && !isThin && Math.random() < 0.28) ? 'round' : 'sharp';
-
         // Side-blade parameters: precompute ONCE (no Math.random in draw -> prevents "glitch" flicker)
         if (this.hasExtraBlade) {
           this.sideBladeHeightFactor = 0.4 + Math.random() * 0.3; // 0.4-0.7
