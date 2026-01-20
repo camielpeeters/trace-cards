@@ -654,14 +654,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.x = x;
         this.baseY = grassHeight; // Y positie op footer
         // Meer variatie in breedte - WILDER GRAS (eerst breedte bepalen)
-        // GEEN dunne sprieten meer - alleen medium en dik om Chrome render probleem te voorkomen
         const widthType = Math.random();
         let isExtraThick = false;
-        // Skip dunne sprieten (0-30%) - alleen medium en dik
-        if (widthType < 0.5) {
-          this.width = 5 + Math.random() * 3; // Medium: 5-8px (50%)
+        if (widthType < 0.3) {
+          this.width = 2.5 + Math.random() * 2; // Dun: 2.5-4.5px (30%) - iets dikker
+        } else if (widthType < 0.7) {
+          this.width = 4 + Math.random() * 3; // Medium: 4-7px (40%)
         } else if (widthType < 0.9) {
-          this.width = 7 + Math.random() * 4; // Dik: 7-11px (40%)
+          this.width = 7 + Math.random() * 4; // Dik: 7-11px (20%)
         } else {
           this.width = 11 + Math.random() * 5; // Extra dik wild gras: 11-16px (10%)
           isExtraThick = true;
@@ -681,17 +681,23 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           this.height = 50 + Math.random() * 30; // Lang: 50-80px (30%)
         }
         
-        // Variatie in wind snelheid - CONSISTENT voor alle sprieten
-        // Chrome fix: gebruik exact dezelfde wind snelheid voor alle sprieten om flickering te voorkomen
-        const baseWindSpeed = 0.4; // Vaste basis snelheid (geen variatie)
-        const baseSwayAmount = 12; // Vaste basis beweging (geen variatie)
-        
-        this.windSpeed = baseWindSpeed + (Math.random() - 0.5) * 0.1; // Zeer kleine variatie (0.35-0.45)
+        // Wind: dunne sprieten zijn stil (voorkomt glitch/flicker in Chrome)
+        const isThin = this.width < 5;
+        this.windSpeed = isThin ? 0 : 0.3 + Math.random() * 0.4; // 0.3-0.7
         this.windOffset = Math.random() * Math.PI * 2; // Random start fase
-        this.swayAmount = baseSwayAmount + (Math.random() - 0.5) * 4; // Zeer kleine variatie (10-14px)
+        this.swayAmount = isThin ? 0 : 10 + Math.random() * 18; // 10-28px
         this.isThick = this.width > 7; // Dikke sprieten zijn automatisch thick
-        this.isThin = false; // Geen dunne sprieten meer - alle sprieten bewegen normaal
+        this.isThin = isThin;
         this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
+
+        // Side-blade parameters: precompute ONCE (no Math.random in draw -> prevents "glitch" flicker)
+        if (this.hasExtraBlade) {
+          this.sideBladeHeightFactor = 0.4 + Math.random() * 0.3; // 0.4-0.7
+          this.sideBladeOffsetX = Math.random() > 0.5 ? 3 : -3;
+        } else {
+          this.sideBladeHeightFactor = 0;
+          this.sideBladeOffsetX = 0;
+        }
         
         // Uitstekers voor wild gras (meerdere zijtakken)
         this.outgrowths = [];
@@ -709,9 +715,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
 
       update(time) {
         // Wind animatie: sin wave voor heen en weer beweging
-        // Bug fix: langzamere update voor dunne sprieten om glitch te voorkomen
-        const effectiveWindSpeed = this.width < 6 ? this.windSpeed * 0.5 : this.windSpeed;
-        this.windPhase = time * effectiveWindSpeed + this.windOffset;
+        // Dunne sprieten: GEEN update (stil)
+        if (this.isThin) return;
+        this.windPhase = time * this.windSpeed + this.windOffset;
       }
 
       draw(ctx, darkMode, dpr = 1, resolutionScale = 1, currentHeight = null) {
@@ -719,15 +725,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         
         ctx.save();
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-        
-        // Bug fix: gebruik imageSmoothingEnabled = false voor pixel-perfect rendering zonder hakkelige animatie
-        ctx.imageSmoothingEnabled = false;
-        
-        // Bereken wind beweging - gebruik floating point voor vloeiende animatie
-        // Bug fix: beperk wind snelheid voor dunne sprieten om glitch te voorkomen
-        const effectiveWindSpeed = this.width < 6 ? this.windSpeed * 0.5 : this.windSpeed;
-        const effectiveSwayAmount = this.width < 6 ? this.swayAmount * 0.5 : this.swayAmount;
-        const windX = Math.sin(this.windPhase) * effectiveSwayAmount;
+
+        const isThin = this.isThin || this.width < 5;
+
+        // Bereken wind beweging - alleen voor dikke sprieten
+        let windX = 0;
+        if (!isThin) {
+          windX = Math.sin(this.windPhase) * this.swayAmount;
+        }
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
@@ -753,7 +758,6 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        // Gebruik floating point voor vloeiende animatie
         const controlX = baseX + windX * 0.5;
         const controlY = baseY - this.height * 0.4;
         const endX = baseX + windX;
@@ -796,15 +800,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Geen extra lijn meer - voorkomt trillen
         
         // Extra zijtak voor meer variatie (50% van sprieten) - ook puntig
-        // ALLE sprieten kunnen zijtakken hebben (consistent)
-        if (this.hasExtraBlade) {
+        // GEEN zijtakken voor dunne sprieten (voorkomt glitch/flicker)
+        if (this.hasExtraBlade && !isThin) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
-          const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
-          const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
-          // Gebruik floating point voor vloeiende animatie
-          const sideWindX = Math.sin(this.windPhase * 1.2) * (effectiveSwayAmount * 0.6);
-          
-          // Gebruik floating point voor vloeiende animatie
+          const sideBladeHeight = this.height * this.sideBladeHeightFactor;
+          const sideBladeX = baseX + this.sideBladeOffsetX;
+          const sideWindX = Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6);
+
           const sideControlX = sideBladeX + sideWindX * 0.4;
           const sideControlY = baseY - sideBladeHeight * 0.4;
           const sideEndX = sideBladeX + sideWindX * 0.7;
@@ -826,8 +828,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         }
         
         // Uitstekers voor wild gras - meerdere puntige zijtakken
-        // ALLE sprieten kunnen uitstekers hebben (consistent)
-        if (this.outgrowths && this.outgrowths.length > 0) {
+        // GEEN uitstekers voor dunne sprieten (voorkomt glitch/flicker)
+        if (this.outgrowths && this.outgrowths.length > 0 && !isThin) {
           this.outgrowths.forEach(outgrowth => {
             ctx.globalAlpha = darkMode ? 0.5 : 0.6;
             
@@ -999,8 +1001,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         animationId = requestAnimationFrame(animate);
         return;
       }
-      
-      animationTimeRef.current += 0.016; // ~60fps
+
+      // Use real frame time for consistent motion across browsers (avoids Firefox stutter)
+      // Clamp delta to avoid huge jumps when tab is throttled.
+      if (!animate._lastTs) animate._lastTs = performance.now();
+      const now = performance.now();
+      const dt = Math.min((now - animate._lastTs) / 1000, 0.033);
+      animate._lastTs = now;
+      animationTimeRef.current += dt;
       
       // Initialiseer als nog niet gedaan
       if (cloudsRef.current.length === 0) {
