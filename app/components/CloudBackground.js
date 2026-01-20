@@ -502,11 +502,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Scale context voor hoge resolutie (canvas is al geschaald in resize)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Apply filter BEFORE any transforms - critical for Firefox mobile
-        // Firefox mobile requires filter to be set before translate/scale/rotate
-        ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+        // Firefox mobile often doesn't support ctx.filter properly
+        // Use shadowBlur as primary blur method - works reliably on all browsers
+        ctx.filter = 'none'; // Disable filter, use shadowBlur instead
+        ctx.shadowBlur = baseBlur;
+        ctx.shadowColor = darkMode ? `rgba(200, 210, 220, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         
-        // Apply brightness adjustment separately if filter doesn't support it
+        // Apply brightness adjustment for dark mode
         if (darkMode) {
           ctx.globalAlpha = opacity * 0.8;
         } else {
