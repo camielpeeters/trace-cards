@@ -943,8 +943,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       
       // Gras op footer (onderkant van scherm) - gebruik altijd actuele height
       // Meer clusters voor volledige bodem vulling
-      // Chrome looked "too thick/dense" mainly due to too many blades. Reduce density for Chrome only.
-      const clusterCount = IS_CHROME ? Math.floor(width / 12) : Math.floor(width / 8);
+      const clusterCount = Math.floor(width / 8);
       
       for (let i = 0; i < clusterCount; i++) {
         // Bepaal cluster positie - meer uniform verdeeld voor volledige vulling
@@ -952,9 +951,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         const clusterX = baseClusterX + (Math.random() - 0.5) * (width / clusterCount) * 0.6;
         
         // Elke cluster heeft 2-4 sprieten vanuit 1 punt
-        const bladesPerCluster = IS_CHROME
-          ? (1 + Math.floor(Math.random() * 3)) // 1-3 (less dense)
-          : (2 + Math.floor(Math.random() * 3)); // 2-4
+        const bladesPerCluster = 2 + Math.floor(Math.random() * 3); // 2-4
         
         for (let j = 0; j < bladesPerCluster; j++) {
           // Sprieten vanuit cluster punt, iets verspreid
@@ -971,16 +968,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       }
       
       // Extra anker punten tussen clusters voor volledige bodem vulling
-      const extraClusterCount = IS_CHROME ? Math.floor(width / 24) : Math.floor(width / 16);
+      const extraClusterCount = Math.floor(width / 16);
       for (let i = 0; i < extraClusterCount; i++) {
         // Plaats tussen bestaande clusters
         const extraX = (i / extraClusterCount) * width + (width / extraClusterCount) * 0.5;
         const clusterX = extraX + (Math.random() - 0.5) * 8;
         
         // Kleinere clusters voor tussenruimtes (1-3 sprieten)
-        const bladesPerCluster = IS_CHROME
-          ? (1 + Math.floor(Math.random() * 2)) // 1-2 (less dense)
-          : (1 + Math.floor(Math.random() * 3)); // 1-3
+        const bladesPerCluster = 1 + Math.floor(Math.random() * 3); // 1-3
         
         for (let j = 0; j < bladesPerCluster; j++) {
           const offsetX = (Math.random() - 0.5) * 4;
