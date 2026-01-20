@@ -42,8 +42,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     // Browser detection (used only for canvas safety fallbacks)
     const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
     const IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
-    // Treat Electron/Cursor as Chromium too
+    const IS_CURSOR = /Cursor|Electron/i.test(ua);
+    // Treat Electron/Cursor as Chromium too (broad)
     const IS_CHROMIUM = !IS_FIREFOX && /Chrome|Chromium|CriOS|Edg|OPR|Electron/i.test(ua);
+    // Only enable aggressive grass safe-mode for Cursor/Electron. Chrome should match Firefox visuals.
+    const IS_SAFE_GRASS = IS_CURSOR;
     let width, height;
     let animationId;
     let dpr = window.devicePixelRatio || 1;
@@ -695,8 +698,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         this.isThin = isThin;
         this.hasExtraBlade = Math.random() > 0.5; // 50% kans op extra zijtak (meer wild)
 
-        // Chromium/Cursor: reduce motion amplitude and speed to avoid shimmer/flicker during movement.
-        if (IS_CHROMIUM && !isThin) {
+        // Cursor/Electron: reduce motion amplitude and speed to avoid shimmer/flicker during movement.
+        if (IS_SAFE_GRASS && !isThin) {
           this.windSpeed = 0.12 + Math.random() * 0.08; // 0.12-0.20 (very gentle)
           this.swayAmount = 4 + Math.random() * 4; // 4-8px (small sway)
         }
@@ -730,8 +733,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
 
         const isThin = this.isThin || this.width < 5;
-        // Chromium/Cursor: quantize to 0.5px to avoid shimmer/flicker from sub-pixel rasterization.
-        const q = (v) => (IS_CHROMIUM ? Math.round(v * 2) / 2 : v);
+        // Cursor/Electron: quantize to 0.5px to avoid shimmer/flicker from sub-pixel rasterization.
+        const q = (v) => (IS_SAFE_GRASS ? Math.round(v * 2) / 2 : v);
 
         // Bereken wind beweging - alleen voor dikke sprieten
         let windX = 0;
@@ -746,9 +749,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
         const baseY = q(currentHeight || this.baseY || height);
         
-        // Chromium/Cursor SAFE MODE:
-        // Filled shapes with sharp tips can still shimmer in Chromium. Use a simple stroked curve.
-        if (IS_CHROMIUM) {
+        // Cursor SAFE MODE:
+        // Filled shapes with sharp tips can still shimmer in Cursor/Electron. Use a simple stroked curve.
+        if (IS_SAFE_GRASS) {
           // Colors (more opaque to reduce shimmer)
           ctx.strokeStyle = darkMode ? 'rgba(24, 48, 24, 0.95)' : 'rgba(70, 140, 70, 0.95)';
           const lineWidth = this.isThick ? this.width * 1.4 : this.width * 1.15;
@@ -1170,9 +1173,9 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       // - Do NOT render thin back-layer blades (they flicker/glitch across browsers)
       // - Render only the thicker blades on top (smooth + stable)
       {
-        // Firefox: no strip (prevents any visible green band).
-        // Chromium/Cursor: keep a strip to ensure "filled footer" even when thin blades are hidden.
-        if (IS_CHROMIUM) {
+        // Firefox/Chrome: no strip (keeps parity + avoids visible band).
+        // Cursor/Electron: keep a strip to ensure "filled footer" even when thin blades are hidden.
+        if (IS_SAFE_GRASS) {
           const grassBaseHeight = 34; // px (CSS pixels)
           const topAlpha = 0.65;
           const bottomAlpha = 0.9;
