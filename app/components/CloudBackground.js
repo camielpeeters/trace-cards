@@ -562,7 +562,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       update() {
         if (!width) return;
         this.x += this.speed;
-        if (this.x > width + 600) {
+        // Reset when cloud goes off screen (ensures clouds come back)
+        if (this.x > width + 200) { // Smaller buffer for smaller clouds
           this.reset(false);
         }
       }
