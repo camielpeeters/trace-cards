@@ -510,45 +510,174 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.scale(this.scale, this.scale);
         
         if (effectiveMobile) {
-          // MOBILE: Realistic clouds WITHOUT blur - uses gradients and layered opacity
-          // Best practice: Multiple semi-transparent layers with radial gradients for soft edges
+          // MOBILE: Simulate desktop blur effect using software Gaussian blur
+          // Technique: Multi-pass blur with downscale/upscale for authentic blur effect
           
-          // Apply brightness adjustment for dark mode
+          const baseBlur = darkMode ? 22 : 27; // Same blur as desktop
           const baseAlpha = darkMode ? opacity * 0.8 : opacity;
           
-          // Draw each blob with individual opacity and gradient for realistic soft edges
+          // Use off-screen canvas for blur simulation
+          if (offScreenCanvas && offScreenCtx) {
+            // Calculate cloud bounds
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            this.blobs.forEach(blob => {
+              const blobX = blob.x - blob.width / 2;
+              const blobY = blob.y - blob.height / 2;
+              const padding = baseBlur * 3;
+              minX = Math.min(minX, blobX - padding);
+              maxX = Math.max(maxX, blobX + blob.width + padding);
+              minY = Math.min(minY, blobY - padding);
+              maxY = Math.max(maxY, blobY + blob.height + padding);
+            });
+            
+            const cloudWidth = (maxX - minX) + baseBlur * 6;
+            const cloudHeight = (maxY - minY) + baseBlur * 6;
+            
+            // Downscale for blur effect (0.5x), then upscale (2x) = blur
+            const blurScale = 0.5;
+            offScreenCanvas.width = cloudWidth * dpr * blurScale;
+            offScreenCanvas.height = cloudHeight * dpr * blurScale;
+            offScreenCtx.setTransform(dpr * blurScale, 0, 0, dpr * blurScale, 0, 0);
+            
+            offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
+            offScreenCtx.globalAlpha = baseAlpha;
+            
+            if (darkMode) {
+              offScreenCtx.fillStyle = `rgba(200, 210, 220, 1)`;
+            } else {
+              offScreenCtx.fillStyle = `rgba(255, 255, 255, 1)`;
+            }
+            
+            offScreenCtx.translate(-minX + baseBlur * 3, -minY + baseBlur * 3);
+            offScreenCtx.scale(this.scale, this.scale);
+            
+            // Multi-pass Gaussian blur simulation (8 passes with circular offsets)
+            this.blobs.forEach(blob => {
+              const blurRadius = baseBlur * blurScale;
+              const blurPasses = 12; // More passes = better blur
+              
+              for (let pass = 0; pass < blurPasses; pass++) {
+                offScreenCtx.save();
+                const offset = (blurRadius / blurPasses) * pass;
+                const passOpacity = (1 / blurPasses) * (1 - pass / blurPasses * 0.4);
+                const angle = (pass / blurPasses) * Math.PI * 2;
+                const offsetX = Math.cos(angle) * offset;
+                const offsetY = Math.sin(angle) * offset;
+                
+                offScreenCtx.globalAlpha = baseAlpha * passOpacity;
+                offScreenCtx.translate(blob.x + offsetX, blob.y + offsetY);
+                offScreenCtx.rotate(blob.rotation);
+                
+                offScreenCtx.beginPath();
+                const radiusX = blob.width / 2;
+                const radiusY = blob.height / 2;
+                offScreenCtx.moveTo(0, -radiusY);
+                offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+                offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+                offScreenCtx.closePath();
+                offScreenCtx.fill();
+                
+                offScreenCtx.restore();
+              }
+            });
+            
+            // Draw solid center layer
+            offScreenCtx.globalAlpha = baseAlpha * 0.75;
+            this.blobs.forEach(blob => {
+              offScreenCtx.save();
+              offScreenCtx.translate(blob.x, blob.y);
+              offScreenCtx.rotate(blob.rotation);
+              
+              offScreenCtx.beginPath();
+              const radiusX = blob.width / 2;
+              const radiusY = blob.height / 2;
+              offScreenCtx.moveTo(0, -radiusY);
+              offScreenCtx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+              offScreenCtx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+              offScreenCtx.closePath();
+              offScreenCtx.fill();
+              
+              offScreenCtx.restore();
+            });
+            
+            // Draw to main canvas with upscaling (creates additional blur)
+            ctx.restore();
+            ctx.save();
+            ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            const drawWidth = cloudWidth * this.scale;
+            const drawHeight = cloudHeight * this.scale;
+            ctx.drawImage(
+              offScreenCanvas,
+              this.x + minX - baseBlur * 3,
+              this.y + minY - baseBlur * 3,
+              drawWidth,
+              drawHeight
+            );
+            
+            ctx.restore();
+            return;
+          }
+          
+          // Fallback: Direct multi-pass blur (if off-screen canvas fails)
+          const blurPasses = 12;
+          const blurRadius = baseBlur * 0.6;
+          
+          for (let pass = 0; pass < blurPasses; pass++) {
+            ctx.save();
+            const offset = (blurRadius / blurPasses) * pass;
+            const passOpacity = (1 / blurPasses) * (1 - pass / blurPasses * 0.5);
+            const angle = (pass / blurPasses) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * offset;
+            const offsetY = Math.sin(angle) * offset;
+            
+            ctx.globalAlpha = baseAlpha * passOpacity;
+            ctx.translate(offsetX, offsetY);
+            
+            if (darkMode) {
+              ctx.fillStyle = `rgba(200, 210, 220, 1)`;
+            } else {
+              ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+            }
+            
+            this.blobs.forEach(blob => {
+              ctx.save();
+              ctx.translate(blob.x, blob.y);
+              ctx.rotate(blob.rotation);
+              
+              ctx.beginPath();
+              const radiusX = blob.width / 2;
+              const radiusY = blob.height / 2;
+              ctx.moveTo(0, -radiusY);
+              ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
+              ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
+              ctx.closePath();
+              ctx.fill();
+              
+              ctx.restore();
+            });
+            
+            ctx.restore();
+          }
+          
+          // Draw main cloud
+          ctx.globalAlpha = baseAlpha * 0.85;
+          if (darkMode) {
+            ctx.fillStyle = `rgba(200, 210, 220, 1)`;
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+          }
+          
           this.blobs.forEach(blob => {
             ctx.save();
             ctx.translate(blob.x, blob.y);
             ctx.rotate(blob.rotation);
             
+            ctx.beginPath();
             const radiusX = blob.width / 2;
             const radiusY = blob.height / 2;
-            const blobOpacity = (blob.opacity || 1.0) * baseAlpha;
-            
-            // Create radial gradient for soft, realistic cloud edges (no blur needed)
-            const gradient = ctx.createRadialGradient(
-              0, 0, 0,  // Center
-              0, 0, Math.max(radiusX, radiusY) * 1.2  // Outer radius (larger for softer edge)
-            );
-            
-            // Color based on dark mode
-            if (darkMode) {
-              gradient.addColorStop(0, `rgba(200, 210, 220, ${blobOpacity})`);
-              gradient.addColorStop(0.5, `rgba(200, 210, 220, ${blobOpacity * 0.8})`);
-              gradient.addColorStop(0.8, `rgba(200, 210, 220, ${blobOpacity * 0.4})`);
-              gradient.addColorStop(1, `rgba(200, 210, 220, 0)`);
-            } else {
-              gradient.addColorStop(0, `rgba(255, 255, 255, ${blobOpacity})`);
-              gradient.addColorStop(0.5, `rgba(255, 255, 255, ${blobOpacity * 0.8})`);
-              gradient.addColorStop(0.8, `rgba(255, 255, 255, ${blobOpacity * 0.4})`);
-              gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
-            }
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            
-            // Draw ellipse with bezier curves (Safari compatible)
             ctx.moveTo(0, -radiusY);
             ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
             ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
