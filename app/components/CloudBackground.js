@@ -546,8 +546,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         const opacity = this.getOpacity(darkMode);
         const baseBlur = darkMode ? 22 : 27; // Same blur values as desktop for consistency
         
-        // Use off-screen canvas for mobile if available (better blur support)
-        if (offScreenCanvas && offScreenCtx) {
+        // Debug: Log mobile cloud rendering
+        if (this.blobs.length === 0) {
+          console.warn('⚠️ MobileCloud: No blobs to draw');
+          return;
+        }
+        
+        // Try off-screen canvas first, fallback to direct rendering if it fails
+        // Direct rendering works better on mobile Safari/Firefox sometimes
+        if (offScreenCanvas && offScreenCtx && offScreenCanvas.width > 0 && offScreenCanvas.height > 0) {
           // Calculate cloud bounds (same technique as desktop would use)
           let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
           this.blobs.forEach(blob => {
@@ -615,20 +622,27 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           return;
         }
         
-        // Fallback: direct rendering (same technique as desktop)
+        // Fallback: direct rendering (same technique as desktop) - PRIMARY for mobile
+        // This works better on mobile Safari and Firefox
         ctx.save();
+        
+        // Scale context voor hoge resolutie (same as desktop)
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
+        
+        // Apply blur filter (same as desktop)
         ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
+        
         ctx.translate(this.x, this.y);
         ctx.scale(this.scale, this.scale);
         
+        // Use opacity in fillStyle (same as desktop)
         if (darkMode) {
           ctx.fillStyle = `rgba(200, 210, 220, ${opacity})`;
         } else {
           ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
         }
 
-        // Same bezier curve drawing as desktop
+        // Same bezier curve drawing as desktop (perfect technique)
         this.blobs.forEach(blob => {
           ctx.save();
           ctx.translate(blob.x, blob.y);
@@ -638,6 +652,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           const radiusX = blob.width / 2;
           const radiusY = blob.height / 2;
           
+          // Same bezier curve technique as desktop
           ctx.moveTo(0, -radiusY);
           ctx.bezierCurveTo(radiusX, -radiusY, radiusX, radiusY, 0, radiusY);
           ctx.bezierCurveTo(-radiusX, radiusY, -radiusX, -radiusY, 0, -radiusY);
