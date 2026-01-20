@@ -752,11 +752,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.lineJoin = 'round';
         
         // Teken gras spriet als gebogen lijn (wind effect)
-        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering
-        const controlX = Math.floor(baseX + windX * 0.5);
-        const controlY = Math.floor(baseY - this.height * 0.4);
-        const endX = Math.floor(baseX + windX);
-        const endY = Math.floor(baseY - this.height);
+        // Performance fix: gebruik Math.round voor vloeiendere animatie
+        const controlX = Math.round((baseX + windX * 0.5) * 10) / 10;
+        const controlY = Math.round((baseY - this.height * 0.4) * 10) / 10;
+        const endX = Math.round((baseX + windX) * 10) / 10;
+        const endY = Math.round((baseY - this.height) * 10) / 10;
         
         // Teken spriet met ECHTE puntige top (scherpe driehoekige punt)
         const tipX = endX;
@@ -1118,8 +1118,11 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
-      // Teken ALLE sprieten (geen skip meer)
-      grassRef.current.forEach((blade) => {
+      // Chrome fix: Skip dunne achterste laag sprieten (width < 6) voor betere performance
+      // Dit voorkomt hakkelige beweging en lage frame rate
+      const visibleBlades = grassRef.current.filter(blade => blade.width >= 6);
+      
+      visibleBlades.forEach((blade) => {
         blade.update(animationTimeRef.current);
         // Geef altijd actuele height mee voor footer positie (consistent bij zoom/uitzoom)
         blade.draw(ctx, darkModeRef.current, dpr, resolutionScale, height);
