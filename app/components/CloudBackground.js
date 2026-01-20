@@ -722,18 +722,16 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         ctx.save();
         ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
         
-        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering (voorkomt sub-pixel flickering)
+        // Performance fix: gebruik directe berekening zonder Math.floor/round voor vloeiendere animatie
         // Bereken wind beweging voor ALLE sprieten (consistent)
-        const windX = Math.floor(Math.sin(this.windPhase) * this.swayAmount);
+        const windX = Math.sin(this.windPhase) * this.swayAmount;
         
         // Gebruik cluster positie als basis (als beschikbaar) voor gedeelde beweging
         const baseXPos = this.clusterX !== undefined ? this.clusterX : this.x;
-        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering (voorkomt sub-pixel flickering)
-        const baseX = Math.floor(baseXPos + (this.clusterOffset || 0));
+        const baseX = baseXPos + (this.clusterOffset || 0);
         
         // Gebruik altijd actuele height voor footer positie (geen opgeslagen baseY)
-        // Chrome fix: gebruik Math.floor voor pixel-perfect rendering (voorkomt sub-pixel flickering)
-        const baseY = Math.floor(currentHeight || this.baseY || height);
+        const baseY = currentHeight || this.baseY || height;
         
         // Kleur afhankelijk van dark mode
         if (darkMode) {
@@ -800,14 +798,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           ctx.globalAlpha = darkMode ? 0.4 : 0.5;
           const sideBladeHeight = this.height * (0.4 + Math.random() * 0.3);
           const sideBladeX = baseX + (Math.random() > 0.5 ? 3 : -3);
-          // Chrome fix: gebruik Math.floor voor pixel-perfect rendering
-          const sideWindX = Math.floor(Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6));
+          // Performance fix: gebruik directe berekening voor vloeiendere animatie
+          const sideWindX = Math.sin(this.windPhase * 1.2) * (this.swayAmount * 0.6);
           
-          // Chrome fix: gebruik Math.floor voor pixel-perfect rendering
-          const sideControlX = Math.floor(sideBladeX + sideWindX * 0.4);
-          const sideControlY = Math.floor(baseY - sideBladeHeight * 0.4);
-          const sideEndX = Math.floor(sideBladeX + sideWindX * 0.7);
-          const sideEndY = Math.floor(baseY - sideBladeHeight);
+          // Performance fix: gebruik directe berekening voor vloeiendere animatie
+          const sideControlX = sideBladeX + sideWindX * 0.4;
+          const sideControlY = baseY - sideBladeHeight * 0.4;
+          const sideEndX = sideBladeX + sideWindX * 0.7;
+          const sideEndY = baseY - sideBladeHeight;
           
           // Zijtak met echte puntige top
           const sideTipSharpness = lineWidth * 0.15;
