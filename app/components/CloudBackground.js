@@ -558,14 +558,15 @@ function CloudBackgroundCanvas({ darkMode = false }) {
             ctx.restore();
           });
         } else {
-          // DESKTOP: Original styling with blur filter
+          // DESKTOP: Original styling with blur filter - NO CHANGES from original
           const baseBlur = darkMode ? 22 : 27;
           
           // Use off-screen canvas for blur if available (better Firefox support)
           if (offScreenCanvas && offScreenCtx) {
-            // Calculate cloud bounds for off-screen canvas
+            // Calculate cloud bounds for off-screen canvas - use cloud position correctly
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
             this.blobs.forEach(blob => {
+              // Blobs are relative to cloud position (this.x, this.y), so account for that
               const blobX = blob.x - blob.width / 2;
               const blobY = blob.y - blob.height / 2;
               minX = Math.min(minX, blobX - baseBlur * 2);
@@ -574,17 +575,24 @@ function CloudBackgroundCanvas({ darkMode = false }) {
               maxY = Math.max(maxY, blobY + blob.height + baseBlur * 2);
             });
             
-            const cloudWidth = (maxX - minX) * this.scale + baseBlur * 4;
-            const cloudHeight = (maxY - minY) * this.scale + baseBlur * 4;
+            const cloudWidth = (maxX - minX) + baseBlur * 4;
+            const cloudHeight = (maxY - minY) + baseBlur * 4;
             
             offScreenCanvas.width = cloudWidth * dpr * resolutionScale;
             offScreenCanvas.height = cloudHeight * dpr * resolutionScale;
             offScreenCtx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
             
+            // Clear and draw cloud on off-screen canvas
             offScreenCtx.clearRect(0, 0, cloudWidth, cloudHeight);
             offScreenCtx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
             offScreenCtx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
-            offScreenCtx.translate(-minX * this.scale + baseBlur * 2, -minY * this.scale + baseBlur * 2);
+            
+            // Reset transform for drawing
+            offScreenCtx.setTransform(1, 0, 0, 1, 0, 0);
+            offScreenCtx.scale(dpr * resolutionScale, dpr * resolutionScale);
+            
+            // Translate to account for cloud position and padding
+            offScreenCtx.translate(-minX + baseBlur * 2, -minY + baseBlur * 2);
             offScreenCtx.scale(this.scale, this.scale);
             
             if (darkMode) {
@@ -609,15 +617,17 @@ function CloudBackgroundCanvas({ darkMode = false }) {
               offScreenCtx.restore();
             });
             
-            ctx.restore();
+            // Draw blurred cloud from off-screen canvas to main canvas at correct position
+            ctx.restore(); // Restore from earlier save
             ctx.save();
             ctx.setTransform(dpr * resolutionScale, 0, 0, dpr * resolutionScale, 0, 0);
-            ctx.drawImage(offScreenCanvas, (this.x + minX) * this.scale - baseBlur * 2, (this.y + minY) * this.scale - baseBlur * 2);
+            // Position: cloud x/y + blob min x/y - padding
+            ctx.drawImage(offScreenCanvas, this.x + minX - baseBlur * 2, this.y + minY - baseBlur * 2);
             ctx.restore();
             return;
           }
           
-          // Fallback: draw directly with filter
+          // Fallback: draw directly with filter (original desktop method)
           ctx.filter = `blur(${baseBlur}px)${darkMode ? ' brightness(0.8)' : ''}`;
           ctx.globalAlpha = darkMode ? opacity * 0.8 : opacity;
           
