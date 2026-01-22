@@ -229,13 +229,16 @@ export default function PublicUserPage() {
           const purchaseData = await purchaseResponse.json();
           console.log('📦 Public purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
           console.log('📦 First card sample:', purchaseData.cards?.[0]);
-          setUser(purchaseData.user);
+          setUser(purchaseData.user || null);
           setPurchaseCards(purchaseData.cards || []);
         } else if (purchaseResponse && !purchaseResponse.ok) {
-          // User might not exist
+          // User might not exist - set user to null to show error message
           console.error('❌ Failed to load purchase cards:', purchaseResponse.status, purchaseResponse.statusText);
+          setUser(null);
         } else if (!purchaseResponse) {
-          console.error('❌ No purchase cards response received');
+          // Timeout or network error - still set empty arrays to stop loading
+          console.error('❌ No purchase cards response received (timeout or network error)');
+          setPurchaseCards([]);
         }
         
         // Handle shop cards response
@@ -245,6 +248,11 @@ export default function PublicUserPage() {
           setShopCards(shopData.cards || []);
         } else if (shopResponse && !shopResponse.ok) {
           console.error('❌ Failed to load shop cards:', shopResponse.status, shopResponse.statusText);
+          setShopCards([]);
+        } else if (!shopResponse) {
+          // Timeout or network error
+          console.error('❌ No shop cards response received (timeout or network error)');
+          setShopCards([]);
         }
       }
     } catch (error) {
