@@ -2310,7 +2310,7 @@ export default function PublicUserPage() {
                     })()}
                   </div>
                 ) : (
-                          <div className="card-select-container space-y-3">
+                  <div className="card-select-container space-y-2 sm:space-y-3">
                     {getSetModalCards().map((card, idx) => {
                       const selected = isCardSelected(card);
                       const cardKey = `${card.setId}-${card.cardId}`;
@@ -2330,84 +2330,96 @@ export default function PublicUserPage() {
                       return (
                         <div
                           key={cardKey}
-                          className={`bg-white dark:bg-gray-800 rounded-xl p-3 border-0 shadow-sm transition-all flex items-center gap-3 ${
+                          className={`bg-white dark:bg-gray-800 rounded-xl p-2 sm:p-3 border-0 shadow-sm transition-all ${
                             selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                           }`}
                         >
-                          <button
-                            onMouseDown={(e) => {
-                              if (e.shiftKey) e.preventDefault();
-                            }}
-                            onClick={(e) => {
-                              const modalCards = getSetModalCards();
-                              handleCardSelectClick({
-                                card,
-                                idx,
-                                cards: modalCards,
-                                activeVariant,
-                                event: e
-                              });
-                            }}
-                            className="flex-shrink-0 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-red-500 transition-colors"
-                          >
-                            {selected && <Check className="w-4 h-4 text-red-500" />}
-                          </button>
-                          <span className="font-bold text-gray-800 dark:text-white flex-shrink-0">
-                            {idx + 1}.
-                          </span>
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <p className="font-bold text-sm text-gray-800 dark:text-white truncate">
-                              #{card.cardNumber} {card.cardName}
-                            </p>
-                            {variantData && (
-                              <span className="text-xs flex-shrink-0">
-                                {activeVariant === 'holofoil' ? <HoloIcon className="w-4 h-4" /> : activeVariant === 'reverseHolo' ? <ReverseHoloIcon className="w-4 h-4" /> : <NonHoloIcon className="w-4 h-4" />}
+                          {/* Mobile: Stack layout, Desktop: Horizontal */}
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            {/* Checkbox + Number + Card Name Row */}
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                              <button
+                                onMouseDown={(e) => {
+                                  if (e.shiftKey) e.preventDefault();
+                                }}
+                                onClick={(e) => {
+                                  const modalCards = getSetModalCards();
+                                  handleCardSelectClick({
+                                    card,
+                                    idx,
+                                    cards: modalCards,
+                                    activeVariant,
+                                    event: e
+                                  });
+                                }}
+                                className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-red-500 transition-colors"
+                              >
+                                {selected && <Check className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />}
+                              </button>
+                              <span className="font-bold text-xs sm:text-sm text-gray-800 dark:text-white flex-shrink-0">
+                                {idx + 1}.
                               </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* User Price (if available) */}
-                            {userPrice > 0 ? (
-                              <>
-                                <span className="font-black text-sm text-red-600 dark:text-red-400 whitespace-nowrap">
-                                  €{formatPrice(userPrice)}
-                                </span>
-                                {tcgMainPrice && (
-                                  <span className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                    (TCG: €{formatPrice(tcgMainPrice)})
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                                <p className="font-bold text-xs sm:text-sm text-gray-800 dark:text-white truncate">
+                                  #{card.cardNumber} {card.cardName}
+                                </p>
+                                {variantData && (
+                                  <span className="text-xs flex-shrink-0">
+                                    {activeVariant === 'holofoil' ? <HoloIcon className="w-3 h-3 sm:w-4 sm:h-4" /> : activeVariant === 'reverseHolo' ? <ReverseHoloIcon className="w-3 h-3 sm:w-4 sm:h-4" /> : <NonHoloIcon className="w-3 h-3 sm:w-4 sm:h-4" />}
                                   </span>
                                 )}
-                              </>
-                            ) : variantData ? (
-                              (() => {
-                                const mainPrice = variantData.market || variantData.mid || variantData.low;
-                                if (!mainPrice) {
-                                  return <span className="text-xs text-gray-500 dark:text-gray-400">Geen prijsdata</span>;
-                                }
-                                
-                                return (
-                                  <>
-                                    <span className="font-bold text-red-600 dark:text-red-400 text-sm whitespace-nowrap">€{formatPrice(mainPrice)}</span>
-                                    {(variantData.low || variantData.mid) && (
-                                      <span className="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">
-                                        ({variantData.low && `low €${formatPrice(variantData.low)}`}
-                                        {variantData.low && variantData.mid && ' · '}
-                                        {variantData.mid && `mid €${formatPrice(variantData.mid)}`})
-                                      </span>
-                                    )}
-                                    <span className="text-gray-400 dark:text-gray-500 text-[10px] whitespace-nowrap">TCGplayer</span>
-                                  </>
-                                );
-                              })()
-                            ) : (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">Geen prijsdata</span>
+                              </div>
+                            </div>
+                            
+                            {/* Pricing Row - Mobile: Full width, Desktop: Auto */}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 sm:flex-shrink-0">
+                              {/* User Price (if available) */}
+                              {userPrice > 0 ? (
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                                  <span className="font-black text-sm sm:text-base text-red-600 dark:text-red-400">
+                                    €{formatPrice(userPrice)}
+                                  </span>
+                                  {tcgMainPrice && (
+                                    <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                                      (TCG: €{formatPrice(tcgMainPrice)})
+                                    </span>
+                                  )}
+                                </div>
+                              ) : variantData ? (
+                                (() => {
+                                  const mainPrice = variantData.market || variantData.mid || variantData.low;
+                                  if (!mainPrice) {
+                                    return <span className="text-xs text-gray-500 dark:text-gray-400">Geen prijsdata</span>;
+                                  }
+                                  
+                                  return (
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
+                                      <span className="font-bold text-sm sm:text-base text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
+                                      <div className="flex flex-wrap items-center gap-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                                        {(variantData.low || variantData.mid) && (
+                                          <span>
+                                            {variantData.low && `low €${formatPrice(variantData.low)}`}
+                                            {variantData.low && variantData.mid && ' · '}
+                                            {variantData.mid && `mid €${formatPrice(variantData.mid)}`}
+                                          </span>
+                                        )}
+                                        <span className="text-gray-400 dark:text-gray-500">TCGplayer</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Geen prijsdata</span>
+                              )}
+                            </div>
+                            
+                            {/* Heart Icon */}
+                            {selected && (
+                              <div className="flex-shrink-0 sm:ml-2">
+                                <Heart className="w-4 h-4 text-red-600 fill-current" />
+                              </div>
                             )}
                           </div>
-                          {selected && (
-                            <div className="flex-shrink-0">
-                              <Heart className="w-4 h-4 text-red-600 fill-current" />
-                            </div>
-                          )}
                         </div>
                       );
                     })}
