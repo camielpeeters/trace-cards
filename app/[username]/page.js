@@ -2272,7 +2272,7 @@ export default function PublicUserPage() {
                                 draggable={false}
                               />
                             </button>
-                            <div className="p-2">
+                            <div className="p-2 bg-white dark:bg-gray-800">
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
                                 <p className="font-bold text-xs text-gray-800 dark:text-white truncate flex-1">
