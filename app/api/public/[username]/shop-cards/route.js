@@ -42,131 +42,78 @@ export async function GET(request, { params }) {
       ]
     });
     
-    // Fetch pricing data for each card with smart fallback
+    // Fetch pricing data directly from Pokémon TCG API (with timeout protection)
     const cardsWithPricing = await Promise.all(
       shopCards.map(async (card) => {
         let tcgplayer = null;
-        let cardRecord = null;
+        
+        if (!pokemonApiKey) {
+          console.log(`⚠️ No API key configured`);
+          return {
+            ...card,
+            images: JSON.parse(card.images),
+            tcgplayer: null
+          };
+        }
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
         
         try {
-          // Try DB first
-          cardRecord = await prisma.card.findFirst({
-            where: {
-              OR: [
-                { pokemonTcgId: card.cardId },
-                { 
-                  name: card.cardName,
-                  setName: card.setName
-                }
-              ]
-            },
-            include: {
-              pricing: true
-            }
-          });
           
-          // Build pricing from DB if available
-          if (cardRecord?.pricing?.tcgplayerPriceUSD) {
-            const pricing = cardRecord.pricing;
-            const exchangeRate = pricing.usdToEurRate || 0.92;
-            
-            const convertToEUR = (usdPrice) => {
-              return usdPrice ? usdPrice * exchangeRate : null;
-            };
-            
-            const holofoilUSD = pricing.tcgplayerPriceUSD;
-            
-            tcgplayer = {
-              url: pricing.tcgplayerUrl || null,
-              prices: {
-                holofoil: {
-                  market: convertToEUR(holofoilUSD),
-                  mid: convertToEUR(holofoilUSD),
-                  low: convertToEUR(holofoilUSD * 0.9),
-                  high: convertToEUR(holofoilUSD * 1.1)
-                }
-              },
-              eurPrice: holofoilUSD * exchangeRate,
-              lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
-            };
-          } else if (pokemonApiKey) {
-            // Fallback to API only if DB has no data AND API key is configured
-            console.log(`⚠️ No DB pricing for ${card.cardName}, trying API...`);
-            
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-            
-            try {
-              const apiResponse = await fetch(
-                `https://api.pokemontcg.io/v2/cards/${card.cardId}`,
-                {
-                  headers: { 'X-Api-Key': pokemonApiKey },
-                  signal: controller.signal
-                }
-              );
-              clearTimeout(timeoutId);
-              
-              if (apiResponse.ok) {
-                const apiData = await apiResponse.json();
-                const apiCard = apiData.data;
-                
-                if (apiCard?.tcgplayer?.prices) {
-                  const exchangeRate = 0.92; // Default rate
-                  
-                  const convertToEUR = (usdPrice) => {
-                    return usdPrice ? usdPrice * exchangeRate : null;
-                  };
-                  
-                  const convertedPrices = {};
-                  Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
-                    const variant = apiCard.tcgplayer.prices[variantKey];
-                    if (variant) {
-                      convertedPrices[variantKey] = {
-                        market: convertToEUR(variant.market),
-                        mid: convertToEUR(variant.mid),
-                        low: convertToEUR(variant.low),
-                        high: convertToEUR(variant.high)
-                      };
-                    }
-                  });
-                  
-                  tcgplayer = {
-                    url: apiCard.tcgplayer.url || null,
-                    prices: convertedPrices,
-                    lastUpdated: new Date().toISOString()
-                  };
-                  
-                  console.log(`✅ API pricing for ${card.cardName}`);
-                }
-              }
-            } catch (apiError) {
-              clearTimeout(timeoutId);
-              if (apiError.name === 'AbortError') {
-                console.log(`⏱️ API timeout for ${card.cardName}`);
-              } else {
-                console.log(`❌ API error for ${card.cardName}:`, apiError.message);
-              }
+          const apiResponse = await fetch(
+            `https://api.pokemontcg.io/v2/cards/${card.cardId}`,
+            {
+              headers: { 'X-Api-Key': pokemonApiKey },
+              signal: controller.signal
             }
-          } else {
-            console.log(`⚠️ No pricing data for ${card.cardName} (DB empty, no API key)`);
+          );
+          clearTimeout(timeoutId);
+          
+          if (apiResponse.ok) {
+            const apiData = await apiResponse.json();
+            const apiCard = apiData.data;
+            
+            if (apiCard?.tcgplayer?.prices) {
+              const exchangeRate = 0.92; // USD to EUR
+              
+              const convertToEUR = (usdPrice) => {
+                return usdPrice ? usdPrice * exchangeRate : null;
+              };
+              
+              const convertedPrices = {};
+              Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
+                const variant = apiCard.tcgplayer.prices[variantKey];
+                if (variant) {
+                  convertedPrices[variantKey] = {
+                    market: convertToEUR(variant.market),
+                    mid: convertToEUR(variant.mid),
+                    low: convertToEUR(variant.low),
+                    high: convertToEUR(variant.high)
+                  };
+                }
+              });
+              
+              tcgplayer = {
+                url: apiCard.tcgplayer.url || null,
+                prices: convertedPrices,
+                lastUpdated: new Date().toISOString()
+              };
+            }
           }
         } catch (error) {
-          console.error(`Error fetching pricing for ${card.cardName}:`, error);
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            console.log(`⏱️ Timeout fetching ${card.cardName}`);
+          } else {
+            console.error(`Error fetching ${card.cardName}:`, error.message);
+          }
         }
         
         return {
           ...card,
           images: JSON.parse(card.images),
-          tcgplayer: tcgplayer,
-          // Include pricing info for display
-          pricing: cardRecord?.pricing ? {
-            tcgplayerPriceUSD: cardRecord.pricing.tcgplayerPriceUSD,
-            tcgplayerUrl: cardRecord.pricing.tcgplayerUrl,
-            customPriceEUR: cardRecord.pricing.customPriceEUR,
-            useCustomPrice: cardRecord.pricing.useCustomPrice,
-            cardmarketUrl: cardRecord.pricing.cardmarketUrl,
-            usdToEurRate: cardRecord.pricing.usdToEurRate
-          } : null
+          tcgplayer: tcgplayer
         };
       })
     );
