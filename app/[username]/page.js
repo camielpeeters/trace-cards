@@ -160,8 +160,9 @@ export default function PublicUserPage() {
   const loadUserData = async () => {
     try {
       // Only show loading on initial load, not on tab switches
-      const isInitialLoad = purchaseCards.length === 0 && shopCards.length === 0;
-      if (isInitialLoad) {
+      // Check if we already have data loaded to avoid showing spinner on tab switch
+      const hasData = purchaseCards.length > 0 || shopCards.length > 0;
+      if (!hasData) {
         setLoading(true);
       }
       
