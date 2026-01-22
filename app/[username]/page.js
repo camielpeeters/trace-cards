@@ -82,12 +82,13 @@ export default function PublicUserPage() {
   }, [username]); // Only run on username change
   
   // Load user data - wait for auth to load, then decide own vs public
+  // NOTE: activeTab removed from dependencies - data is already loaded for both tabs, no need to reload on tab switch
   useEffect(() => {
     // Wait for auth to finish loading before deciding
     if (!authLoading) {
       loadUserData();
     }
-  }, [username, activeTab, pathname, authenticated, authUser, authLoading]); // Reload when any of these change
+  }, [username, pathname, authenticated, authUser, authLoading]); // Reload when username/auth changes, NOT on tab switch
 
   // Load set information from cache (for both purchase and shop cards)
   useEffect(() => {
@@ -2395,16 +2396,12 @@ export default function PublicUserPage() {
                                   return (
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
                                       <span className="font-bold text-sm sm:text-base text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
-                                      <div className="flex flex-wrap items-center gap-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                                        {(variantData.low || variantData.mid) && (
-                                          <span>
-                                            {variantData.low && `low €${formatPrice(variantData.low)}`}
-                                            {variantData.low && variantData.mid && ' · '}
-                                            {variantData.mid && `mid €${formatPrice(variantData.mid)}`}
-                                          </span>
-                                        )}
-                                        <span className="text-gray-400 dark:text-gray-500">TCGplayer</span>
-                                      </div>
+                                      {variantData.mid && (
+                                        <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                                          (mid €{formatPrice(variantData.mid)})
+                                        </span>
+                                      )}
+                                      <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">TCGplayer</span>
                                     </div>
                                   );
                                 })()
