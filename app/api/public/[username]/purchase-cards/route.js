@@ -43,10 +43,11 @@ export async function GET(request, { params }) {
     const cardsWithPricing = await Promise.all(
       purchaseCards.map(async (card) => {
         let tcgplayer = null;
+        let cardRecord = null;
         
         try {
           // Only use DB pricing - NO external API calls
-          const cardRecord = await prisma.card.findFirst({
+          cardRecord = await prisma.card.findFirst({
             where: {
               OR: [
                 { pokemonTcgId: card.cardId },
@@ -91,7 +92,7 @@ export async function GET(request, { params }) {
         }
         
         return {
-      ...card,
+          ...card,
           images: JSON.parse(card.images),
           tcgplayer: tcgplayer,
           // Include pricing info for display

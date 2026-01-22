@@ -207,16 +207,26 @@ export default function PublicUserPage() {
         // Public profile: Load cards from API (database)
         // Always load purchase cards, always load shop cards (we'll need them when switching tabs)
         // Add timeout to prevent infinite loading on slow connections
-        const fetchWithTimeout = (url, timeout = 15000) => {
-          return Promise.race([
-            fetch(url),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Request timeout')), timeout)
-            )
-          ]).catch(err => {
-            console.error(`Error fetching ${url}:`, err);
-            return null;
-          });
+        const fetchWithTimeout = async (url, timeout = 15000) => {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              console.error(`⏱️ Request timeout for ${url}`);
+            } else {
+              console.error(`❌ Error fetching ${url}:`, err);
+            }
+            // Return a fake 408 Response for timeout
+            return new Response(JSON.stringify({ error: 'Request timeout' }), {
+              status: 408,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
         };
         
         const [purchaseResponse, shopResponse] = await Promise.all([
@@ -225,33 +235,24 @@ export default function PublicUserPage() {
         ]);
         
         // Handle purchase cards response
-        if (purchaseResponse && purchaseResponse.ok) {
+        if (purchaseResponse.ok) {
           const purchaseData = await purchaseResponse.json();
           console.log('📦 Public purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
-          console.log('📦 First card sample:', purchaseData.cards?.[0]);
           setUser(purchaseData.user || null);
           setPurchaseCards(purchaseData.cards || []);
-        } else if (purchaseResponse && !purchaseResponse.ok) {
-          // User might not exist - set user to null to show error message
+        } else {
           console.error('❌ Failed to load purchase cards:', purchaseResponse.status, purchaseResponse.statusText);
           setUser(null);
-        } else if (!purchaseResponse) {
-          // Timeout or network error - still set empty arrays to stop loading
-          console.error('❌ No purchase cards response received (timeout or network error)');
           setPurchaseCards([]);
         }
         
         // Handle shop cards response
-        if (shopResponse && shopResponse.ok) {
+        if (shopResponse.ok) {
           const shopData = await shopResponse.json();
           console.log('📦 Public shop cards loaded:', shopData.cards?.length || 0, 'cards');
           setShopCards(shopData.cards || []);
-        } else if (shopResponse && !shopResponse.ok) {
+        } else {
           console.error('❌ Failed to load shop cards:', shopResponse.status, shopResponse.statusText);
-          setShopCards([]);
-        } else if (!shopResponse) {
-          // Timeout or network error
-          console.error('❌ No shop cards response received (timeout or network error)');
           setShopCards([]);
         }
       }
