@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone output voor optimale performance
-  output: 'standalone',
+  // Standalone output voor optimale performance (disabled for Vercel)
+  // output: 'standalone',
   
   // Image optimization
   images: {
