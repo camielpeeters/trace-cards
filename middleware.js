@@ -14,14 +14,16 @@ export function middleware(request) {
     }
   }
   
-  // Redirect /admin to /admin (which will be handled by [username] route)
-  // Actually, we want /admin to work as a username, so we don't need to redirect
-  // The [username] route should handle it
-  
-  // Redirect /admin/shop to /admin/shop (handled by [username]/shop)
+  // Redirect /admin to /account/admin (the actual admin page)
   if (pathname === '/admin' || pathname === '/admin/') {
-    // Let it pass through to [username] route
-    return NextResponse.next();
+    return NextResponse.redirect(new URL('/account/admin', request.url));
+  }
+  
+  // Redirect /admin/login to /admin/login (keep existing route)
+  // Redirect /admin/users to /admin/users (keep existing route)
+  // All other /admin/* paths should go to account/admin
+  if (pathname.startsWith('/admin/') && pathname !== '/admin/login' && pathname !== '/admin/users') {
+    return NextResponse.redirect(new URL('/account/admin', request.url));
   }
   
   return NextResponse.next();
