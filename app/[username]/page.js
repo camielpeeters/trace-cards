@@ -258,6 +258,8 @@ export default function PublicUserPage() {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Don't set user to null on error - let the API response handling do that
+      // This prevents errors from hiding legitimate user data
     } finally {
       // Always reset loading state, even if we didn't show it
       setLoading(false);
