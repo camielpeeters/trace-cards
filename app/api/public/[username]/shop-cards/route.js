@@ -42,8 +42,8 @@ export async function GET(request, { params }) {
       ]
     });
     
-    // Batch fetch pricing data (10 cards at a time for speed)
-    const BATCH_SIZE = 10;
+    // Batch fetch pricing data (20 cards at a time for speed)
+    const BATCH_SIZE = 20;
     const cardsWithPricing = [];
     
     for (let i = 0; i < shopCards.length; i += BATCH_SIZE) {
@@ -62,7 +62,7 @@ export async function GET(request, { params }) {
           }
           
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
           
           try {
             const apiResponse = await fetch(
