@@ -159,7 +159,11 @@ export default function PublicUserPage() {
 
   const loadUserData = async () => {
     try {
-      setLoading(true);
+      // Only show loading on initial load, not on tab switches
+      const isInitialLoad = purchaseCards.length === 0 && shopCards.length === 0;
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       
       // Check if viewing own profile - wait for authUser to load if authenticated
       // If not authenticated or authUser not loaded yet, assume public profile
@@ -2290,11 +2294,9 @@ export default function PublicUserPage() {
                                   return (
                                     <div className="flex items-center gap-1.5 flex-wrap text-xs leading-tight">
                                       <span className="font-bold text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
-                                      {(variantData.low || variantData.mid) && (
+                                      {variantData.mid && (
                                         <span className="text-gray-500 dark:text-gray-400 text-[10px]">
-                                          {variantData.low && `low €${formatPrice(variantData.low)}`}
-                                          {variantData.low && variantData.mid && ' · '}
-                                          {variantData.mid && `mid €${formatPrice(variantData.mid)}`}
+                                          (mid €{formatPrice(variantData.mid)})
                                         </span>
                                       )}
                                       <span className="text-gray-400 dark:text-gray-500 text-[10px] ml-auto">TCGplayer</span>
