@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { ShoppingCart, X, Heart, Sparkles, ArrowLeft, User, Shield, Menu, Copy, Check, List, Grid, ShoppingBag, Wallet, Sparkles as HoloIcon, RotateCcw as ReverseHoloIcon, Square as NonHoloIcon, Zap } from 'lucide-react';
 import Link from 'next/link';
@@ -138,7 +138,7 @@ export default function PublicUserPage() {
       const logoElements = document.querySelectorAll('.series-logo-intro');
       logoElements.forEach(logo => observer.unobserve(logo));
     };
-  }, [purchaseCards, shopCards, setInfoMap, activeTab]); // Re-run when cards, set info, or tab changes
+  }, [activeTab]); // Re-run only when tab changes (cards are memoized)
 
   const loadSetInfo = async () => {
     try {
@@ -368,8 +368,9 @@ export default function PublicUserPage() {
     return grouped;
   };
 
-  const purchaseCardsBySet = groupCardsBySet(purchaseCards);
-  const shopCardsBySet = groupCardsBySet(shopCards);
+  // Memoize grouped cards to avoid recalculation on every render
+  const purchaseCardsBySet = useMemo(() => groupCardsBySet(purchaseCards), [purchaseCards]);
+  const shopCardsBySet = useMemo(() => groupCardsBySet(shopCards), [shopCards]);
 
   const toggleCardSelection = (card) => {
     // Use cardId if provided (already formatted), otherwise construct it
