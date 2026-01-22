@@ -42,27 +42,32 @@ export async function GET(request, { params }) {
       ]
     });
     
-    // Batch fetch pricing data (20 cards at a time for speed)
+    // Batch fetch pricing data - process all batches in parallel for speed
     const BATCH_SIZE = 20;
-    const cardsWithPricing = [];
     
+    // Create batches
+    const batches = [];
     for (let i = 0; i < shopCards.length; i += BATCH_SIZE) {
-      const batch = shopCards.slice(i, i + BATCH_SIZE);
-      
-      const batchResults = await Promise.all(
-        batch.map(async (card) => {
-          let tcgplayer = null;
-          
-          if (!pokemonApiKey) {
-            return {
-              ...card,
-              images: JSON.parse(card.images),
-              tcgplayer: null
-            };
-          }
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+      batches.push(shopCards.slice(i, i + BATCH_SIZE));
+    }
+    
+    // Process all batches in parallel
+    const allBatchResults = await Promise.all(
+      batches.map(batch => 
+        Promise.all(
+          batch.map(async (card) => {
+            let tcgplayer = null;
+            
+            if (!pokemonApiKey) {
+              return {
+                ...card,
+                images: JSON.parse(card.images),
+                tcgplayer: null
+              };
+            }
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
           
           try {
             const apiResponse = await fetch(
@@ -112,16 +117,18 @@ export async function GET(request, { params }) {
             }
           }
           
-          return {
-            ...card,
-            images: JSON.parse(card.images),
-            tcgplayer: tcgplayer
-          };
-        })
-      );
-      
-      cardsWithPricing.push(...batchResults);
-    }
+            return {
+              ...card,
+              images: JSON.parse(card.images),
+              tcgplayer: tcgplayer
+            };
+          })
+        )
+      )
+    );
+    
+    // Flatten all batch results
+    const cardsWithPricing = allBatchResults.flat();
     
     console.log(`✅ Loaded ${cardsWithPricing.length} shop cards with pricing`);
     
