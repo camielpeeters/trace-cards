@@ -40,6 +40,18 @@ body {
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     border: 1px solid var(--glass-border);
     box-shadow: 0 8px 32px var(--glass-shadow);
+    /* Optimize for mobile scrolling performance */
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    /* Reduce blur on mobile for better performance */
+  }
+  
+  @media (max-width: 768px) {
+    .glass {
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+    }
   }
   
   .glass-strong {
@@ -48,6 +60,29 @@ body {
     -webkit-backdrop-filter: blur(50px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    /* Optimize for mobile scrolling performance */
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  @media (max-width: 768px) {
+    .glass-strong {
+      backdrop-filter: blur(25px) saturate(170%);
+      -webkit-backdrop-filter: blur(25px) saturate(170%);
+    }
+    
+    .card-glass-bg {
+      backdrop-filter: blur(5px) !important;
+      -webkit-backdrop-filter: blur(5px) !important;
+    }
+  }
+  
+  /* GPU acceleration for card containers to improve mobile scrolling */
+  .card-select-container > * {
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
   
   .dark .glass-strong {
