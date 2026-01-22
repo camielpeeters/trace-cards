@@ -2360,14 +2360,14 @@ export default function PublicUserPage() {
                       return (
                         <div
                           key={cardKey}
-                          className={`bg-white dark:bg-gray-800 rounded-xl p-2 sm:p-3 border-0 shadow-sm transition-all ${
+                          className={`bg-white dark:bg-gray-800 rounded-xl p-2 border-0 shadow-sm transition-all ${
                             selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                           }`}
                         >
-                          {/* Mobile: Stack layout, Desktop: Horizontal */}
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                            {/* Checkbox + Number + Card Name Row */}
-                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          {/* Single line layout - compact for mobile */}
+                          <div className="flex items-center gap-2">
+                            {/* Checkbox + Number */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
                               <button
                                 onMouseDown={(e) => {
                                   if (e.shiftKey) e.preventDefault();
@@ -2382,68 +2382,68 @@ export default function PublicUserPage() {
                                     event: e
                                   });
                                 }}
-                                className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-red-500 transition-colors"
+                                className="w-4 h-4 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-red-500 transition-colors flex-shrink-0"
                               >
-                                {selected && <Check className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />}
+                                {selected && <Check className="w-3 h-3 text-red-500" />}
                               </button>
-                              <span className="font-bold text-xs sm:text-sm text-gray-800 dark:text-white flex-shrink-0">
+                              <span className="font-bold text-xs text-gray-800 dark:text-white">
                                 {idx + 1}.
                               </span>
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                                <p className="font-bold text-xs sm:text-sm text-gray-800 dark:text-white truncate">
-                                  #{card.cardNumber} {card.cardName}
-                                </p>
-                                {variantData && (
-                                  <span className="text-xs flex-shrink-0">
-                                    {activeVariant === 'holofoil' ? <HoloIcon className="w-3 h-3 sm:w-4 sm:h-4" /> : activeVariant === 'reverseHolo' ? <ReverseHoloIcon className="w-3 h-3 sm:w-4 sm:h-4" /> : <NonHoloIcon className="w-3 h-3 sm:w-4 sm:h-4" />}
-                                  </span>
-                                )}
-                              </div>
                             </div>
                             
-                            {/* Pricing Row - Mobile: Full width, Desktop: Auto */}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 sm:flex-shrink-0">
-                              {/* User Price (if available) */}
+                            {/* Card Name + Icon - truncate on overflow */}
+                            <div className="flex items-center gap-1 flex-1 min-w-0">
+                              <p className="font-bold text-xs text-gray-800 dark:text-white truncate">
+                                #{card.cardNumber} {card.cardName}
+                              </p>
+                              {variantData && (
+                                <span className="flex-shrink-0">
+                                  {activeVariant === 'holofoil' ? <HoloIcon className="w-3 h-3" /> : activeVariant === 'reverseHolo' ? <ReverseHoloIcon className="w-3 h-3" /> : <NonHoloIcon className="w-3 h-3" />}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Pricing - Single line, compact */}
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               {userPrice > 0 ? (
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
-                                  <span className="font-black text-sm sm:text-base text-red-600 dark:text-red-400">
+                                <>
+                                  <span className="font-black text-xs text-red-600 dark:text-red-400">
                                     €{formatPrice(userPrice)}
                                   </span>
                                   {tcgMainPrice && (
-                                    <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                                      (TCG: €{formatPrice(tcgMainPrice)})
+                                    <span className="text-[9px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                      (€{formatPrice(tcgMainPrice)})
                                     </span>
                                   )}
-                                </div>
+                                  <span className="text-[9px] text-gray-400 dark:text-gray-500">TCG</span>
+                                </>
                               ) : variantData ? (
                                 (() => {
                                   const mainPrice = variantData.market || variantData.mid || variantData.low;
                                   if (!mainPrice) {
-                                    return <span className="text-xs text-gray-500 dark:text-gray-400">Geen prijsdata</span>;
+                                    return <span className="text-[9px] text-gray-500">-</span>;
                                   }
                                   
                                   return (
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
-                                      <span className="font-bold text-sm sm:text-base text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
+                                    <>
+                                      <span className="font-bold text-xs text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
                                       {variantData.mid && (
-                                        <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                                          (mid €{formatPrice(variantData.mid)})
+                                        <span className="text-[9px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                          (€{formatPrice(variantData.mid)})
                                         </span>
                                       )}
-                                      <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">TCGplayer</span>
-                                    </div>
+                                      <span className="text-[9px] text-gray-400 dark:text-gray-500">TCG</span>
+                                    </>
                                   );
                                 })()
                               ) : (
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Geen prijsdata</span>
+                                <span className="text-[9px] text-gray-500">-</span>
                               )}
                             </div>
                             
                             {/* Heart Icon */}
                             {selected && (
-                              <div className="flex-shrink-0 sm:ml-2">
-                                <Heart className="w-4 h-4 text-red-600 fill-current" />
-                              </div>
+                              <Heart className="w-3 h-3 text-red-600 fill-current flex-shrink-0" />
                             )}
                           </div>
                         </div>
@@ -2508,17 +2508,17 @@ export default function PublicUserPage() {
                         const price = cardPrices[cardKey] || '';
                         
                         return (
-                          <div key={cardKey} className="bg-white dark:bg-gray-800 rounded-xl p-3 border-0 shadow-sm">
-                            <div className="flex items-start justify-between gap-4">
+                          <div key={cardKey} className="bg-white dark:bg-gray-800 rounded-xl p-2.5 border-0 shadow-sm overflow-x-hidden">
+                            <div className="flex items-start gap-2">
                               {/* Left side: Title, Input, Condition, Variant */}
-                              <div className="flex-1 min-w-0 space-y-2">
+                              <div className="flex-1 min-w-0 space-y-1.5">
                                 {/* Title */}
-                                <p className="font-bold text-sm text-gray-800 dark:text-white">#{card.cardNumber} {card.cardName}</p>
+                                <p className="font-bold text-xs text-gray-800 dark:text-white truncate">#{card.cardNumber} {card.cardName}</p>
                                 
                                 {/* Price Input */}
-                                <div className="flex items-center gap-2">
-                                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                    Bedrag <span className="text-red-500">*</span>:
+                                <div className="flex items-center gap-1.5">
+                                  <label className="text-[10px] font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                    €:
                                   </label>
                                   <input
                                     type="number"
@@ -2527,61 +2527,52 @@ export default function PublicUserPage() {
                                     required
                                     value={price}
                                     onChange={(e) => setCardPrices({...cardPrices, [cardKey]: e.target.value})}
-                                    className="w-24 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 font-medium text-xs text-gray-800 dark:text-white bg-white dark:bg-gray-700 transition-all"
+                                    className="w-20 px-1.5 py-0.5 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50 font-medium text-xs text-gray-800 dark:text-white bg-white dark:bg-gray-700 transition-all"
                                     placeholder="0.00"
                                   />
                                 </div>
                                 
                                 {/* Condition and Variant on same line */}
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-start gap-1.5 flex-wrap">
                                   {/* Condition Buttons */}
-                                  <div className="flex items-center gap-1">
-                                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                      Staat:
-                                    </label>
+                                  <div className="flex items-center gap-0.5">
                                     {[
-                                      { code: 'NM', label: 'NM', tooltip: 'Near Mint - Als nieuw' },
-                                      { code: 'EX', label: 'EX', tooltip: 'Excellent - Lichte slijtage aan randen' },
-                                      { code: 'GD', label: 'GD', tooltip: 'Good - Zichtbaar gebruikt' },
-                                      { code: 'LP', label: 'LP', tooltip: 'Light Played - Veel slijtage, geen vouwen' },
-                                      { code: 'DMG', label: 'DMG', tooltip: 'Damaged - Vouwen, scheuren of defect' }
+                                      { code: 'NM', label: 'NM', tooltip: 'Near Mint' },
+                                      { code: 'EX', label: 'EX', tooltip: 'Excellent' },
+                                      { code: 'GD', label: 'GD', tooltip: 'Good' },
+                                      { code: 'LP', label: 'LP', tooltip: 'Light Played' },
+                                      { code: 'DMG', label: 'DMG', tooltip: 'Damaged' }
                                     ].map((cond) => (
                                       <div key={cond.code} className="relative group">
                                         <button
                                           type="button"
                                           onClick={() => setCardConditions({...cardConditions, [cardKey]: cond.code})}
-                                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
                                             condition === cond.code
-                                              ? 'bg-red-500 text-white shadow-md'
-                                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                              ? 'bg-red-500 text-white shadow-sm'
+                                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                           }`}
                                         >
                                           {cond.label}
                                         </button>
-                                        {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-50 whitespace-nowrap">
+                                        {/* Tooltip - only on desktop */}
+                                        <div className="hidden sm:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-[9px] rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
                                           {cond.tooltip}
-                                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                                            <div className="border-4 border-transparent border-t-gray-900 dark:border-t-gray-800"></div>
-                                          </div>
                                         </div>
                                       </div>
                                     ))}
                                   </div>
                                   
                                   {/* Variant Selection */}
-                                  <div className="flex items-center gap-1">
-                                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                      Type:
-                                    </label>
+                                  <div className="flex items-center gap-0.5">
                                     {(() => {
                                       const availableVariants = getAvailableVariants(card);
                                       const selectedVariant = card.variant || cardVariants[cardKey] || getDefaultVariant(card) || 'nonHolo';
                                       
                                       const variantLabels = {
-                                        'holofoil': 'Holofoil',
-                                        'reverseHolo': 'Reverse Holo',
-                                        'nonHolo': 'Non-Holo'
+                                        'holofoil': 'Holo',
+                                        'reverseHolo': 'Reverse',
+                                        'nonHolo': 'Normal'
                                       };
                                       
                                       return availableVariants.map((variant) => (
@@ -2599,10 +2590,10 @@ export default function PublicUserPage() {
                                               setSelectedCards(updatedCards);
                                             }
                                           }}
-                                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
                                             selectedVariant === variant
-                                              ? 'bg-red-500 text-white shadow-md'
-                                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                              ? 'bg-red-500 text-white shadow-sm'
+                                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                           }`}
                                           title={variantLabels[variant] || variant}
                                         >
