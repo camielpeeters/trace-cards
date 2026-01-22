@@ -206,15 +206,22 @@ export default function PublicUserPage() {
       } else {
         // Public profile: Load cards from API (database)
         // Always load purchase cards, always load shop cards (we'll need them when switching tabs)
+        // Add timeout to prevent infinite loading on slow connections
+        const fetchWithTimeout = (url, timeout = 15000) => {
+          return Promise.race([
+            fetch(url),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Request timeout')), timeout)
+            )
+          ]).catch(err => {
+            console.error(`Error fetching ${url}:`, err);
+            return null;
+          });
+        };
+        
         const [purchaseResponse, shopResponse] = await Promise.all([
-          fetch(`/api/public/${username}/purchase-cards`).catch(err => {
-            console.error('Error fetching purchase cards:', err);
-            return null;
-          }),
-          fetch(`/api/public/${username}/shop-cards`).catch(err => {
-            console.error('Error fetching shop cards:', err);
-            return null;
-          })
+          fetchWithTimeout(`/api/public/${username}/purchase-cards`),
+          fetchWithTimeout(`/api/public/${username}/shop-cards`)
         ]);
         
         // Handle purchase cards response
