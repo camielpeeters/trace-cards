@@ -1243,7 +1243,7 @@ export default function PublicUserPage() {
                                     </div>
                                   </div>
                                   
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white border-t border-white/20 shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '80px' }}>
+                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
                                     {/* Card Title: #Number Name */}
                                     <div className="flex items-center gap-1 mb-1.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
@@ -1256,23 +1256,25 @@ export default function PublicUserPage() {
                                       )}
                                     </div>
                                     
-                                    {/* Variant Toggle - Always reserve space, hide when only one variant */}
-                                    <div className={`mb-1.5 flex gap-1 ${availableVariants.length > 1 ? '' : 'invisible'}`} style={{ minHeight: '24px' }}>
-                                      {availableVariants.map((variant) => (
-                                        <button
-                                          key={variant}
-                                          onClick={(e) => handleVariantChange(e, variant)}
-                                          className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
-                                            activeVariant === variant
-                                              ? 'bg-red-500 text-white'
-                                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                          }`}
-                                          title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
-                                        >
-                                          {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
-                                        </button>
-                                      ))}
-                                    </div>
+                                    {/* Variant Toggle - Only render when multiple variants available */}
+                                    {availableVariants.length > 1 && (
+                                      <div className="mb-1.5 flex gap-1">
+                                        {availableVariants.map((variant) => (
+                                          <button
+                                            key={variant}
+                                            onClick={(e) => handleVariantChange(e, variant)}
+                                            className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
+                                              activeVariant === variant
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                            }`}
+                                            title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
+                                          >
+                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
                                     
                                     {/* Pricing Display - Single Line with Flex Layout */}
                                     {variantData ? (
@@ -1381,22 +1383,24 @@ export default function PublicUserPage() {
                                         )}
                                       </div>
                                       
-                                      {/* Variant Toggle - Always reserve space, hide when only one variant */}
-                                      <div className={`mb-1 flex gap-1 ${availableVariants.length > 1 ? '' : 'invisible'}`} style={{ minHeight: '20px' }}>
-                                        {availableVariants.map((variant) => (
-                                          <button
-                                            key={variant}
-                                            onClick={(e) => handleVariantChange(e, variant)}
-                                            className={`flex-1 px-1 py-0.5 rounded text-[9px] font-medium transition-all ${
-                                              activeVariant === variant
-                                                ? 'bg-red-500 text-white'
-                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                            }`}
-                                          >
-                                            {variant === 'holofoil' ? 'H' : variant === 'reverseHolo' ? 'R' : 'N'}
-                                          </button>
-                                        ))}
-                                      </div>
+                                      {/* Variant Toggle - Only render when multiple variants available */}
+                                      {availableVariants.length > 1 && (
+                                        <div className="mb-1 flex gap-1">
+                                          {availableVariants.map((variant) => (
+                                            <button
+                                              key={variant}
+                                              onClick={(e) => handleVariantChange(e, variant)}
+                                              className={`flex-1 px-1 py-0.5 rounded text-[9px] font-medium transition-all ${
+                                                activeVariant === variant
+                                                  ? 'bg-red-500 text-white'
+                                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                              }`}
+                                            >
+                                              {variant === 'holofoil' ? 'H' : variant === 'reverseHolo' ? 'R' : 'N'}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
                                       
                                       {/* Pricing Display - Single Line with Flex Layout */}
                                       {variantData ? (
@@ -1889,7 +1893,7 @@ export default function PublicUserPage() {
                                   </div>
                                   
                                   {/* Card info section - SHOP VERSION with price display */}
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white border-t border-white/20 shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '80px' }}>
+                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
                                     {/* Card Title */}
                                     <div className="flex items-center gap-1 mb-1.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
@@ -1902,23 +1906,25 @@ export default function PublicUserPage() {
                                       )}
                                     </div>
                                     
-                                    {/* Variant Toggle - Always reserve space, show only when selected and multiple variants */}
-                                    <div className={`mb-1.5 flex gap-1 ${selected && availableVariants.length > 1 ? '' : 'invisible'}`} style={{ minHeight: '24px' }}>
-                                      {availableVariants.map((variant) => (
-                                        <button
-                                          key={variant}
-                                          onClick={(e) => handleVariantChange(e, variant)}
-                                          className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
-                                            activeVariant === variant
-                                              ? 'bg-red-500 text-white'
-                                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                          }`}
-                                          title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
-                                        >
-                                          {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
-                                        </button>
-                                      ))}
-                                    </div>
+                                    {/* Variant Toggle - Only render when selected and multiple variants available */}
+                                    {selected && availableVariants.length > 1 && (
+                                      <div className="mb-1.5 flex gap-1">
+                                        {availableVariants.map((variant) => (
+                                          <button
+                                            key={variant}
+                                            onClick={(e) => handleVariantChange(e, variant)}
+                                            className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
+                                              activeVariant === variant
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                            }`}
+                                            title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
+                                          >
+                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
                                     
                                     {/* SHOP PRICING DISPLAY: User price on top, TCG price below */}
                                     <div className="space-y-0.5">
@@ -2035,22 +2041,24 @@ export default function PublicUserPage() {
                                         )}
                                       </div>
                                       
-                                      {/* Variant Toggle - Always reserve space, show only when selected and multiple variants */}
-                                      <div className={`mb-1 flex gap-1 ${selected && availableVariants.length > 1 ? '' : 'invisible'}`} style={{ minHeight: '20px' }}>
-                                        {availableVariants.map((variant) => (
-                                          <button
-                                            key={variant}
-                                            onClick={(e) => handleVariantChange(e, variant)}
-                                            className={`flex-1 px-1 py-0.5 rounded text-[9px] font-medium transition-all ${
-                                              activeVariant === variant
-                                                ? 'bg-red-500 text-white'
-                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                            }`}
-                                          >
-                                            {variant === 'holofoil' ? 'H' : variant === 'reverseHolo' ? 'R' : 'N'}
-                                          </button>
-                                        ))}
-                                      </div>
+                                      {/* Variant Toggle - Only render when selected and multiple variants available */}
+                                      {selected && availableVariants.length > 1 && (
+                                        <div className="mb-1 flex gap-1">
+                                          {availableVariants.map((variant) => (
+                                            <button
+                                              key={variant}
+                                              onClick={(e) => handleVariantChange(e, variant)}
+                                              className={`flex-1 px-1 py-0.5 rounded text-[9px] font-medium transition-all ${
+                                                activeVariant === variant
+                                                  ? 'bg-red-500 text-white'
+                                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                              }`}
+                                            >
+                                              {variant === 'holofoil' ? 'H' : variant === 'reverseHolo' ? 'R' : 'N'}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
                                       
                                       {/* SHOP PRICING DISPLAY: User price on top, TCG price below */}
                                       <div className="space-y-0.5">
@@ -2274,28 +2282,30 @@ export default function PublicUserPage() {
                                 )}
                               </div>
                               
-                              {/* Variant Toggle - Always reserve space, hide when only one variant */}
-                              <div className={`mb-1.5 flex gap-1 ${availableVariants.length > 1 ? '' : 'invisible'}`} style={{ minHeight: '32px' }}>
-                                {availableVariants.map((variant) => (
-                                  <button
-                                    key={variant}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setCardVariants({
-                                        ...cardVariants,
-                                        [cardKey]: variant
-                                      });
-                                    }}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                      activeVariant === variant
-                                        ? 'bg-red-500 text-white shadow-md'
-                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                    }`}
-                                  >
-                                    {variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
-                                  </button>
-                                ))}
-                              </div>
+                              {/* Variant Toggle - Only render when multiple variants available */}
+                              {availableVariants.length > 1 && (
+                                <div className="mb-1.5 flex gap-1">
+                                  {availableVariants.map((variant) => (
+                                    <button
+                                      key={variant}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCardVariants({
+                                          ...cardVariants,
+                                          [cardKey]: variant
+                                        });
+                                      }}
+                                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                        activeVariant === variant
+                                          ? 'bg-red-500 text-white shadow-md'
+                                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                      }`}
+                                    >
+                                      {variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                               
                               {/* Pricing Display - Single Line with Flex Layout */}
                               {variantData ? (
