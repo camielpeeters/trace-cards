@@ -39,88 +39,88 @@ export async function GET(request, { params }) {
       ]
     });
     
-    // Fetch pricing data directly from Pokémon TCG API (with timeout protection)
-    const cardsWithPricing = await Promise.all(
-      purchaseCards.map(async (card) => {
-        let tcgplayer = null;
-        
-        if (!pokemonApiKey) {
-          console.log(`⚠️ No API key configured`);
+    // Batch fetch pricing data (10 cards at a time for speed)
+    const BATCH_SIZE = 10;
+    const cardsWithPricing = [];
+    
+    for (let i = 0; i < purchaseCards.length; i += BATCH_SIZE) {
+      const batch = purchaseCards.slice(i, i + BATCH_SIZE);
+      
+      const batchResults = await Promise.all(
+        batch.map(async (card) => {
+          let tcgplayer = null;
+          
+          if (!pokemonApiKey) {
+            return {
+              ...card,
+              images: JSON.parse(card.images),
+              tcgplayer: null
+            };
+          }
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+          
+          try {
+            const apiResponse = await fetch(
+              `https://api.pokemontcg.io/v2/cards/${card.cardId}`,
+              {
+                headers: { 'X-Api-Key': pokemonApiKey },
+                signal: controller.signal
+              }
+            );
+            clearTimeout(timeoutId);
+            
+            if (apiResponse.ok) {
+              const apiData = await apiResponse.json();
+              const apiCard = apiData.data;
+              
+              if (apiCard?.tcgplayer?.prices) {
+                const exchangeRate = 0.92; // USD to EUR
+                
+                const convertToEUR = (usdPrice) => {
+                  return usdPrice ? usdPrice * exchangeRate : null;
+                };
+                
+                const convertedPrices = {};
+                Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
+                  const variant = apiCard.tcgplayer.prices[variantKey];
+                  if (variant) {
+                    convertedPrices[variantKey] = {
+                      market: convertToEUR(variant.market),
+                      mid: convertToEUR(variant.mid),
+                      low: convertToEUR(variant.low),
+                      high: convertToEUR(variant.high)
+                    };
+                  }
+                });
+                
+                tcgplayer = {
+                  url: apiCard.tcgplayer.url || null,
+                  prices: convertedPrices,
+                  lastUpdated: new Date().toISOString()
+                };
+              }
+            }
+          } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name !== 'AbortError') {
+              console.error(`Error: ${card.cardName}:`, error.message);
+            }
+          }
+          
           return {
             ...card,
             images: JSON.parse(card.images),
-            tcgplayer: null
+            tcgplayer: tcgplayer
           };
-        }
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
-        
-        try {
-          
-          const apiResponse = await fetch(
-            `https://api.pokemontcg.io/v2/cards/${card.cardId}`,
-            {
-              headers: { 'X-Api-Key': pokemonApiKey },
-              signal: controller.signal
-            }
-          );
-          clearTimeout(timeoutId);
-          
-          if (apiResponse.ok) {
-            const apiData = await apiResponse.json();
-            const apiCard = apiData.data;
-            
-            if (apiCard?.tcgplayer?.prices) {
-              const exchangeRate = 0.92; // USD to EUR
-              
-              const convertToEUR = (usdPrice) => {
-                return usdPrice ? usdPrice * exchangeRate : null;
-              };
-              
-              const convertedPrices = {};
-              Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
-                const variant = apiCard.tcgplayer.prices[variantKey];
-                if (variant) {
-                  convertedPrices[variantKey] = {
-                    market: convertToEUR(variant.market),
-                    mid: convertToEUR(variant.mid),
-                    low: convertToEUR(variant.low),
-                    high: convertToEUR(variant.high)
-                  };
-                }
-              });
-              
-              tcgplayer = {
-                url: apiCard.tcgplayer.url || null,
-                prices: convertedPrices,
-                lastUpdated: new Date().toISOString()
-              };
-              
-              console.log(`✅ ${card.cardName} pricing:`, JSON.stringify({
-                variants: Object.keys(convertedPrices),
-                samplePrices: Object.keys(convertedPrices).slice(0, 2).reduce((acc, key) => {
-                  acc[key] = convertedPrices[key];
-                  return acc;
-                }, {})
-              }));
-            }
-          }
-        } catch (error) {
-          if (error.name === 'AbortError') {
-            console.log(`⏱️ Timeout fetching ${card.cardName}`);
-          } else {
-            console.error(`Error fetching ${card.cardName}:`, error.message);
-          }
-        }
-        
-        return {
-          ...card,
-          images: JSON.parse(card.images),
-          tcgplayer: tcgplayer
-        };
-      })
-    );
+        })
+      );
+      
+      cardsWithPricing.push(...batchResults);
+    }
+    
+    console.log(`✅ Loaded ${cardsWithPricing.length} purchase cards with pricing`);
     
     return NextResponse.json({
       user: {
