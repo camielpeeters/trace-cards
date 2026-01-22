@@ -96,6 +96,14 @@ export async function GET(request, { params }) {
                 prices: convertedPrices,
                 lastUpdated: new Date().toISOString()
               };
+              
+              console.log(`✅ ${card.cardName} pricing:`, JSON.stringify({
+                variants: Object.keys(convertedPrices),
+                samplePrices: Object.keys(convertedPrices).slice(0, 2).reduce((acc, key) => {
+                  acc[key] = convertedPrices[key];
+                  return acc;
+                }, {})
+              }));
             }
           }
         } catch (error) {
