@@ -243,6 +243,7 @@ export default function PublicUserPage() {
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
+      // Always reset loading state, even if we didn't show it
       setLoading(false);
     }
   };
