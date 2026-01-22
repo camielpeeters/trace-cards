@@ -1349,8 +1349,8 @@ export default function PublicUserPage() {
                               return (
                                 <div
                                   key={cardKey}
-                                  className={`glass rounded-xl p-3 transition-all ${
-                                    selected ? 'ring-2 ring-red-500' : ''
+                                  className={`bg-white dark:bg-gray-800 rounded-xl p-3 transition-all shadow-sm ${
+                                    selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                                   }`}
                                 >
                                   <button
@@ -2005,8 +2005,8 @@ export default function PublicUserPage() {
                               return (
                                 <div
                                   key={cardKey}
-                                  className={`glass rounded-xl p-3 transition-all ${
-                                    selected ? 'ring-2 ring-red-500' : ''
+                                  className={`bg-white dark:bg-gray-800 rounded-xl p-3 transition-all shadow-sm ${
+                                    selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                                   }`}
                                 >
                                   <button
