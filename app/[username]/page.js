@@ -2241,7 +2241,7 @@ export default function PublicUserPage() {
                         return (
                           <div
                             key={cardKey}
-                            className={`relative rounded-xl overflow-hidden transition-all border-0 shadow-sm ${
+                            className={`relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden transition-all border-0 shadow-sm ${
                               selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                             }`}
                           >
@@ -2263,7 +2263,7 @@ export default function PublicUserPage() {
                                   event: e
                                 });
                               }}
-                              className="w-full bg-white dark:bg-gray-800 rounded-t-xl"
+                              className="w-full"
                             >
                               <img
                                 src={card.images?.small || card.images?.large}
@@ -2272,7 +2272,7 @@ export default function PublicUserPage() {
                                 draggable={false}
                               />
                             </button>
-                            <div className="p-2 bg-white dark:bg-gray-800 rounded-b-xl">
+                            <div className="p-2">
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
                                 <p className="font-bold text-xs text-gray-800 dark:text-white truncate flex-1">
