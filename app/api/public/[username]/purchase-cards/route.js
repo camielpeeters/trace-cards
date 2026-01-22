@@ -88,52 +88,6 @@ export async function GET(request, { params }) {
           }
         } catch (error) {
           console.error(`Error fetching pricing for ${card.cardName}:`, error);
-              
-              if (!apiResponse.ok) {
-                console.log(`⚠️ Pokémon TCG API returned ${apiResponse.status} for ${card.cardId}`);
-              } else {
-                const apiData = await apiResponse.json();
-                const apiCard = apiData.data;
-                
-                // Use tcgplayer data directly from Pokémon TCG API
-                if (apiCard?.tcgplayer?.prices) {
-                  // Get exchange rate
-                  exchangeRate = await getUSDtoEURRate().catch(() => 0.92);
-                  
-                  const convertToEUR = (usdPrice) => {
-                    return usdPrice ? usdPrice * exchangeRate : null;
-                  };
-                  
-                  // Convert all price variants from USD to EUR
-                  const convertedPrices = {};
-                  Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
-                    const variant = apiCard.tcgplayer.prices[variantKey];
-                    if (variant) {
-                      convertedPrices[variantKey] = {
-                        market: variant.market ? convertToEUR(variant.market) : null,
-                        mid: variant.mid ? convertToEUR(variant.mid) : null,
-                        low: variant.low ? convertToEUR(variant.low) : null,
-                        high: variant.high ? convertToEUR(variant.high) : null
-                      };
-                    }
-                  });
-                  
-                  tcgplayer = {
-                    url: apiCard.tcgplayer.url || null,
-                    prices: convertedPrices,
-                    lastUpdated: new Date().toISOString()
-                  };
-                  
-                  console.log(`✅ Fetched pricing from Pokémon TCG API for ${card.cardName} - ${Object.keys(convertedPrices).length} variants`);
-                } else {
-                  console.log(`⚠️ Pokémon TCG API returned card but no tcgplayer.prices for ${card.cardId}`);
-                }
-              }
-            }
-          } catch (error) {
-            // Log error for debugging
-            console.log(`❌ Error fetching pricing from Pokémon TCG API for ${card.cardName}: ${error.message}`);
-          }
         }
         
         return {
