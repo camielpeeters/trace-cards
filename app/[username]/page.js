@@ -2360,7 +2360,20 @@ export default function PublicUserPage() {
                       return (
                         <div
                           key={cardKey}
-                          className={`bg-white dark:bg-gray-800 rounded-xl p-2 border-0 shadow-sm transition-all ${
+                          onMouseDown={(e) => {
+                            if (e.shiftKey) e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            const modalCards = getSetModalCards();
+                            handleCardSelectClick({
+                              card,
+                              idx,
+                              cards: modalCards,
+                              activeVariant,
+                              event: e
+                            });
+                          }}
+                          className={`bg-white dark:bg-gray-800 rounded-xl p-2 border-0 shadow-sm transition-all cursor-pointer ${
                             selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                           }`}
                         >
@@ -2368,24 +2381,9 @@ export default function PublicUserPage() {
                           <div className="flex items-center gap-2">
                             {/* Checkbox + Number */}
                             <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <button
-                                onMouseDown={(e) => {
-                                  if (e.shiftKey) e.preventDefault();
-                                }}
-                                onClick={(e) => {
-                                  const modalCards = getSetModalCards();
-                                  handleCardSelectClick({
-                                    card,
-                                    idx,
-                                    cards: modalCards,
-                                    activeVariant,
-                                    event: e
-                                  });
-                                }}
-                                className="w-4 h-4 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-red-500 transition-colors flex-shrink-0"
-                              >
+                              <div className="w-4 h-4 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-colors flex-shrink-0">
                                 {selected && <Check className="w-3 h-3 text-red-500" />}
-                              </button>
+                              </div>
                               <span className="font-bold text-xs text-gray-800 dark:text-white">
                                 {idx + 1}.
                               </span>
@@ -2517,18 +2515,20 @@ export default function PublicUserPage() {
                                 
                                 {/* Price Input */}
                                 <div className="flex items-center gap-1.5">
-                                  <label className="text-[10px] font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                                     €:
                                   </label>
                                   <input
                                     type="number"
+                                    inputMode="decimal"
                                     step="0.01"
                                     min="0"
                                     required
                                     value={price}
                                     onChange={(e) => setCardPrices({...cardPrices, [cardKey]: e.target.value})}
-                                    className="w-20 px-1.5 py-0.5 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50 font-medium text-xs text-gray-800 dark:text-white bg-white dark:bg-gray-700 transition-all"
+                                    className="w-20 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50 font-medium text-base text-gray-800 dark:text-white bg-white dark:bg-gray-700 transition-all"
                                     placeholder="0.00"
+                                    style={{ fontSize: '16px' }}
                                   />
                                 </div>
                                 
