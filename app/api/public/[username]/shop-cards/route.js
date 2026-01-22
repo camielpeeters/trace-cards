@@ -42,14 +42,14 @@ export async function GET(request, { params }) {
       ]
     });
     
-    // Fetch pricing data for each card - SKIP API calls to prevent hanging
+    // Fetch pricing data for each card with smart fallback
     const cardsWithPricing = await Promise.all(
       shopCards.map(async (card) => {
         let tcgplayer = null;
         let cardRecord = null;
         
         try {
-          // Only use DB pricing - NO external API calls
+          // Try DB first
           cardRecord = await prisma.card.findFirst({
             where: {
               OR: [
@@ -65,7 +65,7 @@ export async function GET(request, { params }) {
             }
           });
           
-          // Build pricing from DB only
+          // Build pricing from DB if available
           if (cardRecord?.pricing?.tcgplayerPriceUSD) {
             const pricing = cardRecord.pricing;
             const exchangeRate = pricing.usdToEurRate || 0.92;
@@ -89,6 +89,66 @@ export async function GET(request, { params }) {
               eurPrice: holofoilUSD * exchangeRate,
               lastUpdated: pricing.tcgplayerUpdated?.toISOString() || null
             };
+          } else if (pokemonApiKey) {
+            // Fallback to API only if DB has no data AND API key is configured
+            console.log(`⚠️ No DB pricing for ${card.cardName}, trying API...`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            
+            try {
+              const apiResponse = await fetch(
+                `https://api.pokemontcg.io/v2/cards/${card.cardId}`,
+                {
+                  headers: { 'X-Api-Key': pokemonApiKey },
+                  signal: controller.signal
+                }
+              );
+              clearTimeout(timeoutId);
+              
+              if (apiResponse.ok) {
+                const apiData = await apiResponse.json();
+                const apiCard = apiData.data;
+                
+                if (apiCard?.tcgplayer?.prices) {
+                  const exchangeRate = 0.92; // Default rate
+                  
+                  const convertToEUR = (usdPrice) => {
+                    return usdPrice ? usdPrice * exchangeRate : null;
+                  };
+                  
+                  const convertedPrices = {};
+                  Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
+                    const variant = apiCard.tcgplayer.prices[variantKey];
+                    if (variant) {
+                      convertedPrices[variantKey] = {
+                        market: convertToEUR(variant.market),
+                        mid: convertToEUR(variant.mid),
+                        low: convertToEUR(variant.low),
+                        high: convertToEUR(variant.high)
+                      };
+                    }
+                  });
+                  
+                  tcgplayer = {
+                    url: apiCard.tcgplayer.url || null,
+                    prices: convertedPrices,
+                    lastUpdated: new Date().toISOString()
+                  };
+                  
+                  console.log(`✅ API pricing for ${card.cardName}`);
+                }
+              }
+            } catch (apiError) {
+              clearTimeout(timeoutId);
+              if (apiError.name === 'AbortError') {
+                console.log(`⏱️ API timeout for ${card.cardName}`);
+              } else {
+                console.log(`❌ API error for ${card.cardName}:`, apiError.message);
+              }
+            }
+          } else {
+            console.log(`⚠️ No pricing data for ${card.cardName} (DB empty, no API key)`);
           }
         } catch (error) {
           console.error(`Error fetching pricing for ${card.cardName}:`, error);
