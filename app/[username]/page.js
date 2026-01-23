@@ -1150,19 +1150,19 @@ export default function PublicUserPage() {
                                     
                                     {/* Variant Toggle - Floating over image, only when selected and multiple variants */}
                                     {selected && availableVariants.length > 1 && (
-                                      <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-50" style={{ pointerEvents: 'auto' }}>
+                                      <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 right-1.5 sm:right-2 flex gap-0.5 sm:gap-1 z-50" style={{ pointerEvents: 'auto' }}>
                                         {availableVariants.map((variant) => (
                                           <button
                                             key={variant}
                                             onClick={(e) => handleVariantChange(e, variant)}
-                                            className={`flex-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all shadow-lg ${
+                                            className={`flex-1 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-[8px] sm:text-[10px] font-bold transition-all shadow-lg ${
                                               activeVariant === variant
                                                 ? 'bg-red-500 text-white'
                                                 : 'bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
                                             }`}
                                             title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
                                           >
-                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
+                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Rev' : 'Non'}
                                           </button>
                                         ))}
                                       </div>
@@ -1269,9 +1269,9 @@ export default function PublicUserPage() {
                                     </div>
                                   </div>
                                   
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
+                                  <div className={`p-2 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '65px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
                                     {/* Card Title: #Number Name */}
-                                    <div className="flex items-center gap-1 mb-1.5">
+                                    <div className="flex items-center gap-1 mb-1">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
                                         #{card.cardNumber} {card.cardName}
                                       </p>
@@ -1282,7 +1282,7 @@ export default function PublicUserPage() {
                                       )}
                                     </div>
                                     
-                                    {/* Pricing Display - Single Line with Flex Layout - mt-auto for bottom alignment */}
+                                    {/* Pricing Display - Compact single line - mt-auto for bottom alignment */}
                                     <div className="mt-auto">
                                     {variantData ? (
                                       (() => {
@@ -1292,16 +1292,16 @@ export default function PublicUserPage() {
                                         }
                                         
                                         return (
-                                          <div className="flex items-center gap-1.5 flex-wrap text-xs leading-tight">
-                                            <span className="font-bold text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
+                                          <div className="flex items-center gap-1 text-xs whitespace-nowrap">
+                                            <span className="font-bold text-red-600 dark:text-red-400 text-xs">€{formatPrice(mainPrice)}</span>
                                             {(variantData.low || variantData.mid) && (
-                                              <span className="text-gray-500 dark:text-gray-400 text-[10px]">
-                                                {variantData.low && `low €${formatPrice(variantData.low)}`}
-                                                {variantData.low && variantData.mid && ' · '}
-                                                {variantData.mid && `mid €${formatPrice(variantData.mid)}`}
+                                              <span className="text-gray-500 dark:text-gray-400 text-[9px]">
+                                                {variantData.low && `€${formatPrice(variantData.low)}`}
+                                                {variantData.low && variantData.mid && '/'}
+                                                {variantData.mid && `€${formatPrice(variantData.mid)}`}
                                               </span>
                                             )}
-                                            <span className="text-gray-400 dark:text-gray-500 text-[10px] ml-auto">TCGplayer</span>
+                                            <span className="text-red-500 dark:text-red-400 text-[9px] font-medium">TCG</span>
                                           </div>
                                         );
                                       })()
@@ -1806,21 +1806,21 @@ export default function PublicUserPage() {
                                       }}></div>
                                     </div>
                                     
-                                    {/* Variant Toggle - Floating over image, only when selected and multiple variants */}
+                                    {/* Variant Toggle - Floating over image, only when selected and multiple variants - SHOP CARDS */}
                                     {selected && availableVariants.length > 1 && (
-                                      <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-50" style={{ pointerEvents: 'auto' }}>
+                                      <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 right-1.5 sm:right-2 flex gap-0.5 sm:gap-1 z-50" style={{ pointerEvents: 'auto' }}>
                                         {availableVariants.map((variant) => (
                                           <button
                                             key={variant}
                                             onClick={(e) => handleVariantChange(e, variant)}
-                                            className={`flex-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all shadow-lg ${
+                                            className={`flex-1 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-[8px] sm:text-[10px] font-bold transition-all shadow-lg ${
                                               activeVariant === variant
                                                 ? 'bg-red-500 text-white'
                                                 : 'bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
                                             }`}
                                             title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
                                           >
-                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
+                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Rev' : 'Non'}
                                           </button>
                                         ))}
                                       </div>
@@ -1923,9 +1923,9 @@ export default function PublicUserPage() {
                                   </div>
                                   
                                   {/* Card info section - SHOP VERSION with price display */}
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
+                                  <div className={`p-2 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '70px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
                                     {/* Card Title */}
-                                    <div className="flex items-center gap-1 mb-1.5">
+                                    <div className="flex items-center gap-1 mb-1">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
                                         #{card.cardNumber} {card.cardName}
                                       </p>
@@ -1936,34 +1936,33 @@ export default function PublicUserPage() {
                                       )}
                                     </div>
                                     
-                                    {/* SHOP PRICING DISPLAY: User price on top, TCG price below - mt-auto for bottom alignment */}
-                                    <div className="mt-auto">
-                                    <div className="space-y-0.5">
-                                      {/* User's selling price - larger, prominent */}
-                                      <div className="flex items-center">
+                                    {/* SHOP PRICING DISPLAY: Compact layout - mt-auto for bottom alignment */}
+                                    <div className="mt-auto space-y-0.5">
+                                      {/* User's selling price */}
+                                      <div>
                                         <span className="font-black text-sm text-purple-600 dark:text-purple-400">
                                           €{formatPrice(userPrice)}
                                         </span>
                                       </div>
                                       
-                                      {/* TCG price - smaller, below user price */}
+                                      {/* TCG price - compact single line */}
                                       {tcgMainPrice ? (
-                                        <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
-                                          <span>TCG: €{formatPrice(tcgMainPrice)}</span>
+                                        <div className="flex items-center gap-1 text-[9px]">
+                                          <span className="text-red-500 dark:text-red-400 font-medium">TCG</span>
+                                          <span className="text-gray-700 dark:text-gray-300">€{formatPrice(tcgMainPrice)}</span>
                                           {variantData?.low || variantData?.mid ? (
-                                            <span className="text-gray-400 dark:text-gray-500">
-                                              ({variantData.low && `low €${formatPrice(variantData.low)}`}
-                                              {variantData.low && variantData.mid && ' · '}
-                                              {variantData.mid && `mid €${formatPrice(variantData.mid)}`})
+                                            <span className="text-gray-500 dark:text-gray-400">
+                                              ({variantData.low && `€${formatPrice(variantData.low)}`}
+                                              {variantData.low && variantData.mid && '/'}
+                                              {variantData.mid && `€${formatPrice(variantData.mid)}`})
                                             </span>
                                           ) : null}
                                         </div>
                                       ) : (
-                                        <div className="text-[10px] text-gray-400 dark:text-gray-500">
-                                          Geen TCG prijsdata
+                                        <div className="text-[9px] text-gray-400 dark:text-gray-500">
+                                          Geen TCG data
                                         </div>
                                       )}
-                                    </div>
                                     </div>
                                   </div>
                                 </div>
@@ -2313,16 +2312,16 @@ export default function PublicUserPage() {
                                 </div>
                               )}
                             </button>
-                            <div className="p-2" style={{ 
+                            <div className="p-1.5" style={{ 
                               backgroundColor: 'var(--card-bg, white)',
-                              minHeight: '80px',
+                              minHeight: '55px',
                               display: 'flex',
                               flexDirection: 'column',
                               justifyContent: 'space-between'
                             }}>
                               {/* Card Title: #Number Name */}
-                              <div className="flex items-center gap-1 mb-1">
-                                <p className="font-bold text-xs text-gray-800 dark:text-white truncate flex-1">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <p className="font-bold text-[11px] text-gray-800 dark:text-white truncate flex-1">
                                   #{card.cardNumber} {card.cardName}
                                 </p>
                                 {variantData && (
@@ -2332,27 +2331,31 @@ export default function PublicUserPage() {
                                 )}
                               </div>
                               
-                              {/* Pricing Display - Fixed height wrapper for consistency */}
+                              {/* Pricing Display - Compact single line */}
                               <div className="mt-auto">
                                 {variantData ? (
                                   (() => {
                                     const mainPrice = variantData.market || variantData.mid || variantData.low;
                                     if (!mainPrice) {
-                                      return <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>;
+                                      return <p className="text-[9px] text-gray-500 dark:text-gray-500">Geen data</p>;
                                     }
                                     
                                     return (
-                                      <div className="flex items-center gap-1 text-xs whitespace-nowrap">
-                                        <span className="font-bold text-red-600 dark:text-red-400 text-xs">€{formatPrice(mainPrice)}</span>
-                                        <span className="text-gray-500 dark:text-gray-400 text-[9px]">
-                                          (€{formatPrice(variantData.low || variantData.mid || mainPrice)})
-                                        </span>
-                                        <span className="text-gray-400 dark:text-gray-500 text-[9px]">TCG</span>
+                                      <div className="flex items-center gap-0.5 text-xs whitespace-nowrap">
+                                        <span className="font-bold text-red-600 dark:text-red-400 text-[11px]">€{formatPrice(mainPrice)}</span>
+                                        {(variantData.low || variantData.mid) && (
+                                          <span className="text-gray-500 dark:text-gray-400 text-[8px]">
+                                            ({variantData.low && `€${formatPrice(variantData.low)}`}
+                                            {variantData.low && variantData.mid && '/'}
+                                            {variantData.mid && `€${formatPrice(variantData.mid)}`})
+                                          </span>
+                                        )}
+                                        <span className="text-red-500 dark:text-red-400 text-[8px] font-medium">TCG</span>
                                       </div>
                                     );
                                   })()
                                 ) : (
-                                  <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>
+                                  <p className="text-[9px] text-gray-500 dark:text-gray-500">Geen data</p>
                                 )}
                               </div>
                             </div>
