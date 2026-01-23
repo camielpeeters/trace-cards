@@ -2244,6 +2244,7 @@ export default function PublicUserPage() {
                             className={`relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden transition-all border-0 shadow-sm ${
                               selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                             }`}
+                            style={{ display: 'flex', flexDirection: 'column' }}
                           >
                             {selected && (
                               <div className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 z-10">
@@ -2263,16 +2264,16 @@ export default function PublicUserPage() {
                                   event: e
                                 });
                               }}
-                              className="w-full"
+                              className="w-full flex-shrink-0"
                             >
                               <img
                                 src={card.images?.small || card.images?.large}
                                 alt={card.cardName}
-                                className="w-full h-auto"
+                                className="w-full h-auto block"
                                 draggable={false}
                               />
                             </button>
-                            <div className="p-2">
+                            <div className="p-2 flex-1" style={{ background: 'inherit' }}>
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
                                 <p className="font-bold text-xs text-gray-800 dark:text-white truncate flex-1">
