@@ -2284,9 +2284,10 @@ export default function PublicUserPage() {
                             <div className="p-2" style={{ 
                               backgroundColor: 'var(--card-bg, white)',
                               flex: '1 1 auto',
-                              minHeight: 0,
+                              minHeight: '60px',
                               display: 'flex',
-                              flexDirection: 'column'
+                              flexDirection: 'column',
+                              justifyContent: 'space-between'
                             }}>
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
@@ -2325,27 +2326,29 @@ export default function PublicUserPage() {
                                 </div>
                               )}
                               
-                              {/* Pricing Display - Consistent single line layout */}
-                              {variantData ? (
-                                (() => {
-                                  const mainPrice = variantData.market || variantData.mid || variantData.low;
-                                  if (!mainPrice) {
-                                    return <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>;
-                                  }
-                                  
-                                  return (
-                                    <div className="flex items-center gap-1 text-xs whitespace-nowrap">
-                                      <span className="font-bold text-red-600 dark:text-red-400 text-xs">€{formatPrice(mainPrice)}</span>
-                                      <span className="text-gray-500 dark:text-gray-400 text-[9px]">
-                                        (€{formatPrice(variantData.low || variantData.mid || mainPrice)})
-                                      </span>
-                                      <span className="text-gray-400 dark:text-gray-500 text-[9px]">TCG</span>
-                                    </div>
-                                  );
-                                })()
-                              ) : (
-                                <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>
-                              )}
+                              {/* Pricing Display - Consistent single line layout - always minimum height */}
+                              <div style={{ minHeight: '20px' }}>
+                                {variantData ? (
+                                  (() => {
+                                    const mainPrice = variantData.market || variantData.mid || variantData.low;
+                                    if (!mainPrice) {
+                                      return <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>;
+                                    }
+                                    
+                                    return (
+                                      <div className="flex items-center gap-1 text-xs whitespace-nowrap">
+                                        <span className="font-bold text-red-600 dark:text-red-400 text-xs">€{formatPrice(mainPrice)}</span>
+                                        <span className="text-gray-500 dark:text-gray-400 text-[9px]">
+                                          (€{formatPrice(variantData.low || variantData.mid || mainPrice)})
+                                        </span>
+                                        <span className="text-gray-400 dark:text-gray-500 text-[9px]">TCG</span>
+                                      </div>
+                                    );
+                                  })()
+                                ) : (
+                                  <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
