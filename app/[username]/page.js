@@ -1205,7 +1205,7 @@ export default function PublicUserPage() {
                                   
                                   {/* Card image container - clickable and hoverable - above blur background */}
                                   <div 
-                                    className="aspect-[2.5/3.5] flex items-center justify-center p-2 relative cursor-pointer rounded-t-xl"
+                                    className="aspect-[2.5/3.5] flex items-center justify-center p-2 relative cursor-pointer rounded-t-xl overflow-hidden"
                                     style={{
                                       transformStyle: 'preserve-3d',
                                       backfaceVisibility: 'hidden',
@@ -1233,7 +1233,7 @@ export default function PublicUserPage() {
                                     
                                     {/* Variant Toggle - Floating over image, only when selected and multiple variants */}
                                     {selected && availableVariants.length > 1 && (
-                                      <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 right-1.5 sm:right-2 flex gap-0.5 sm:gap-1 z-50" style={{ pointerEvents: 'auto' }}>
+                                      <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-50" style={{ pointerEvents: 'auto' }}>
                                         {availableVariants.map((variant) => (
                                           <button
                                             key={variant}
@@ -1792,7 +1792,7 @@ export default function PublicUserPage() {
                                 <div
                                   key={cardKey}
                                   data-card-key={cardKey}
-                                  className={`group relative rounded-xl h-full overflow-hidden ${
+                                  className={`group relative rounded-xl h-full ${
                                     selected 
                                       ? 'card-selected' 
                                       : ''
@@ -1870,7 +1870,7 @@ export default function PublicUserPage() {
                                   
                                   {/* Card image container */}
                                   <div 
-                                    className="aspect-[2.5/3.5] flex items-center justify-center p-2 relative cursor-pointer rounded-t-xl"
+                                    className="aspect-[2.5/3.5] flex items-center justify-center p-2 relative cursor-pointer rounded-t-xl overflow-hidden"
                                     style={{
                                       transformStyle: 'preserve-3d',
                                       backfaceVisibility: 'hidden',
@@ -1893,7 +1893,7 @@ export default function PublicUserPage() {
                                     
                                     {/* Variant Toggle - Floating over image, only when selected and multiple variants - SHOP CARDS */}
                                     {selected && availableVariants.length > 1 && (
-                                      <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 right-1.5 sm:right-2 flex gap-0.5 sm:gap-1 z-50" style={{ pointerEvents: 'auto' }}>
+                                      <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-50" style={{ pointerEvents: 'auto' }}>
                                         {availableVariants.map((variant) => (
                                           <button
                                             key={variant}
