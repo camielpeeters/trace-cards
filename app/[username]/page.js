@@ -684,9 +684,9 @@ export default function PublicUserPage() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-8 relative z-10 w-full overflow-x-hidden">
+        <main className="max-w-7xl mx-auto px-2 sm:px-4 py-8 relative z-10 w-full overflow-x-hidden">
           {/* Modern Toggle - Hip & Beautiful */}
-          <div className="mb-8 flex items-center justify-between gap-4">
+          <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="relative glass-strong rounded-2xl p-1.5 inline-flex gap-1 shadow-xl backdrop-blur-xl border border-white/20 dark:border-gray-700/30">
               {/* Active background indicator */}
               <div 
@@ -2246,10 +2246,9 @@ export default function PublicUserPage() {
                               selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                             }`}
                             style={{ 
-                              display: 'flex', 
-                              flexDirection: 'column',
-                              backgroundColor: 'var(--card-bg, white)',
-                              minHeight: 0
+                              display: 'grid',
+                              gridTemplateRows: 'auto 1fr',
+                              backgroundColor: 'var(--card-bg, white)'
                             }}
                           >
                             {selected && (
@@ -2270,24 +2269,19 @@ export default function PublicUserPage() {
                                   event: e
                                 });
                               }}
-                              className="w-full flex-shrink-0"
-                              style={{ background: 'transparent', border: 'none', padding: 0, margin: 0, lineHeight: 0 }}
+                              className="w-full"
+                              style={{ background: 'transparent', border: 'none', padding: 0, margin: 0, lineHeight: 1 }}
                             >
                               <img
                                 src={card.images?.small || card.images?.large}
                                 alt={card.cardName}
                                 className="w-full h-auto"
                                 draggable={false}
-                                style={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'bottom' }}
+                                style={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'top' }}
                               />
                             </button>
-                            <div className="p-2" style={{ 
-                              backgroundColor: 'var(--card-bg, white)',
-                              flex: '1 1 auto',
-                              minHeight: '60px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'space-between'
+                            <div className="p-2 flex flex-col justify-between" style={{ 
+                              backgroundColor: 'var(--card-bg, white)'
                             }}>
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
@@ -2326,8 +2320,8 @@ export default function PublicUserPage() {
                                 </div>
                               )}
                               
-                              {/* Pricing Display - Consistent single line layout - always minimum height */}
-                              <div style={{ minHeight: '20px' }}>
+                              {/* Pricing Display - Fixed height wrapper for consistency */}
+                              <div className="mt-auto">
                                 {variantData ? (
                                   (() => {
                                     const mainPrice = variantData.market || variantData.mid || variantData.low;
