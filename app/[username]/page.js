@@ -39,8 +39,10 @@ export default function PublicUserPage() {
     name: '',
     email: '',
     phone: '',
-    offer: ''
+    message: ''
   });
+  const [negotiate, setNegotiate] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   // State for set info and side modal
   const [setInfoMap, setSetInfoMap] = useState({});
@@ -484,44 +486,80 @@ export default function PublicUserPage() {
     setSelectedCards([]);
   };
 
-  const handleSubmitOffer = (e) => {
+  const handleSubmitOffer = async (e) => {
     e.preventDefault();
     
-    // Validate that all cards have prices
-    const missingPrices = selectedCards.filter(card => {
-      const price = parseFloat(cardPrices[card.cardId]);
-      return !price || price === 0;
-    });
-    
-    if (missingPrices.length > 0) {
-      alert(`Gelieve voor alle kaarten een bedrag in te vullen. (${missingPrices.length} kaart(en) zonder prijs)`);
-      return;
+    // Only validate prices if NOT negotiating
+    if (!negotiate) {
+      const missingPrices = selectedCards.filter(card => {
+        const price = parseFloat(cardPrices[card.cardId]);
+        return !price || price === 0;
+      });
+      
+      if (missingPrices.length > 0) {
+        alert(`Gelieve voor alle kaarten een bedrag in te vullen, of selecteer "Onderhandelen over prijs". (${missingPrices.length} kaart(en) zonder prijs)`);
+        return;
+      }
     }
     
-    // Prepare offer data with conditions, prices, and variants
-    const offerData = {
-      ...formData,
-      cards: selectedCards.map(card => {
-        const cardKey = card.cardId;
-        return {
-          ...card,
-          variant: card.variant || cardVariants[cardKey] || getDefaultVariant(card) || 'nonHolo',
-          condition: cardConditions[cardKey] || 'NM',
-          price: parseFloat(cardPrices[cardKey]) || 0
-        };
-      }),
-      totalPrice: Object.values(cardPrices).reduce((sum, price) => sum + (parseFloat(price) || 0), 0)
-    };
+    setSubmitting(true);
     
-    // Here you would send the offer to the API
-    console.log('Offer data:', offerData);
-    alert(`Bedankt ${formData.name}! Je aanbod is ontvangen.`);
-    
-    setShowModal(false);
-    setFormData({ name: '', email: '', phone: '', offer: '' });
-    setSelectedCards([]);
-    setCardConditions({});
-    setCardPrices({});
+    try {
+      // Prepare offer data with conditions, prices, and variants
+      const offerData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message || null,
+        negotiate: negotiate,
+        cards: selectedCards.map(card => {
+          const cardKey = card.cardId;
+          return {
+            cardId: cardKey,
+            cardName: card.cardName,
+            cardNumber: card.cardNumber,
+            setId: card.setId,
+            setName: card.setName,
+            variant: card.variant || cardVariants[cardKey] || getDefaultVariant(card) || 'nonHolo',
+            condition: cardConditions[cardKey] || 'NM',
+            price: negotiate ? null : (parseFloat(cardPrices[cardKey]) || 0),
+            images: card.images
+          };
+        }),
+        totalPrice: negotiate ? null : Object.values(cardPrices).reduce((sum, price) => sum + (parseFloat(price) || 0), 0)
+      };
+      
+      // Send to API
+      const response = await fetch(`/api/public/${username}/purchase-offers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(offerData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit offer');
+      }
+      
+      // Success!
+      alert(`Bedankt ${formData.name}! Je aanbod is ontvangen. We nemen zo snel mogelijk contact met je op.`);
+      
+      // Reset form
+      setShowModal(false);
+      setFormData({ name: '', email: '', phone: '', message: '' });
+      setSelectedCards([]);
+      setCardConditions({});
+      setCardPrices({});
+      setNegotiate(false);
+    } catch (error) {
+      console.error('Error submitting offer:', error);
+      alert(`Er ging iets mis bij het versturen van je aanbod. Probeer het later opnieuw. (${error.message})`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const isCardSelected = (card) => {
@@ -2554,11 +2592,12 @@ export default function PublicUserPage() {
                                     inputMode="decimal"
                                     step="0.01"
                                     min="0"
-                                    required
+                                    required={!negotiate}
+                                    disabled={negotiate}
                                     value={price}
                                     onChange={(e) => setCardPrices({...cardPrices, [cardKey]: e.target.value})}
-                                    className="w-20 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50 font-medium text-base text-gray-800 dark:text-white bg-white dark:bg-gray-700 transition-all"
-                                    placeholder="0.00"
+                                    className="w-20 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50 font-medium text-base text-gray-800 dark:text-white bg-white dark:bg-gray-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    placeholder={negotiate ? "N/A" : "0.00"}
                                     style={{ fontSize: '16px' }}
                                   />
                                 </div>
@@ -2729,7 +2768,8 @@ export default function PublicUserPage() {
                             const condition = cardConditions[cardKey] || 'NM';
                             const variant = card.variant || cardVariants[cardKey] || getDefaultVariant(card) || 'nonHolo';
                             
-                            if (price === 0) return null;
+                            // Show card even if price is 0 when negotiating
+                            if (!negotiate && price === 0) return null;
                             
                             const conditionLabels = {
                               'NM': 'Near Mint',
@@ -2806,21 +2846,40 @@ export default function PublicUserPage() {
                   <div>
                     <label className="block font-bold text-sm mb-2 text-gray-700 dark:text-gray-300">Opmerkingen</label>
                     <textarea
-                      value={formData.offer}
-                      onChange={(e) => setFormData({...formData, offer: e.target.value})}
+                      value={formData.message}
+                      onChange={(e) => setFormData({...formData, message: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl glass border border-white/30 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 font-medium text-gray-800 dark:text-white dark:bg-gray-800/50 transition-all resize-none"
                       rows="3"
                       placeholder="Vertel ons over de staat van je kaarten..."
                     />
                   </div>
+                  
+                  {/* Negotiate checkbox */}
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-xl p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={negotiate}
+                        onChange={(e) => setNegotiate(e.target.checked)}
+                        className="mt-0.5 w-5 h-5 rounded border-2 border-yellow-500 text-yellow-600 focus:ring-2 focus:ring-yellow-500/50 transition-all"
+                      />
+                      <div>
+                        <p className="font-bold text-sm text-gray-800 dark:text-white">Onderhandelen over prijs</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          Vink aan als je nog geen prijzen wilt invullen en liever eerst wilt overleggen over de waarde van je kaarten.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
 
                   <button
                     type="submit"
-                    className="relative w-full bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white px-6 py-4 rounded-full font-black text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all overflow-hidden group"
+                    disabled={submitting}
+                    className="relative w-full bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white px-6 py-4 rounded-full font-black text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     <span className="relative z-10 flex items-center justify-center gap-2">
-                      Verstuur Aanbod
+                      {submitting ? 'Versturen...' : 'Verstuur Aanbod'}
                     </span>
                   </button>
                 </form>

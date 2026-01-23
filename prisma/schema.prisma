@@ -109,20 +109,55 @@ model ShopCard {
 
 // Purchase Offers (inkoop aanbiedingen)
 model PurchaseOffer {
-  id            String   @id @default(uuid())
-  userId        String
-  visitorName   String
-  visitorEmail  String
-  visitorPhone  String?
-  cards         String   // JSON stored as string
-  totalExpected Float?
-  notes         String?
-  status        String   @default("pending")
-  createdAt     DateTime @default(now())
+  id              String                @id @default(uuid())
+  userId          String
+  offerNumber     String                @unique @default(cuid())
   
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Customer info
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  message         String?
+  
+  // Pricing
+  negotiate       Boolean               @default(false)
+  totalPrice      Float?
+  
+  // Status
+  status          String                @default("PENDING")
+  
+  // Relations
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards           PurchaseOfferCard[]
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
   
   @@index([userId])
+  @@index([status])
+  @@index([customerEmail])
+}
+
+// Purchase Offer Cards
+model PurchaseOfferCard {
+  id                String         @id @default(uuid())
+  offerId           String
+  offer             PurchaseOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  
+  // Card details
+  cardId            String
+  cardName          String
+  cardNumber        String
+  setId             String
+  setName           String
+  variant           String         @default("nonHolo")
+  condition         String         @default("NM")
+  price             Float?
+  imageUrl          String?
+  
+  createdAt         DateTime       @default(now())
+  
+  @@index([offerId])
 }
 
 // Shop Orders (verkoop bestellingen)

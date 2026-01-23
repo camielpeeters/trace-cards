@@ -75,6 +75,61 @@ export default function AdminDashboard() {
   const [defaultPrice, setDefaultPrice] = useState(5.00);
   const [cardNumberInput, setCardNumberInput] = useState('');
   const [cardView, setCardView] = useState('grid'); // 'grid' or 'list'
+  const [purchaseOffers, setPurchaseOffers] = useState([]);
+  const [shopOrders, setShopOrders] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+
+  // Load offers from API
+  const loadOffersFromAPI = async () => {
+    try {
+      setOffersLoading(true);
+      
+      // Fetch purchase offers and shop orders in parallel
+      const [purchaseRes, shopRes] = await Promise.all([
+        fetch('/api/user/purchase-offers'),
+        fetch('/api/user/shop-orders'),
+      ]);
+      
+      if (purchaseRes.ok) {
+        const { offers } = await purchaseRes.json();
+        setPurchaseOffers(offers || []);
+      }
+      
+      if (shopRes.ok) {
+        const { orders } = await shopRes.json();
+        setShopOrders(orders || []);
+      }
+    } catch (error) {
+      console.error('Error loading offers:', error);
+    } finally {
+      setOffersLoading(false);
+    }
+  };
+  
+  // Update offer status
+  const updateOfferStatus = async (offerId, status, type = 'purchase') => {
+    try {
+      const endpoint = type === 'purchase' ? '/api/user/purchase-offers' : '/api/user/shop-orders';
+      const response = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          [type === 'purchase' ? 'offerId' : 'orderId']: offerId, 
+          status 
+        }),
+      });
+      
+      if (response.ok) {
+        // Reload offers
+        await loadOffersFromAPI();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating offer status:', error);
+      return false;
+    }
+  };
 
   // Check authentication and load data
   useEffect(() => {
@@ -98,6 +153,9 @@ export default function AdminDashboard() {
     
     // Load current user
     loadCurrentUser();
+    
+    // Load offers from API
+    loadOffersFromAPI();
     
     // Auto-sync cards from localStorage to database (once on mount, after a short delay to ensure auth is loaded)
     setTimeout(() => {
@@ -823,15 +881,40 @@ export default function AdminDashboard() {
     set.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const purchaseOffers = getPurchaseOffers();
-  const shopOrders = getShopOrders();
-  const allOrders = [...purchaseOffers.map(o => ({...o, orderType: 'purchase'})), ...shopOrders.map(o => ({...o, orderType: 'shop'}))];
+  // Combine purchase offers and shop orders from API
+  const allOrders = [
+    ...purchaseOffers.map(o => ({
+      id: o.id,
+      orderType: 'purchase',
+      name: o.customerName,
+      email: o.customerEmail,
+      phone: o.customerPhone,
+      date: o.createdAt,
+      status: o.status,
+      cards: o.cards || [],
+      negotiate: o.negotiate,
+      totalExpected: o.totalPrice,
+      notes: o.message,
+    })), 
+    ...shopOrders.map(o => ({
+      id: o.id,
+      orderType: 'shop',
+      name: o.customerName,
+      email: o.customerEmail,
+      phone: o.customerPhone,
+      date: o.createdAt,
+      status: o.status,
+      cards: o.cards || [],
+      totalPrice: o.totalPrice,
+      notes: o.notes,
+    }))
+  ];
   
   const filteredOffers = allOrders.filter(order =>
     order.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const pendingPurchaseOffers = purchaseOffers.filter(o => o.status === 'pending').length;
+  const pendingPurchaseOffers = purchaseOffers.filter(o => o.status === 'PENDING').length;
   const pendingShopOrders = shopOrders.filter(o => o.status === 'pending').length;
   const purchaseCardsCount = Object.keys(purchaseCards).length;
   const purchaseSetsCount = Object.keys(purchaseSets).length;
@@ -2090,9 +2173,12 @@ export default function AdminDashboard() {
                   <div className="space-y-4">
                     {filteredOffers.map((order) => {
                       const isPurchase = order.orderType === 'purchase';
-                      const totalAmount = isPurchase 
-                        ? (order.totalExpected || order.cards?.reduce((sum, card) => sum + (parseFloat(card.expectedPrice) || 0), 0) || 0)
-                        : (order.totalPrice || order.cards?.reduce((sum, card) => sum + (parseFloat(card.price) || 0), 0) || 0);
+                      // Calculate total, but handle negotiate offers (no prices)
+                      const totalAmount = order.negotiate ? 0 : (
+                        isPurchase 
+                          ? (order.totalExpected || order.cards?.reduce((sum, card) => sum + (parseFloat(card.price) || 0), 0) || 0)
+                          : (order.totalPrice || order.cards?.reduce((sum, card) => sum + (parseFloat(card.price) || 0), 0) || 0)
+                      );
                       
                       return (
                         <div
@@ -2127,19 +2213,23 @@ export default function AdminDashboard() {
                             </div>
                             <div className="text-right">
                               <div className="text-2xl font-black bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
-                                €{totalAmount.toFixed(2)}
+                                {order.negotiate ? (
+                                  <span className="text-yellow-600 dark:text-yellow-400 text-lg">Onderhandelen</span>
+                                ) : (
+                                  `€${totalAmount.toFixed(2)}`
+                                )}
                               </div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 {new Date(order.date).toLocaleDateString('nl-NL')}
                               </p>
                               <span className={`mt-2 inline-block px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
-                                order.status === 'pending' 
+                                order.status === 'PENDING' || order.status === 'pending'
                                   ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30'
-                                  : order.status === 'accepted'
+                                  : order.status === 'ACCEPTED' || order.status === 'accepted'
                                   ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 dark:text-green-400 border border-green-500/30'
                                   : 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-700 dark:text-red-400 border border-red-500/30'
                               }`}>
-                                {order.status === 'pending' ? 'Openstaand' : order.status === 'accepted' ? 'Geaccepteerd' : 'Geweigerd'}
+                                {(order.status === 'PENDING' || order.status === 'pending') ? 'Openstaand' : (order.status === 'ACCEPTED' || order.status === 'accepted') ? 'Geaccepteerd' : 'Geweigerd'}
                               </span>
                             </div>
                           </div>
@@ -2164,14 +2254,22 @@ export default function AdminDashboard() {
                                     <td className="py-2 text-gray-800 dark:text-gray-200">{card.cardName}</td>
                                     <td className="text-center py-2 text-gray-600 dark:text-gray-400">#{card.cardNumber}</td>
                                     <td className="text-right py-2 font-semibold text-gray-800 dark:text-gray-200">
-                                      €{((isPurchase ? card.expectedPrice : card.price) || 0).toFixed(2)}
+                                      {(isPurchase ? card.price : card.price) ? (
+                                        `€${((isPurchase ? card.price : card.price) || 0).toFixed(2)}`
+                                      ) : (
+                                        <span className="text-yellow-600 dark:text-yellow-400 text-xs">Onderhandelen</span>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
                                 <tr className="font-bold border-t-2 border-gray-800 dark:border-gray-600">
                                   <td className="py-2 text-gray-800 dark:text-gray-200 uppercase tracking-wide" colSpan="2">Totaal</td>
                                   <td className="text-right py-2 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent text-lg font-black">
-                                    €{totalAmount.toFixed(2)}
+                                    {totalAmount > 0 ? (
+                                      `€${totalAmount.toFixed(2)}`
+                                    ) : (
+                                      <span className="text-yellow-600 dark:text-yellow-400 text-sm font-semibold">Te bepalen</span>
+                                    )}
                                   </td>
                                 </tr>
                               </tbody>
@@ -2179,23 +2277,36 @@ export default function AdminDashboard() {
                           </div>
                           
                           {/* Opmerkingen */}
-                          {(order.offer || order.notes) && (
+                          {(order.notes || order.negotiate) && (
                             <div className="glass rounded-xl p-4 mb-4 border border-yellow-500/30 dark:border-yellow-400/30 bg-yellow-500/10 dark:bg-yellow-500/10">
                               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2 uppercase tracking-wide">
                                 <Mail className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                                 Opmerking klant
                               </p>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{order.offer || order.notes}</p>
+                              {order.negotiate && (
+                                <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400 mb-2">
+                                  🤝 Klant wil onderhandelen over de prijs
+                                </p>
+                              )}
+                              {order.notes && (
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{order.notes}</p>
+                              )}
                             </div>
                           )}
                           
                           {/* Acties */}
                           <div className="flex gap-2">
-                            <button className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => updateOfferStatus(order.id, 'ACCEPTED', order.orderType)}
+                              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
+                            >
                               <Check className="w-4 h-4" />
                               Accepteren
                             </button>
-                            <button className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => updateOfferStatus(order.id, 'REJECTED', order.orderType)}
+                              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
+                            >
                               <XCircle className="w-4 h-4" />
                               Afwijzen
                             </button>
