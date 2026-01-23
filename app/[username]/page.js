@@ -1269,9 +1269,9 @@ export default function PublicUserPage() {
                                     </div>
                                   </div>
                                   
-                                  <div className={`p-2 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '65px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
+                                  <div className={`p-2 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '58px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
                                     {/* Card Title: #Number Name */}
-                                    <div className="flex items-center gap-1 mb-1">
+                                    <div className="flex items-center gap-1 mb-0.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
                                         #{card.cardNumber} {card.cardName}
                                       </p>
@@ -1282,7 +1282,7 @@ export default function PublicUserPage() {
                                       )}
                                     </div>
                                     
-                                    {/* Pricing Display - Compact single line - mt-auto for bottom alignment */}
+                                    {/* Pricing Display - Compact with arrows, right-aligned - mt-auto for bottom alignment */}
                                     <div className="mt-auto">
                                     {variantData ? (
                                       (() => {
@@ -1292,16 +1292,18 @@ export default function PublicUserPage() {
                                         }
                                         
                                         return (
-                                          <div className="flex items-center gap-1 text-xs whitespace-nowrap">
+                                          <div className="flex items-center justify-between gap-1 text-xs">
                                             <span className="font-bold text-red-600 dark:text-red-400 text-xs">€{formatPrice(mainPrice)}</span>
-                                            {(variantData.low || variantData.mid) && (
-                                              <span className="text-gray-500 dark:text-gray-400 text-[9px]">
-                                                {variantData.low && `€${formatPrice(variantData.low)}`}
-                                                {variantData.low && variantData.mid && '/'}
-                                                {variantData.mid && `€${formatPrice(variantData.mid)}`}
-                                              </span>
-                                            )}
-                                            <span className="text-red-500 dark:text-red-400 text-[9px] font-medium">TCG</span>
+                                            <div className="flex items-center gap-1">
+                                              {(variantData.low || variantData.mid) && (
+                                                <span className="text-gray-500 dark:text-gray-400 text-[9px]">
+                                                  {variantData.low && `↓€${formatPrice(variantData.low)}`}
+                                                  {variantData.low && variantData.mid && ' '}
+                                                  {variantData.mid && `↑€${formatPrice(variantData.mid)}`}
+                                                </span>
+                                              )}
+                                              <span className="text-red-500 dark:text-red-400 text-[9px] font-medium">TCG</span>
+                                            </div>
                                           </div>
                                         );
                                       })()
@@ -1923,9 +1925,9 @@ export default function PublicUserPage() {
                                   </div>
                                   
                                   {/* Card info section - SHOP VERSION with price display */}
-                                  <div className={`p-2 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '70px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
+                                  <div className={`p-2 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '62px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
                                     {/* Card Title */}
-                                    <div className="flex items-center gap-1 mb-1">
+                                    <div className="flex items-center gap-1 mb-0.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
                                         #{card.cardNumber} {card.cardName}
                                       </p>
@@ -1936,7 +1938,7 @@ export default function PublicUserPage() {
                                       )}
                                     </div>
                                     
-                                    {/* SHOP PRICING DISPLAY: Compact layout - mt-auto for bottom alignment */}
+                                    {/* SHOP PRICING DISPLAY: Compact with arrows, right-aligned - mt-auto for bottom alignment */}
                                     <div className="mt-auto space-y-0.5">
                                       {/* User's selling price */}
                                       <div>
@@ -1945,18 +1947,20 @@ export default function PublicUserPage() {
                                         </span>
                                       </div>
                                       
-                                      {/* TCG price - compact single line */}
+                                      {/* TCG price - compact with arrows, right-aligned */}
                                       {tcgMainPrice ? (
-                                        <div className="flex items-center gap-1 text-[9px]">
-                                          <span className="text-red-500 dark:text-red-400 font-medium">TCG</span>
+                                        <div className="flex items-center justify-between gap-1 text-[9px]">
                                           <span className="text-gray-700 dark:text-gray-300">€{formatPrice(tcgMainPrice)}</span>
-                                          {variantData?.low || variantData?.mid ? (
-                                            <span className="text-gray-500 dark:text-gray-400">
-                                              ({variantData.low && `€${formatPrice(variantData.low)}`}
-                                              {variantData.low && variantData.mid && '/'}
-                                              {variantData.mid && `€${formatPrice(variantData.mid)}`})
-                                            </span>
-                                          ) : null}
+                                          <div className="flex items-center gap-1">
+                                            {variantData?.low || variantData?.mid ? (
+                                              <span className="text-gray-500 dark:text-gray-400">
+                                                {variantData.low && `↓€${formatPrice(variantData.low)}`}
+                                                {variantData.low && variantData.mid && ' '}
+                                                {variantData.mid && `↑€${formatPrice(variantData.mid)}`}
+                                              </span>
+                                            ) : null}
+                                            <span className="text-red-500 dark:text-red-400 font-medium">TCG</span>
+                                          </div>
                                         </div>
                                       ) : (
                                         <div className="text-[9px] text-gray-400 dark:text-gray-500">
@@ -2314,13 +2318,13 @@ export default function PublicUserPage() {
                             </button>
                             <div className="p-1.5" style={{ 
                               backgroundColor: 'var(--card-bg, white)',
-                              minHeight: '55px',
+                              minHeight: '50px',
                               display: 'flex',
                               flexDirection: 'column',
                               justifyContent: 'space-between'
                             }}>
                               {/* Card Title: #Number Name */}
-                              <div className="flex items-center gap-1 mb-0.5">
+                              <div className="flex items-center gap-1 mb-0">
                                 <p className="font-bold text-[11px] text-gray-800 dark:text-white truncate flex-1">
                                   #{card.cardNumber} {card.cardName}
                                 </p>
@@ -2331,7 +2335,7 @@ export default function PublicUserPage() {
                                 )}
                               </div>
                               
-                              {/* Pricing Display - Compact single line */}
+                              {/* Pricing Display - Compact with arrows, right-aligned */}
                               <div className="mt-auto">
                                 {variantData ? (
                                   (() => {
@@ -2341,16 +2345,18 @@ export default function PublicUserPage() {
                                     }
                                     
                                     return (
-                                      <div className="flex items-center gap-0.5 text-xs whitespace-nowrap">
+                                      <div className="flex items-center justify-between gap-0.5 text-xs">
                                         <span className="font-bold text-red-600 dark:text-red-400 text-[11px]">€{formatPrice(mainPrice)}</span>
-                                        {(variantData.low || variantData.mid) && (
-                                          <span className="text-gray-500 dark:text-gray-400 text-[8px]">
-                                            ({variantData.low && `€${formatPrice(variantData.low)}`}
-                                            {variantData.low && variantData.mid && '/'}
-                                            {variantData.mid && `€${formatPrice(variantData.mid)}`})
-                                          </span>
-                                        )}
-                                        <span className="text-red-500 dark:text-red-400 text-[8px] font-medium">TCG</span>
+                                        <div className="flex items-center gap-0.5">
+                                          {(variantData.low || variantData.mid) && (
+                                            <span className="text-gray-500 dark:text-gray-400 text-[8px]">
+                                              {variantData.low && `↓€${formatPrice(variantData.low)}`}
+                                              {variantData.low && variantData.mid && ' '}
+                                              {variantData.mid && `↑€${formatPrice(variantData.mid)}`}
+                                            </span>
+                                          )}
+                                          <span className="text-red-500 dark:text-red-400 text-[8px] font-medium">TCG</span>
+                                        </div>
                                       </div>
                                     );
                                   })()
