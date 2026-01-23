@@ -2242,10 +2242,14 @@ export default function PublicUserPage() {
                         return (
                           <div
                             key={cardKey}
-                            className={`relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden transition-all border-0 shadow-sm ${
+                            className={`relative rounded-xl overflow-hidden transition-all border-0 shadow-sm ${
                               selected ? 'ring-2 ring-red-500' : 'hover:shadow-md'
                             }`}
-                            style={{ display: 'flex', flexDirection: 'column' }}
+                            style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column',
+                              backgroundColor: 'var(--card-bg, white)'
+                            }}
                           >
                             {selected && (
                               <div className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 z-10">
@@ -2266,15 +2270,17 @@ export default function PublicUserPage() {
                                 });
                               }}
                               className="w-full flex-shrink-0"
+                              style={{ background: 'transparent', border: 'none', padding: 0 }}
                             >
                               <img
                                 src={card.images?.small || card.images?.large}
                                 alt={card.cardName}
-                                className="w-full h-auto block"
+                                className="w-full h-auto"
                                 draggable={false}
+                                style={{ display: 'block', width: '100%', height: 'auto' }}
                               />
                             </button>
-                            <div className="p-2 flex-1" style={{ background: 'inherit' }}>
+                            <div className="p-2 flex-1" style={{ backgroundColor: 'var(--card-bg, white)' }}>
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
                                 <p className="font-bold text-xs text-gray-800 dark:text-white truncate flex-1">
