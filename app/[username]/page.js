@@ -1247,7 +1247,7 @@ export default function PublicUserPage() {
                                     </div>
                                   </div>
                                   
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
+                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                     {/* Card Title: #Number Name */}
                                     <div className="flex items-center gap-1 mb-1.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
@@ -1280,7 +1280,8 @@ export default function PublicUserPage() {
                                       </div>
                                     )}
                                     
-                                    {/* Pricing Display - Single Line with Flex Layout */}
+                                    {/* Pricing Display - Single Line with Flex Layout - mt-auto for bottom alignment */}
+                                    <div className="mt-auto">
                                     {variantData ? (
                                       (() => {
                                         const mainPrice = variantData.market || variantData.mid || variantData.low;
@@ -1305,6 +1306,7 @@ export default function PublicUserPage() {
                                     ) : (
                                       <p className="text-[10px] text-gray-500 dark:text-gray-500">Geen prijsdata</p>
                                     )}
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -1897,7 +1899,7 @@ export default function PublicUserPage() {
                                   </div>
                                   
                                   {/* Card info section - SHOP VERSION with price display */}
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
+                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                     {/* Card Title */}
                                     <div className="flex items-center gap-1 mb-1.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
@@ -1930,7 +1932,8 @@ export default function PublicUserPage() {
                                       </div>
                                     )}
                                     
-                                    {/* SHOP PRICING DISPLAY: User price on top, TCG price below */}
+                                    {/* SHOP PRICING DISPLAY: User price on top, TCG price below - mt-auto for bottom alignment */}
+                                    <div className="mt-auto">
                                     <div className="space-y-0.5">
                                       {/* User's selling price - larger, prominent */}
                                       <div className="flex items-center">
@@ -1956,6 +1959,7 @@ export default function PublicUserPage() {
                                           Geen TCG prijsdata
                                         </div>
                                       )}
+                                    </div>
                                     </div>
                                   </div>
                                 </div>
@@ -2247,7 +2251,7 @@ export default function PublicUserPage() {
                             }`}
                             style={{ 
                               display: 'grid',
-                              gridTemplateRows: 'auto 1fr',
+                              gridTemplateRows: 'auto auto',
                               backgroundColor: 'var(--card-bg, white)'
                             }}
                           >
@@ -2280,8 +2284,12 @@ export default function PublicUserPage() {
                                 style={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'top' }}
                               />
                             </button>
-                            <div className="p-2 flex flex-col justify-between" style={{ 
-                              backgroundColor: 'var(--card-bg, white)'
+                            <div className="p-2" style={{ 
+                              backgroundColor: 'var(--card-bg, white)',
+                              minHeight: '80px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between'
                             }}>
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
