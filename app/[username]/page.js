@@ -181,28 +181,73 @@ export default function PublicUserPage() {
         const purchaseCardsArray = Object.values(purchaseCardsData);
         const shopCardsArray = Object.values(shopCardsData);
         
-        // Render immediately from cache
-        setPurchaseCards(purchaseCardsArray);
-        setShopCards(shopCardsArray);
-        
-        // Trigger background price hydration (non-blocking)
-        if (purchaseCardsArray.length > 0 || shopCardsArray.length > 0) {
-          hydratePricesInBackground(purchaseCardsArray, shopCardsArray);
-        }
-        
-        // Load user info from localStorage or API
-        if (authUser) {
-          setUser({
-            username: authUser.username,
-            displayName: authUser.displayName,
-            avatarUrl: authUser.avatarUrl
-          });
-        } else {
-          // Fallback to API if no authUser
-          const purchaseResponse = await fetch(`/api/public/${username}/purchase-cards`);
+        // If localStorage is empty, fallback to database API
+        if (purchaseCardsArray.length === 0 && shopCardsArray.length === 0) {
+          console.log('⚠️ localStorage empty for own profile, loading from database instead');
+          
+          // Load from database API (same as public profile)
+          const fetchWithTimeout = async (url, timeout = 15000) => {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), timeout);
+              
+              const response = await fetch(url, { signal: controller.signal });
+              clearTimeout(timeoutId);
+              return response;
+            } catch (err) {
+              if (err.name === 'AbortError') {
+                console.error(`⏱️ Request timeout for ${url}`);
+              } else {
+                console.error(`❌ Error fetching ${url}:`, err);
+              }
+              return new Response(JSON.stringify({ error: 'Request timeout' }), {
+                status: 408,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            }
+          };
+          
+          const [purchaseResponse, shopResponse] = await Promise.all([
+            fetchWithTimeout(`/api/public/${username}/purchase-cards`),
+            fetchWithTimeout(`/api/public/${username}/shop-cards`)
+          ]);
+          
           if (purchaseResponse.ok) {
             const purchaseData = await purchaseResponse.json();
-            setUser(purchaseData.user);
+            console.log('📦 Database purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
+            setUser(purchaseData.user || null);
+            setPurchaseCards(purchaseData.cards || []);
+          }
+          
+          if (shopResponse.ok) {
+            const shopData = await shopResponse.json();
+            console.log('🛒 Database shop cards loaded:', shopData.cards?.length || 0, 'cards');
+            setShopCards(shopData.cards || []);
+          }
+        } else {
+          // Render immediately from cache
+          setPurchaseCards(purchaseCardsArray);
+          setShopCards(shopCardsArray);
+          
+          // Trigger background price hydration (non-blocking)
+          if (purchaseCardsArray.length > 0 || shopCardsArray.length > 0) {
+            hydratePricesInBackground(purchaseCardsArray, shopCardsArray);
+          }
+          
+          // Load user info from localStorage or API
+          if (authUser) {
+            setUser({
+              username: authUser.username,
+              displayName: authUser.displayName,
+              avatarUrl: authUser.avatarUrl
+            });
+          } else {
+            // Fallback to API if no authUser
+            const purchaseResponse = await fetch(`/api/public/${username}/purchase-cards`);
+            if (purchaseResponse.ok) {
+              const purchaseData = await purchaseResponse.json();
+              setUser(purchaseData.user);
+            }
           }
         }
       } else {
