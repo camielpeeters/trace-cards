@@ -726,43 +726,44 @@ export default function PublicUserPage() {
               </button>
             </div>
             
-            {/* View Toggle and Card Size - Show on both purchase and shop tab */}
+            {/* View Toggle and Card Size - Responsive mobile layout */}
             {((activeTab === 'purchase' && hasPurchaseCards) || (activeTab === 'shop' && hasShopCards)) && (
-              <div className="flex items-center gap-3">
-                <div className="glass-strong rounded-xl p-1 flex gap-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {/* View Toggle - Full width on mobile */}
+                <div className="glass-strong rounded-xl p-1 flex gap-1 w-full sm:w-auto">
                   <button
                     onClick={() => setMainView('grid')}
-                    className={`p-2 rounded-lg transition-all ${
+                    className={`flex-1 sm:flex-none p-2 rounded-lg transition-all ${
                       mainView === 'grid' 
                         ? 'bg-red-500 text-white' 
                         : 'text-gray-800 dark:text-white hover:bg-white/20'
                     }`}
                     title="Grid weergave"
                   >
-                    <Grid className="w-5 h-5" />
+                    <Grid className="w-4 h-4 sm:w-5 sm:h-5 mx-auto" />
                   </button>
                   <button
                     onClick={() => setMainView('list')}
-                    className={`p-2 rounded-lg transition-all ${
+                    className={`flex-1 sm:flex-none p-2 rounded-lg transition-all ${
                       mainView === 'list' 
                         ? 'bg-red-500 text-white' 
                         : 'text-gray-800 dark:text-white hover:bg-white/20'
                     }`}
                     title="Lijst weergave"
                   >
-                    <List className="w-5 h-5" />
+                    <List className="w-4 h-4 sm:w-5 sm:h-5 mx-auto" />
                   </button>
                 </div>
                 
-                {/* Card Size Slider */}
-                <div className="glass-strong rounded-xl px-3 py-1.5 flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Grootte:</span>
-                  <div className="flex gap-1">
+                {/* Card Size - Full width on mobile */}
+                <div className="glass-strong rounded-xl px-2 sm:px-3 py-1.5 flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Grootte:</span>
+                  <div className="flex gap-1 flex-1 sm:flex-none">
                     {['small', 'medium', 'large'].map((size) => (
                       <button
                         key={size}
                         onClick={() => setCardSize(size)}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                        className={`flex-1 sm:flex-none px-2 py-1 rounded text-xs font-medium transition-all ${
                           cardSize === size
                             ? 'bg-red-500 text-white'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-white/20'
@@ -2311,7 +2312,7 @@ export default function PublicUserPage() {
                                 </div>
                               )}
                               
-                              {/* Pricing Display - Single Line with Flex Layout */}
+                              {/* Pricing Display - Consistent single line layout */}
                               {variantData ? (
                                 (() => {
                                   const mainPrice = variantData.market || variantData.mid || variantData.low;
@@ -2320,14 +2321,12 @@ export default function PublicUserPage() {
                                   }
                                   
                                   return (
-                                    <div className="flex items-center gap-1.5 flex-wrap text-xs leading-tight">
-                                      <span className="font-bold text-red-600 dark:text-red-400">€{formatPrice(mainPrice)}</span>
-                                      {variantData.mid && (
-                                        <span className="text-gray-500 dark:text-gray-400 text-[10px]">
-                                          (mid €{formatPrice(variantData.mid)})
-                                        </span>
-                                      )}
-                                      <span className="text-gray-400 dark:text-gray-500 text-[10px] ml-auto">TCGplayer</span>
+                                    <div className="flex items-center gap-1 text-xs whitespace-nowrap">
+                                      <span className="font-bold text-red-600 dark:text-red-400 text-xs">€{formatPrice(mainPrice)}</span>
+                                      <span className="text-gray-500 dark:text-gray-400 text-[9px]">
+                                        (€{formatPrice(variantData.low || variantData.mid || mainPrice)})
+                                      </span>
+                                      <span className="text-gray-400 dark:text-gray-500 text-[9px]">TCG</span>
                                     </div>
                                   );
                                 })()
