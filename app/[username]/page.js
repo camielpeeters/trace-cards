@@ -2248,7 +2248,8 @@ export default function PublicUserPage() {
                             style={{ 
                               display: 'flex', 
                               flexDirection: 'column',
-                              backgroundColor: 'var(--card-bg, white)'
+                              backgroundColor: 'var(--card-bg, white)',
+                              minHeight: 0
                             }}
                           >
                             {selected && (
@@ -2270,17 +2271,23 @@ export default function PublicUserPage() {
                                 });
                               }}
                               className="w-full flex-shrink-0"
-                              style={{ background: 'transparent', border: 'none', padding: 0 }}
+                              style={{ background: 'transparent', border: 'none', padding: 0, margin: 0, lineHeight: 0 }}
                             >
                               <img
                                 src={card.images?.small || card.images?.large}
                                 alt={card.cardName}
                                 className="w-full h-auto"
                                 draggable={false}
-                                style={{ display: 'block', width: '100%', height: 'auto' }}
+                                style={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'bottom' }}
                               />
                             </button>
-                            <div className="p-2 flex-1" style={{ backgroundColor: 'var(--card-bg, white)' }}>
+                            <div className="p-2" style={{ 
+                              backgroundColor: 'var(--card-bg, white)',
+                              flex: '1 1 auto',
+                              minHeight: 0,
+                              display: 'flex',
+                              flexDirection: 'column'
+                            }}>
                               {/* Card Title: #Number Name */}
                               <div className="flex items-center gap-1 mb-1">
                                 <p className="font-bold text-xs text-gray-800 dark:text-white truncate flex-1">
