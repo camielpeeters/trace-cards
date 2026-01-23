@@ -1148,6 +1148,26 @@ export default function PublicUserPage() {
                                       }}></div>
                                     </div>
                                     
+                                    {/* Variant Toggle - Floating over image, only when selected and multiple variants */}
+                                    {selected && availableVariants.length > 1 && (
+                                      <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-50" style={{ pointerEvents: 'auto' }}>
+                                        {availableVariants.map((variant) => (
+                                          <button
+                                            key={variant}
+                                            onClick={(e) => handleVariantChange(e, variant)}
+                                            className={`flex-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all shadow-lg ${
+                                              activeVariant === variant
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                                            }`}
+                                            title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
+                                          >
+                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                    
                                     {/* Rotating card image container with glare as child */}
                                     <div 
                                       className="card-image-3d w-full h-full flex items-center justify-center transition-transform duration-100 relative pointer-events-none"
@@ -1261,26 +1281,6 @@ export default function PublicUserPage() {
                                         </span>
                                       )}
                                     </div>
-                                    
-                                    {/* Variant Toggle - Only render when multiple variants available */}
-                                    {availableVariants.length > 1 && (
-                                      <div className="mb-1.5 flex gap-1">
-                                        {availableVariants.map((variant) => (
-                                          <button
-                                            key={variant}
-                                            onClick={(e) => handleVariantChange(e, variant)}
-                                            className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
-                                              activeVariant === variant
-                                                ? 'bg-red-500 text-white'
-                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                            }`}
-                                            title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
-                                          >
-                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
                                     
                                     {/* Pricing Display - Single Line with Flex Layout - mt-auto for bottom alignment */}
                                     <div className="mt-auto">
@@ -1806,6 +1806,26 @@ export default function PublicUserPage() {
                                       }}></div>
                                     </div>
                                     
+                                    {/* Variant Toggle - Floating over image, only when selected and multiple variants */}
+                                    {selected && availableVariants.length > 1 && (
+                                      <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-50" style={{ pointerEvents: 'auto' }}>
+                                        {availableVariants.map((variant) => (
+                                          <button
+                                            key={variant}
+                                            onClick={(e) => handleVariantChange(e, variant)}
+                                            className={`flex-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all shadow-lg ${
+                                              activeVariant === variant
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                                            }`}
+                                            title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
+                                          >
+                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                    
                                     <div 
                                       className="card-image-3d w-full h-full flex items-center justify-center transition-transform duration-100 relative pointer-events-none"
                                       style={{ 
@@ -1915,26 +1935,6 @@ export default function PublicUserPage() {
                                         </span>
                                       )}
                                     </div>
-                                    
-                                    {/* Variant Toggle - Only render when selected and multiple variants available */}
-                                    {selected && availableVariants.length > 1 && (
-                                      <div className="mb-1.5 flex gap-1">
-                                        {availableVariants.map((variant) => (
-                                          <button
-                                            key={variant}
-                                            onClick={(e) => handleVariantChange(e, variant)}
-                                            className={`flex-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
-                                              activeVariant === variant
-                                                ? 'bg-red-500 text-white'
-                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                            }`}
-                                            title={variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
-                                          >
-                                            {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Reverse' : 'Non-Holo'}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
                                     
                                     {/* SHOP PRICING DISPLAY: User price on top, TCG price below - mt-auto for bottom alignment */}
                                     <div className="mt-auto">
@@ -2277,7 +2277,7 @@ export default function PublicUserPage() {
                                   event: e
                                 });
                               }}
-                              className="w-full"
+                              className="w-full relative"
                               style={{ background: 'transparent', border: 'none', padding: 0, margin: 0, lineHeight: 1 }}
                             >
                               <img
@@ -2287,6 +2287,31 @@ export default function PublicUserPage() {
                                 draggable={false}
                                 style={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'top' }}
                               />
+                              
+                              {/* Variant Toggle - Floating over image in modal, only when selected and multiple variants */}
+                              {selected && availableVariants.length > 1 && (
+                                <div className="absolute bottom-1 left-1 right-1 flex gap-0.5 z-50" style={{ pointerEvents: 'auto' }}>
+                                  {availableVariants.map((variant) => (
+                                    <button
+                                      key={variant}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCardVariants({
+                                          ...cardVariants,
+                                          [cardKey]: variant
+                                        });
+                                      }}
+                                      className={`flex-1 px-1.5 py-0.5 rounded text-[9px] font-bold transition-all shadow-lg ${
+                                        activeVariant === variant
+                                          ? 'bg-red-500 text-white'
+                                          : 'bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                                      }`}
+                                    >
+                                      {variant === 'holofoil' ? 'Holo' : variant === 'reverseHolo' ? 'Rev' : 'Non'}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </button>
                             <div className="p-2" style={{ 
                               backgroundColor: 'var(--card-bg, white)',
@@ -2306,31 +2331,6 @@ export default function PublicUserPage() {
                                   </span>
                                 )}
                               </div>
-                              
-                              {/* Variant Toggle - Only render when multiple variants available */}
-                              {availableVariants.length > 1 && (
-                                <div className="mb-1.5 flex gap-1">
-                                  {availableVariants.map((variant) => (
-                                    <button
-                                      key={variant}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCardVariants({
-                                          ...cardVariants,
-                                          [cardKey]: variant
-                                        });
-                                      }}
-                                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                        activeVariant === variant
-                                          ? 'bg-red-500 text-white shadow-md'
-                                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                      }`}
-                                    >
-                                      {variant === 'holofoil' ? 'Holofoil' : variant === 'reverseHolo' ? 'Reverse Holo' : 'Non-Holo'}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
                               
                               {/* Pricing Display - Fixed height wrapper for consistency */}
                               <div className="mt-auto">
