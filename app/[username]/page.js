@@ -859,7 +859,7 @@ export default function PublicUserPage() {
                             cardSize === 'small' ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8' :
                             cardSize === 'large' ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
                             'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                          }`}>
+                          }`} style={{ gridAutoRows: '1fr' }}>
                             {cards.map((card, idx) => {
                               const selected = isCardSelected(card);
                               const cardKey = `${card.setId}-${card.cardId}`;
@@ -1041,7 +1041,7 @@ export default function PublicUserPage() {
                                 <div
                                   key={cardKey}
                                   data-card-key={cardKey}
-                                  className={`group relative rounded-xl ${
+                                  className={`group relative rounded-xl h-full ${
                                     selected 
                                       ? 'card-selected' 
                                       : ''
@@ -1053,6 +1053,8 @@ export default function PublicUserPage() {
                                     borderRadius: '0.75rem',
                                     transition: selected ? 'padding 0.3s ease' : 'transform 0.3s ease',
                                     transform: selected ? 'none' : 'translate3d(0, 0, 0) scale(1)',
+                                    display: 'flex',
+                                    flexDirection: 'column'
                                   }}
                                   onMouseEnter={(e) => {
                                     if (!selected) {
@@ -1247,7 +1249,7 @@ export default function PublicUserPage() {
                                     </div>
                                   </div>
                                   
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
                                     {/* Card Title: #Number Name */}
                                     <div className="flex items-center gap-1 mb-1.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
@@ -1535,7 +1537,7 @@ export default function PublicUserPage() {
                             cardSize === 'small' ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8' :
                             cardSize === 'large' ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
                             'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                          }`}>
+                          }`} style={{ gridAutoRows: '1fr' }}>
                             {cards.map((card) => {
                               const selected = isCardSelected(card);
                               const cardKey = `${card.setId}-${card.cardId}`;
@@ -1705,7 +1707,7 @@ export default function PublicUserPage() {
                                 <div
                                   key={cardKey}
                                   data-card-key={cardKey}
-                                  className={`group relative rounded-xl ${
+                                  className={`group relative rounded-xl h-full ${
                                     selected 
                                       ? 'card-selected' 
                                       : ''
@@ -1717,6 +1719,8 @@ export default function PublicUserPage() {
                                     borderRadius: '0.75rem',
                                     transition: selected ? 'padding 0.3s ease' : 'transform 0.3s ease',
                                     transform: selected ? 'none' : 'translate3d(0, 0, 0) scale(1)',
+                                    display: 'flex',
+                                    flexDirection: 'column'
                                   }}
                                   onMouseEnter={(e) => {
                                     if (!selected) {
@@ -1899,7 +1903,7 @@ export default function PublicUserPage() {
                                   </div>
                                   
                                   {/* Card info section - SHOP VERSION with price display */}
-                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                  <div className={`p-3 bg-gradient-to-br from-white/90 to-white dark:from-gray-800/90 dark:to-gray-900 dark:text-white shadow-sm rounded-b-xl relative`} style={{ zIndex: 1, backdropFilter: 'none', WebkitBackdropFilter: 'none', minHeight: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1 1 auto' }}>
                                     {/* Card Title */}
                                     <div className="flex items-center gap-1 mb-1.5">
                                       <p className="font-bold text-xs text-gray-800 dark:text-gray-100 truncate flex-1">
