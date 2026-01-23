@@ -84,20 +84,39 @@ export default function AdminDashboard() {
     try {
       setOffersLoading(true);
       
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.log('No auth token found');
+        setOffersLoading(false);
+        return;
+      }
+      
       // Fetch purchase offers and shop orders in parallel
       const [purchaseRes, shopRes] = await Promise.all([
-        fetch('/api/user/purchase-offers'),
-        fetch('/api/user/shop-orders'),
+        fetch('/api/user/purchase-offers', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }),
+        fetch('/api/user/shop-orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }),
       ]);
       
       if (purchaseRes.ok) {
         const { offers } = await purchaseRes.json();
         setPurchaseOffers(offers || []);
+      } else {
+        console.error('Failed to fetch purchase offers:', purchaseRes.status);
       }
       
       if (shopRes.ok) {
         const { orders } = await shopRes.json();
         setShopOrders(orders || []);
+      } else {
+        console.error('Failed to fetch shop orders:', shopRes.status);
       }
     } catch (error) {
       console.error('Error loading offers:', error);
@@ -109,10 +128,19 @@ export default function AdminDashboard() {
   // Update offer status
   const updateOfferStatus = async (offerId, status, type = 'purchase') => {
     try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Je moet ingelogd zijn om deze actie uit te voeren');
+        return false;
+      }
+      
       const endpoint = type === 'purchase' ? '/api/user/purchase-offers' : '/api/user/shop-orders';
       const response = await fetch(endpoint, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ 
           [type === 'purchase' ? 'offerId' : 'orderId']: offerId, 
           status 

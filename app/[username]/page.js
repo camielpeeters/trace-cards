@@ -1079,7 +1079,7 @@ export default function PublicUserPage() {
                                 <div
                                   key={cardKey}
                                   data-card-key={cardKey}
-                                  className={`group relative rounded-xl h-full ${
+                                  className={`group relative rounded-xl h-full overflow-hidden ${
                                     selected 
                                       ? 'card-selected' 
                                       : ''
@@ -1747,7 +1747,7 @@ export default function PublicUserPage() {
                                 <div
                                   key={cardKey}
                                   data-card-key={cardKey}
-                                  className={`group relative rounded-xl h-full ${
+                                  className={`group relative rounded-xl h-full overflow-hidden ${
                                     selected 
                                       ? 'card-selected' 
                                       : ''
