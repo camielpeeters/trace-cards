@@ -212,6 +212,50 @@ body {
   }
 }
 
+/* Safari-only: Simple CSS clouds as fallback */
+@supports (-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none)) {
+  .animated-background-container .cloud {
+    display: block !important;
+    position: absolute;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 100px;
+    filter: blur(25px);
+    -webkit-filter: blur(25px);
+    opacity: 0.6;
+  }
+  
+  .dark .animated-background-container .cloud {
+    background: rgba(200, 210, 220, 0.2);
+    opacity: 0.3;
+  }
+  
+  .animated-background-container .cloud1 {
+    width: 350px;
+    height: 120px;
+    top: 15%;
+    left: -200px;
+    animation: cloud-move 45s linear infinite;
+  }
+  
+  .animated-background-container .cloud2 {
+    width: 400px;
+    height: 140px;
+    top: 35%;
+    left: -250px;
+    animation: cloud-move-slow 60s linear infinite;
+    animation-delay: -20s;
+  }
+  
+  .animated-background-container .cloud3 {
+    width: 300px;
+    height: 100px;
+    top: 8%;
+    left: -150px;
+    animation: cloud-move 50s linear infinite;
+    animation-delay: -40s;
+  }
+}
+
 @keyframes card-glow {
   0% {
     box-shadow: 0 0 5px rgba(239, 68, 68, 0.3),
@@ -628,4 +672,18 @@ body {
   -webkit-perspective: 1000px;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
+}
+
+/* Shimmer animation for progress bar */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
 }

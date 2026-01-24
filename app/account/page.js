@@ -168,6 +168,13 @@ export default function AdminDashboard() {
       return;
     }
     
+    // Check if we should open orders tab (from notification click)
+    const dashboardTab = localStorage.getItem('dashboardActiveTab');
+    if (dashboardTab) {
+      setActiveTab(dashboardTab);
+      localStorage.removeItem('dashboardActiveTab'); // Clear after reading
+    }
+    
     const savedApiKey = localStorage.getItem('pokemonApiKey') || '';
     
     setApiKey(savedApiKey);

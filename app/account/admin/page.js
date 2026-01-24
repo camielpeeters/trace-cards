@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, LogOut, Users, User, ExternalLink, Mail, Calendar, Key, Save, Eye, EyeOff, ShoppingBag, Bug, ArrowLeft, Trash2 } from 'lucide-react';
+import { Shield, LogOut, Users, User, ExternalLink, Mail, Calendar, Key, Save, Eye, EyeOff, ShoppingBag, Bug, ArrowLeft, Trash2, Send } from 'lucide-react';
 import { isAuthenticated, logout } from '../../lib/auth';
 import Link from 'next/link';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -21,11 +21,25 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'api', or 'debug'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'api', 'smtp', or 'debug'
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiMessage, setApiMessage] = useState({ type: '', text: '' });
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // SMTP settings
+  const [smtpSettings, setSmtpSettings] = useState({
+    host: '',
+    port: '587',
+    secure: false,
+    user: '',
+    password: '',
+    fromEmail: '',
+    fromName: ''
+  });
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [smtpMessage, setSmtpMessage] = useState({ type: '', text: '' });
+  const [smtpTesting, setSmtpTesting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -38,6 +52,16 @@ export default function AdminUsersPage() {
     // Load API key
     const savedApiKey = localStorage.getItem('pokemonApiKey') || '';
     setApiKey(savedApiKey);
+    
+    // Load SMTP settings
+    const savedSmtp = localStorage.getItem('smtpSettings');
+    if (savedSmtp) {
+      try {
+        setSmtpSettings(JSON.parse(savedSmtp));
+      } catch (e) {
+        console.error('Failed to parse SMTP settings:', e);
+      }
+    }
     
     loadUsers();
     loadCurrentUser();
@@ -108,6 +132,71 @@ export default function AdminUsersPage() {
     setTimeout(() => {
       window.location.reload();
     }, 1000);
+  };
+  
+  const handleSaveSmtp = async () => {
+    setSmtpMessage({ type: '', text: '' });
+    
+    if (!smtpSettings.host || !smtpSettings.port || !smtpSettings.user || !smtpSettings.password || !smtpSettings.fromEmail) {
+      setSmtpMessage({ type: 'error', text: 'Alle velden (behalve From Name) zijn verplicht' });
+      return;
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('smtpSettings', JSON.stringify(smtpSettings));
+    
+    // Save to database via API
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/smtp/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(smtpSettings),
+      });
+      
+      if (response.ok) {
+        setSmtpMessage({ type: 'success', text: 'SMTP instellingen opgeslagen!' });
+      } else {
+        const data = await response.json();
+        setSmtpMessage({ type: 'error', text: data.error || 'Failed to save SMTP settings' });
+      }
+    } catch (error) {
+      console.error('Error saving SMTP settings:', error);
+      setSmtpMessage({ type: 'error', text: 'Error: ' + error.message });
+    }
+  };
+  
+  const handleTestSmtp = async () => {
+    setSmtpTesting(true);
+    setSmtpMessage({ type: '', text: '' });
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/smtp/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(smtpSettings),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSmtpMessage({ type: 'success', text: 'Test email verzonden! Controleer je inbox.' });
+      } else {
+        setSmtpMessage({ type: 'error', text: data.error || 'Failed to send test email' });
+      }
+    } catch (error) {
+      console.error('Error testing SMTP:', error);
+      setSmtpMessage({ type: 'error', text: 'Error: ' + error.message });
+    } finally {
+      setSmtpTesting(false);
+    }
   };
 
   if (!mounted) {
@@ -206,15 +295,13 @@ export default function AdminUsersPage() {
             <div className="relative flex gap-1">
               {/* Active background indicator */}
               <div 
-                className={`absolute top-1.5 bottom-1.5 rounded-xl bg-gradient-to-r shadow-lg transition-all duration-300 ease-out ${
-                  activeTab === 'users'
-                    ? 'left-1.5 from-blue-500 to-purple-500'
-                    : activeTab === 'api'
-                    ? 'left-1/3 ml-1.5 from-blue-500 to-purple-500'
-                    : 'left-2/3 ml-1.5 from-blue-500 to-purple-500'
-                }`}
+                className={`absolute top-1.5 bottom-1.5 rounded-xl bg-gradient-to-r shadow-lg transition-all duration-300 ease-out from-blue-500 to-purple-500`}
                 style={{ 
-                  width: 'calc(33.333% - 6px)',
+                  width: 'calc(25% - 6px)',
+                  transform: activeTab === 'users' ? 'translateX(0)' 
+                    : activeTab === 'api' ? 'translateX(calc(100% + 8px))' 
+                    : activeTab === 'smtp' ? 'translateX(calc(200% + 16px))'
+                    : 'translateX(calc(300% + 24px))'
                 }}
               />
               
@@ -227,7 +314,7 @@ export default function AdminUsersPage() {
                 }`}
               >
                 <Users className="w-5 h-5" />
-                <span>Gebruikers Beheer</span>
+                <span>Gebruikers</span>
               </button>
               
               <button
@@ -239,7 +326,19 @@ export default function AdminUsersPage() {
                 }`}
               >
                 <Key className="w-5 h-5" />
-                <span>TCG API Koppeling</span>
+                <span>TCG API</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('smtp')}
+                className={`relative z-10 flex-1 px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap flex items-center justify-center gap-2 ${
+                  activeTab === 'smtp'
+                    ? 'text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <Send className="w-5 h-5" />
+                <span>Email</span>
               </button>
               
               <button
@@ -251,7 +350,7 @@ export default function AdminUsersPage() {
                 }`}
               >
                 <Bug className="w-5 h-5" />
-                <span>Debug Info</span>
+                <span>Debug</span>
               </button>
             </div>
           </div>
@@ -313,6 +412,188 @@ export default function AdminUsersPage() {
                 <Save className="w-5 h-5" />
                 API Sleutel Opslaan
               </button>
+            </div>
+          )}
+          
+          {/* SMTP Email Tab Content */}
+          {activeTab === 'smtp' && (
+            <div className="glass-strong rounded-2xl shadow-xl p-6 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 mb-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                  <Send className="w-6 h-6 text-green-500 dark:text-green-400" />
+                  SMTP Email Configuratie
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Configureer SMTP instellingen voor wachtwoord herstel emails en notificaties.
+                </p>
+              </div>
+
+              {smtpMessage.text && (
+                <div className={`mb-4 p-4 rounded-lg ${
+                  smtpMessage.type === 'success' 
+                    ? 'bg-green-50 dark:bg-green-900/30 border-2 border-green-400 text-green-800 dark:text-green-200' 
+                    : 'bg-red-50 dark:bg-red-900/30 border-2 border-red-400 text-red-800 dark:text-red-200'
+                }`}>
+                  {smtpMessage.text}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {/* SMTP Host */}
+                <div>
+                  <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                    SMTP Host *
+                  </label>
+                  <input
+                    type="text"
+                    value={smtpSettings.host}
+                    onChange={(e) => setSmtpSettings({...smtpSettings, host: e.target.value})}
+                    className="w-full px-4 py-3 glass rounded-xl border border-white/30 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-gray-900 dark:text-white"
+                    placeholder="smtp.gmail.com"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Bijvoorbeeld: smtp.gmail.com, smtp.office365.com, smtp.sendgrid.net
+                  </p>
+                </div>
+
+                {/* SMTP Port & Secure */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                      SMTP Port *
+                    </label>
+                    <input
+                      type="number"
+                      value={smtpSettings.port}
+                      onChange={(e) => setSmtpSettings({...smtpSettings, port: e.target.value})}
+                      className="w-full px-4 py-3 glass rounded-xl border border-white/30 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-gray-900 dark:text-white"
+                      placeholder="587"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      587 (TLS) of 465 (SSL)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                      SSL/TLS
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer glass rounded-xl px-4 py-3 border border-white/30 dark:border-gray-700/50">
+                      <input
+                        type="checkbox"
+                        checked={smtpSettings.secure}
+                        onChange={(e) => setSmtpSettings({...smtpSettings, secure: e.target.checked})}
+                        className="w-5 h-5 rounded border-2 border-green-500 text-green-600 focus:ring-2 focus:ring-green-500/50"
+                      />
+                      <span className="text-gray-800 dark:text-white">Gebruik SSL (port 465)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* SMTP User */}
+                <div>
+                  <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                    SMTP Gebruikersnaam *
+                  </label>
+                  <input
+                    type="text"
+                    value={smtpSettings.user}
+                    onChange={(e) => setSmtpSettings({...smtpSettings, user: e.target.value})}
+                    className="w-full px-4 py-3 glass rounded-xl border border-white/30 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-gray-900 dark:text-white"
+                    placeholder="jouw-email@gmail.com"
+                  />
+                </div>
+
+                {/* SMTP Password */}
+                <div>
+                  <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                    SMTP Wachtwoord *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showSmtpPassword ? 'text' : 'password'}
+                      value={smtpSettings.password}
+                      onChange={(e) => setSmtpSettings({...smtpSettings, password: e.target.value})}
+                      className="w-full px-4 py-3 glass rounded-xl border border-white/30 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-gray-900 dark:text-white pr-12"
+                      placeholder="App wachtwoord (voor Gmail: 2FA vereist)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                      title={showSmtpPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
+                    >
+                      {showSmtpPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Voor Gmail: gebruik een App Wachtwoord (2FA vereist)
+                  </p>
+                </div>
+
+                {/* From Email & Name */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                      Van Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={smtpSettings.fromEmail}
+                      onChange={(e) => setSmtpSettings({...smtpSettings, fromEmail: e.target.value})}
+                      className="w-full px-4 py-3 glass rounded-xl border border-white/30 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-gray-900 dark:text-white"
+                      placeholder="noreply@yourdomain.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-gray-800 dark:text-white font-bold mb-2">
+                      Van Naam
+                    </label>
+                    <input
+                      type="text"
+                      value={smtpSettings.fromName}
+                      onChange={(e) => setSmtpSettings({...smtpSettings, fromName: e.target.value})}
+                      className="w-full px-4 py-3 glass rounded-xl border border-white/30 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-gray-900 dark:text-white"
+                      placeholder="Trace Cards"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleSaveSmtp}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-4 rounded-lg font-black shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                >
+                  <Save className="w-5 h-5" />
+                  Instellingen Opslaan
+                </button>
+                
+                <button
+                  onClick={handleTestSmtp}
+                  disabled={smtpTesting}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-4 rounded-lg font-black shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-5 h-5" />
+                  {smtpTesting ? 'Verzenden...' : 'Test Email Verzenden'}
+                </button>
+              </div>
+              
+              {/* Help Text */}
+              <div className="mt-6 glass rounded-xl p-4 border border-yellow-500/30 dark:border-yellow-400/30 bg-yellow-500/10">
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-2">
+                  💡 Tip: Voor Gmail
+                </p>
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-disc list-inside">
+                  <li>Activeer 2-Factor Authenticatie op je Google account</li>
+                  <li>Ga naar Google Account → Security → App Passwords</li>
+                  <li>Genereer een app-specifiek wachtwoord voor "Mail"</li>
+                  <li>Gebruik dit wachtwoord hier (niet je normale Gmail wachtwoord)</li>
+                  <li>Host: smtp.gmail.com, Port: 587, SSL: uit</li>
+                </ul>
+              </div>
             </div>
           )}
 

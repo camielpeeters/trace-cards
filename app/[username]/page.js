@@ -44,6 +44,8 @@ export default function PublicUserPage() {
   const [negotiate, setNegotiate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [pendingOffersCount, setPendingOffersCount] = useState(0);
   // State for set info and side modal
   const [setInfoMap, setSetInfoMap] = useState({});
   const [openSetModal, setOpenSetModal] = useState(null); // setId of null
@@ -71,10 +73,18 @@ export default function PublicUserPage() {
     };
     checkAuth();
     
+    // Load pending offers count for authenticated users
+    if (isAuthenticated() && authUser) {
+      loadPendingOffersCount();
+    }
+    
     // Only check on storage events (other tabs login/logout) - no polling
     const handleStorageChange = (e) => {
       if (e.key === 'authToken') {
         checkAuth();
+        if (isAuthenticated()) {
+          loadPendingOffersCount();
+        }
       }
     };
     
@@ -156,6 +166,38 @@ export default function PublicUserPage() {
       setSetInfoMap(setMap);
     } catch (error) {
       console.error('Error loading set info:', error);
+    }
+  };
+
+  const loadPendingOffersCount = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+      
+      const [purchaseRes, shopRes] = await Promise.all([
+        fetch('/api/user/purchase-offers', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+        fetch('/api/user/shop-orders', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+      ]);
+      
+      let count = 0;
+      
+      if (purchaseRes.ok) {
+        const { offers } = await purchaseRes.json();
+        count += offers.filter(o => o.status === 'PENDING').length;
+      }
+      
+      if (shopRes.ok) {
+        const { orders } = await shopRes.json();
+        count += orders.filter(o => o.status === 'pending').length;
+      }
+      
+      setPendingOffersCount(count);
+    } catch (error) {
+      console.error('Error loading offers count:', error);
     }
   };
 
@@ -253,6 +295,9 @@ export default function PublicUserPage() {
       } else {
         // Public profile: Load cards from API (database)
         // Always load purchase cards, always load shop cards (we'll need them when switching tabs)
+        // Progress tracker
+        setLoadingProgress(10);
+        
         // Add timeout to prevent infinite loading on slow connections
         const fetchWithTimeout = async (url, timeout = 15000) => {
           try {
@@ -276,10 +321,14 @@ export default function PublicUserPage() {
           }
         };
         
+        setLoadingProgress(30);
+        
         const [purchaseResponse, shopResponse] = await Promise.all([
           fetchWithTimeout(`/api/public/${username}/purchase-cards`),
           fetchWithTimeout(`/api/public/${username}/shop-cards`)
         ]);
+        
+        setLoadingProgress(60);
         
         // Handle purchase cards response
         if (purchaseResponse.ok) {
@@ -293,6 +342,8 @@ export default function PublicUserPage() {
           setPurchaseCards([]);
         }
         
+        setLoadingProgress(80);
+        
         // Handle shop cards response
         if (shopResponse.ok) {
           const shopData = await shopResponse.json();
@@ -302,6 +353,8 @@ export default function PublicUserPage() {
           console.error('❌ Failed to load shop cards:', shopResponse.status, shopResponse.statusText);
           setShopCards([]);
         }
+        
+        setLoadingProgress(100);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -648,9 +701,30 @@ export default function PublicUserPage() {
       <div className="min-h-screen font-['Ubuntu',_sans-serif] relative flex items-center justify-center">
         <div className="animated-background-container"></div>
         <div className="relative z-10">
-          <div className="glass-strong rounded-3xl p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent mb-4"></div>
-            <p className="text-gray-800 dark:text-white font-bold">Laden...</p>
+          <div className="glass-strong rounded-3xl p-12 text-center max-w-md mx-auto">
+            {/* Pokéball Spinner */}
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full border-8 border-red-500 border-t-white animate-spin"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border-4 border-red-500"></div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500 ease-out rounded-full relative overflow-hidden"
+                style={{ width: `${loadingProgress}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+              </div>
+            </div>
+            
+            {/* Progress Text */}
+            <p className="text-gray-800 dark:text-white font-bold text-xl mb-2">
+              {loadingProgress}%
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Kaarten laden...
+            </p>
           </div>
         </div>
       </div>
@@ -734,6 +808,25 @@ export default function PublicUserPage() {
             
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               <ThemeToggle />
+              
+              {/* Notification Badge - Only for authenticated users */}
+              {authenticated && pendingOffersCount > 0 && (
+                <Link href="/account">
+                  <button
+                    className="relative p-2 sm:p-3 glass rounded-lg sm:rounded-xl backdrop-blur-md transition-all hover:scale-110 group"
+                    title={`${pendingOffersCount} nieuwe ${pendingOffersCount === 1 ? 'aanbieding' : 'aanbiedingen'}`}
+                    onClick={() => {
+                      // Set orders tab active in localStorage so dashboard opens it
+                      localStorage.setItem('dashboardActiveTab', 'orders');
+                    }}
+                  >
+                    <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-white dark:text-red-200 relative z-10" />
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg animate-pulse">
+                      {pendingOffersCount > 9 ? '9+' : pendingOffersCount}
+                    </span>
+                  </button>
+                </Link>
+              )}
               
               {/* Show login link only if not authenticated */}
               {!authenticated && (

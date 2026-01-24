@@ -373,3 +373,25 @@ model ApiCredential {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// SMTP Settings (encrypted password)
+model SmtpSettings {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  
+  // SMTP config
+  host          String
+  port          Int
+  secure        Boolean  @default(false)
+  user          String
+  password      String   // Encrypted
+  
+  // Email settings
+  fromEmail     String
+  fromName      String?
+  
+  isActive      Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
