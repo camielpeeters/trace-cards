@@ -52,7 +52,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(ua);
     
     if (IS_SAFARI) {
-      console.log('🍎 Safari detected - Canvas enabled for grass animation');
+      console.log('🍎 Safari detected - Canvas enabled for grass animation, CSS clouds for sky');
     }
     
     const IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
@@ -1178,20 +1178,24 @@ function CloudBackgroundCanvas({ darkMode = false }) {
       
       // Teken wolken (boven alles) - met DPR scaling en resolution scale
       // Desktop uses SimpleCloud (perfect, untouched), Mobile uses MobileCloud
+      // NOTE: In Safari, CSS clouds are used as fallback, so we skip canvas clouds there
       const isMobile = width < 768;
       
-      cloudsRef.current.forEach(cloud => {
-        cloud.update();
-        // Mobile clouds: try off-screen canvas first, fallback to direct rendering
-        // Desktop clouds: always direct rendering (perfect, untouched)
-        if (isMobile && cloud.constructor.name === 'MobileCloud') {
-          // Mobile: use off-screen canvas if available, otherwise direct rendering
-          cloud.draw(darkModeRef.current, dpr, resolutionScale, offScreenCanvas, offScreenCtx);
-        } else {
-          // Desktop: perfect rendering, untouched
-          cloud.draw(darkModeRef.current, dpr, resolutionScale);
-        }
-      });
+      // Only draw canvas clouds if NOT Safari (Safari uses CSS clouds)
+      if (!IS_SAFARI) {
+        cloudsRef.current.forEach(cloud => {
+          cloud.update();
+          // Mobile clouds: try off-screen canvas first, fallback to direct rendering
+          // Desktop clouds: always direct rendering (perfect, untouched)
+          if (isMobile && cloud.constructor.name === 'MobileCloud') {
+            // Mobile: use off-screen canvas if available, otherwise direct rendering
+            cloud.draw(darkModeRef.current, dpr, resolutionScale, offScreenCanvas, offScreenCtx);
+          } else {
+            // Desktop: perfect rendering, untouched
+            cloud.draw(darkModeRef.current, dpr, resolutionScale);
+          }
+        });
+      }
       
       // Teken gras op footer (onderkant) - met wind animatie
       if (grassRef.current.length === 0) {
@@ -1258,9 +1262,14 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     // Initialiseer en start animatie - use setTimeout to ensure canvas is ready
     const startAnimation = () => {
       if (width && height) {
-        console.log('🎬 Starting animation with dimensions:', { width, height });
-        initClouds();
-        initGrass(); // Initialiseer gras
+        console.log('🎬 Starting animation with dimensions:', { width, height, isSafari: IS_SAFARI });
+        // Only init clouds if NOT Safari (Safari uses CSS clouds)
+        if (!IS_SAFARI) {
+          initClouds();
+        } else {
+          console.log('☁️ Safari: Using CSS clouds, skipping canvas clouds');
+        }
+        initGrass(); // Initialiseer gras (works in Safari)
         if (darkModeRef.current) {
           initStars();
         }

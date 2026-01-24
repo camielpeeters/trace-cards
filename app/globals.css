@@ -399,14 +399,18 @@ body {
 }
 
 /* Oude wolken CSS uitgeschakeld - nu via CloudBackground component */
-.cloud {
-  display: none !important;
-}
+/* BUT: Keep CSS clouds for Safari as fallback (they work alongside canvas for grass) */
+@supports not ((-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none))) {
+  /* Hide CSS clouds for non-Safari browsers (they use canvas) */
+  .cloud {
+    display: none !important;
+  }
 
-.cloud1,
-.cloud2,
-.cloud3 {
-  display: none !important;
+  .cloud1,
+  .cloud2,
+  .cloud3 {
+    display: none !important;
+  }
 }
 
 @keyframes fade-orbs {
