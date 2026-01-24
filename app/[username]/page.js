@@ -227,8 +227,8 @@ export default function PublicUserPage() {
         if (purchaseCardsArray.length === 0 && shopCardsArray.length === 0) {
           console.log('⚠️ localStorage empty for own profile, loading from database instead');
           
-          // Load from database API (same as public profile)
-          const fetchWithTimeout = async (url, timeout = 15000) => {
+          // Load from database API - 30s timeout (pricing can take time)
+          const fetchWithTimeout = async (url, timeout = 30000) => {
             try {
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -249,22 +249,30 @@ export default function PublicUserPage() {
             }
           };
           
-          const [purchaseResponse, shopResponse] = await Promise.all([
-            fetchWithTimeout(`/api/public/${username}/purchase-cards`),
-            fetchWithTimeout(`/api/public/${username}/shop-cards`)
-          ]);
-          
-          if (purchaseResponse.ok) {
-            const purchaseData = await purchaseResponse.json();
-            console.log('📦 Database purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
-            setUser(purchaseData.user || null);
-            setPurchaseCards(purchaseData.cards || []);
-          }
-          
-          if (shopResponse.ok) {
-            const shopData = await shopResponse.json();
-            console.log('🛒 Database shop cards loaded:', shopData.cards?.length || 0, 'cards');
-            setShopCards(shopData.cards || []);
+          try {
+            const [purchaseResponse, shopResponse] = await Promise.all([
+              fetchWithTimeout(`/api/public/${username}/purchase-cards`),
+              fetchWithTimeout(`/api/public/${username}/shop-cards`)
+            ]);
+            
+            if (purchaseResponse.ok) {
+              const purchaseData = await purchaseResponse.json();
+              console.log('📦 Database purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
+              setUser(purchaseData.user || null);
+              setPurchaseCards(purchaseData.cards || []);
+            } else {
+              console.error('❌ Purchase cards failed:', purchaseResponse.status);
+            }
+            
+            if (shopResponse.ok) {
+              const shopData = await shopResponse.json();
+              console.log('🛒 Database shop cards loaded:', shopData.cards?.length || 0, 'cards');
+              setShopCards(shopData.cards || []);
+            } else {
+              console.error('❌ Shop cards failed:', shopResponse.status);
+            }
+          } catch (fetchError) {
+            console.error('❌ Fetch error:', fetchError);
           }
         } else {
           // Render immediately from cache
@@ -313,8 +321,8 @@ export default function PublicUserPage() {
           });
         }, 100);
         
-        // Timeout moet langer dan API worst case (batch queries kunnen traag zijn)
-        const fetchWithTimeout = async (url, timeout = 20000) => {
+        // Timeout moet langer dan API worst case (prijzen laden kan tijd kosten)
+        const fetchWithTimeout = async (url, timeout = 30000) => {
           try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
