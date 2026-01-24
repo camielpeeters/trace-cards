@@ -6,6 +6,75 @@ export const dynamic = 'force-dynamic';
 // Prijzen worden gecached in DB - alleen opnieuw fetchen als ouder dan 24 uur
 const PRICE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 uur
 
+// Fetch single card pricing met timeout
+async function fetchCardPricing(cardId, apiKey) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000);
+  
+  try {
+    const response = await fetch(
+      `https://api.pokemontcg.io/v2/cards/${cardId}`,
+      {
+        headers: { 'X-Api-Key': apiKey },
+        signal: controller.signal
+      }
+    );
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.tcgplayer?.prices) {
+        const exchangeRate = 0.92;
+        const apiCard = data.data;
+        const convertedPrices = {};
+        
+        Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
+          const variant = apiCard.tcgplayer.prices[variantKey];
+          if (variant) {
+            convertedPrices[variantKey] = {
+              market: variant.market ? variant.market * exchangeRate : null,
+              mid: variant.mid ? variant.mid * exchangeRate : null,
+              low: variant.low ? variant.low * exchangeRate : null,
+              high: variant.high ? variant.high * exchangeRate : null
+            };
+          }
+        });
+        
+        return {
+          url: apiCard.tcgplayer?.url || null,
+          prices: convertedPrices,
+          lastUpdated: new Date().toISOString()
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Process cards with concurrency limit
+async function fetchPricingWithLimit(cardIds, apiKey, concurrency = 5) {
+  const results = new Map();
+  
+  for (let i = 0; i < cardIds.length; i += concurrency) {
+    const chunk = cardIds.slice(i, i + concurrency);
+    const promises = chunk.map(async (cardId) => {
+      const pricing = await fetchCardPricing(cardId, apiKey);
+      if (pricing) results.set(cardId, pricing);
+    });
+    
+    await Promise.all(promises);
+    
+    if (i + concurrency < cardIds.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  return results;
+}
+
 export async function GET(request, { params }) {
   const startTime = Date.now();
   
@@ -70,94 +139,45 @@ export async function GET(request, { params }) {
     // FASE 3: Bepaal welke kaarten verse prijzen nodig hebben
     const now = Date.now();
     const cardsNeedingPrices = [];
-    const cardsWithCachedPrices = [];
+    const cachedPriceMap = new Map();
     
     shopCards.forEach(card => {
       const lastUpdated = card.tcgplayerUpdated ? new Date(card.tcgplayerUpdated).getTime() : 0;
       const isFresh = (now - lastUpdated) < PRICE_CACHE_TTL_MS;
       
       if (isFresh && card.tcgplayerPrices) {
-        cardsWithCachedPrices.push(card);
+        const cachedPrices = parseJson(card.tcgplayerPrices);
+        if (cachedPrices) {
+          cachedPriceMap.set(card.cardId, {
+            url: card.tcgplayerUrl,
+            prices: cachedPrices,
+            lastUpdated: card.tcgplayerUpdated?.toISOString() || null
+          });
+        } else {
+          cardsNeedingPrices.push(card);
+        }
       } else {
         cardsNeedingPrices.push(card);
       }
     });
     
-    console.log(`💾 ${cardsWithCachedPrices.length} cached, ${cardsNeedingPrices.length} need refresh`);
+    const cachedCount = cachedPriceMap.size;
+    console.log(`💾 Shop: ${cachedCount} cached, ${cardsNeedingPrices.length} need refresh`);
     
-    // FASE 4: Fetch prijzen voor kaarten die dat nodig hebben
-    const pricingMap = new Map();
+    // FASE 4: Fetch prijzen met individuele queries (sneller dan batch!)
+    let freshPricingMap = new Map();
     
     if (pokemonApiKey && cardsNeedingPrices.length > 0) {
-      const BATCH_SIZE = 15;
-      const cardIds = cardsNeedingPrices.map(c => c.cardId);
-      const batches = [];
+      const cardIdsToFetch = cardsNeedingPrices.map(c => c.cardId);
+      freshPricingMap = await fetchPricingWithLimit(cardIdsToFetch, pokemonApiKey, 5);
       
-      for (let i = 0; i < cardIds.length; i += BATCH_SIZE) {
-        batches.push(cardIds.slice(i, i + BATCH_SIZE));
-      }
+      console.log(`✅ Shop fetched ${freshPricingMap.size}/${cardIdsToFetch.length} prices`);
       
-      // SEQUENTIEEL met delay om rate limits te voorkomen
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-        const query = batch.map(id => `id:${id}`).join(' OR ');
-        const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}`;
-        
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
-          
-          const response = await fetch(url, {
-            headers: { 'X-Api-Key': pokemonApiKey },
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (response.ok) {
-            const data = await response.json();
-            const cards = data.data || [];
-            
-            cards.forEach(apiCard => {
-              if (apiCard?.tcgplayer?.prices) {
-                const exchangeRate = 0.92;
-                const convertedPrices = {};
-                
-                Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
-                  const variant = apiCard.tcgplayer.prices[variantKey];
-                  if (variant) {
-                    convertedPrices[variantKey] = {
-                      market: variant.market ? variant.market * exchangeRate : null,
-                      mid: variant.mid ? variant.mid * exchangeRate : null,
-                      low: variant.low ? variant.low * exchangeRate : null,
-                      high: variant.high ? variant.high * exchangeRate : null
-                    };
-                  }
-                });
-                
-                pricingMap.set(apiCard.id, {
-                  url: apiCard.tcgplayer?.url || null,
-                  prices: convertedPrices,
-                  lastUpdated: new Date().toISOString()
-                });
-              }
-            });
-          }
-        } catch (error) {
-          console.warn(`⚠️ Shop batch ${batchIndex + 1} error:`, error.message);
-        }
-        
-        // Delay tussen batches
-        if (batchIndex < batches.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-      
-      // FASE 5: Update database met nieuwe prijzen (fire-and-forget)
-      if (pricingMap.size > 0) {
+      // Update database (fire-and-forget)
+      if (freshPricingMap.size > 0) {
         const updatePromises = [];
         
-        pricingMap.forEach((pricing, cardId) => {
+        freshPricingMap.forEach((pricing, cardId) => {
           const card = cardsNeedingPrices.find(c => c.cardId === cardId);
           if (card) {
             updatePromises.push(
@@ -168,34 +188,21 @@ export async function GET(request, { params }) {
                   tcgplayerUrl: pricing.url,
                   tcgplayerUpdated: new Date()
                 }
-              }).catch(err => console.warn(`DB update failed for ${cardId}:`, err.message))
+              }).catch(err => console.warn(`DB update failed:`, err.message))
             );
           }
         });
         
-        // Fire-and-forget
         Promise.all(updatePromises).then(() => {
           console.log(`💾 Cached ${updatePromises.length} shop prices to DB`);
         });
       }
     }
     
-    // FASE 6: Combineer alle kaarten met pricing
+    // FASE 5: Combineer alle kaarten met pricing
     const cardsWithPricing = shopCards.map(card => {
       const images = parseJson(card.images) || { small: null, large: null };
-      
-      let tcgplayer = pricingMap.get(card.cardId);
-      
-      if (!tcgplayer && card.tcgplayerPrices) {
-        const cachedPrices = parseJson(card.tcgplayerPrices);
-        if (cachedPrices) {
-          tcgplayer = {
-            url: card.tcgplayerUrl,
-            prices: cachedPrices,
-            lastUpdated: card.tcgplayerUpdated?.toISOString() || null
-          };
-        }
-      }
+      const tcgplayer = freshPricingMap.get(card.cardId) || cachedPriceMap.get(card.cardId) || null;
       
       return {
         id: card.id,
@@ -210,7 +217,7 @@ export async function GET(request, { params }) {
         stock: card.stock,
         addedAt: card.addedAt,
         isActive: card.isActive,
-        tcgplayer: tcgplayer || null
+        tcgplayer
       };
     });
     
@@ -229,8 +236,8 @@ export async function GET(request, { params }) {
       _meta: {
         totalCards: cardsWithPricing.length,
         pricedCards: pricedCount,
-        cachedCards: cardsWithCachedPrices.length,
-        freshFetched: pricingMap.size,
+        cachedCards: cachedCount,
+        freshFetched: freshPricingMap.size,
         loadTimeMs: totalTime
       }
     });
