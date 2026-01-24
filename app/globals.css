@@ -217,10 +217,22 @@ body {
 @supports (-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none)) {
   /* Canvas is now enabled for Safari to show animated grass */
   
-  /* Show CSS clouds for Safari - INTENSER */
-  /* Also target clouds directly (not just within animated-background-container) */
+  /* Show CSS clouds for Safari - INTENSER - HIGHEST PRIORITY */
+  /* Target ALL cloud elements in Safari */
   .cloud,
-  .animated-background-container .cloud {
+  .animated-background-container .cloud,
+  .cloud1,
+  .cloud2,
+  .cloud3,
+  .cloud4,
+  .cloud5,
+  .cloud6,
+  .animated-background-container .cloud1,
+  .animated-background-container .cloud2,
+  .animated-background-container .cloud3,
+  .animated-background-container .cloud4,
+  .animated-background-container .cloud5,
+  .animated-background-container .cloud6 {
     display: block !important;
     position: absolute;
     background: rgba(255, 255, 255, 0.65);
@@ -411,17 +423,19 @@ body {
 
 /* Oude wolken CSS uitgeschakeld - nu via CloudBackground component */
 /* BUT: Keep CSS clouds for Safari as fallback (they work alongside canvas for grass) */
-@supports not ((-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none))) {
-  /* Hide CSS clouds for non-Safari browsers (they use canvas) */
-  .cloud {
-    display: none !important;
-  }
+/* Hide CSS clouds for non-Safari browsers (they use canvas) */
+/* This will be overridden by the Safari-specific @supports rule below */
+.cloud:not(.animated-background-container .cloud) {
+  display: none !important;
+}
 
-  .cloud1,
-  .cloud2,
-  .cloud3 {
-    display: none !important;
-  }
+.cloud1:not(.animated-background-container .cloud1),
+.cloud2:not(.animated-background-container .cloud2),
+.cloud3:not(.animated-background-container .cloud3),
+.cloud4:not(.animated-background-container .cloud4),
+.cloud5:not(.animated-background-container .cloud5),
+.cloud6:not(.animated-background-container .cloud6) {
+  display: none !important;
 }
 
 @keyframes fade-orbs {

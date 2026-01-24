@@ -853,7 +853,7 @@ export default function PublicUserPage() {
       
       <div className="relative z-10 w-full overflow-x-hidden">
         {/* Header */}
-        <header className="relative glass sticky top-0 z-30 shadow-lg w-full overflow-x-hidden">
+        <header className="relative glass sticky top-0 z-30 shadow-lg w-full overflow-x-hidden" style={{ overflowY: 'visible' }}>
           <div className="absolute inset-0 bg-gradient-to-r from-red-600 dark:from-red-700 via-red-500/95 dark:via-red-600/90 to-white/40 dark:to-gray-900/30"></div>
           
           <div className="absolute right-0 top-0 bottom-0 w-96 max-w-[50vw] opacity-10 dark:opacity-5 pointer-events-none transform rotate-12 overflow-hidden">
