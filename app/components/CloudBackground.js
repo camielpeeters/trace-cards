@@ -41,6 +41,16 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     const ctx = canvas.getContext('2d');
     // Browser detection (used only for canvas safety fallbacks / minor styling)
     const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
+    
+    // Safari detection - DISABLE CANVAS ENTIRELY for Safari
+    const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(ua);
+    
+    if (IS_SAFARI) {
+      console.log('🍎 Safari detected - Canvas disabled, using CSS clouds fallback');
+      // Don't render canvas at all for Safari
+      return;
+    }
+    
     const IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
     const IS_CURSOR = /Cursor|Electron/i.test(ua);
     const IS_CHROME =
@@ -1265,7 +1275,7 @@ function CloudBackgroundCanvas({ darkMode = false }) {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
+      className="fixed inset-0 pointer-events-none safari-hide"
       style={{ 
         position: 'fixed',
         top: 0,

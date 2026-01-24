@@ -105,13 +105,23 @@ export async function GET(request, { params }) {
                   prices: convertedPrices,
                   lastUpdated: new Date().toISOString()
                 };
+                
+                console.log(`✅ Pricing loaded: ${card.cardName} - ${Object.keys(convertedPrices).length} variants`);
+              } else {
+                console.warn(`⚠️ No pricing data for ${card.cardName} (${card.cardId}) - API returned no prices`);
               }
+            } else {
+              console.error(`❌ API error for ${card.cardName}: ${apiResponse.status} ${apiResponse.statusText}`);
             }
           } catch (error) {
             clearTimeout(timeoutId);
-            if (error.name !== 'AbortError') {
-              console.error(`Error: ${card.cardName}:`, error.message);
+            if (error.name === 'AbortError') {
+              console.warn(`⏱️ Timeout fetching pricing for ${card.cardName} (${card.cardId})`);
+            } else {
+              console.error(`❌ Error fetching pricing for ${card.cardName} (${card.cardId}):`, error.message);
             }
+            // Always return card data even if pricing fails
+            tcgplayer = null;
           }
           
             return {
