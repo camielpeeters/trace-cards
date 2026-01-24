@@ -42,11 +42,22 @@ export async function GET(request, { params }) {
     
     console.log(`🛒 Found ${shopCards.length} shop cards (${Date.now() - startTime}ms)`);
     
+    // Helper: parse images veilig (kan string of object zijn)
+    const parseImages = (images) => {
+      if (!images) return { small: null, large: null };
+      if (typeof images === 'object') return images;
+      try {
+        return JSON.parse(images);
+      } catch {
+        return { small: null, large: null };
+      }
+    };
+    
     // Als geen API key of geen kaarten, return direct
     if (!pokemonApiKey || shopCards.length === 0) {
       const cards = shopCards.map(card => ({
         ...card,
-        images: JSON.parse(card.images),
+        images: parseImages(card.images),
         tcgplayer: null
       }));
       
@@ -128,7 +139,7 @@ export async function GET(request, { params }) {
     // FASE 4: Combineer kaarten met pricing
     const cardsWithPricing = shopCards.map(card => ({
       ...card,
-      images: JSON.parse(card.images),
+      images: parseImages(card.images),
       tcgplayer: pricingMap.get(card.cardId) || null
     }));
     

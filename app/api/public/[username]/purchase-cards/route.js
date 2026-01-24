@@ -45,15 +45,33 @@ export async function GET(request, { params }) {
       ]
     });
     
-    console.log(`📦 Found ${purchaseCards.length} cards (${Date.now() - startTime}ms)`);
+    console.log(`📦 Found ${purchaseCards.length} cards for user ${user.id} (${Date.now() - startTime}ms)`);
+    
+    // Debug: log eerste kaart als die bestaat
+    if (purchaseCards.length > 0) {
+      console.log(`📋 First card: ${purchaseCards[0].cardName} (${purchaseCards[0].cardId})`);
+    }
+    
+    // Helper: parse images veilig (kan string of object zijn)
+    const parseImages = (images) => {
+      if (!images) return { small: null, large: null };
+      if (typeof images === 'object') return images;
+      try {
+        return JSON.parse(images);
+      } catch {
+        return { small: null, large: null };
+      }
+    };
     
     // Als geen API key of geen kaarten, return direct
     if (!pokemonApiKey || purchaseCards.length === 0) {
       const cards = purchaseCards.map(card => ({
         ...card,
-        images: JSON.parse(card.images),
+        images: parseImages(card.images),
         tcgplayer: null
       }));
+      
+      console.log(`⚠️ Returning ${cards.length} cards without pricing (no API key or empty)`);
       
       return NextResponse.json({
         user: {
@@ -151,7 +169,7 @@ export async function GET(request, { params }) {
     // FASE 4: Combineer kaarten met pricing data
     const cardsWithPricing = purchaseCards.map(card => ({
       ...card,
-      images: JSON.parse(card.images),
+      images: parseImages(card.images),
       tcgplayer: pricingMap.get(card.cardId) || null
     }));
     
