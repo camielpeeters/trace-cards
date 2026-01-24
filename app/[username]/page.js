@@ -313,8 +313,8 @@ export default function PublicUserPage() {
           });
         }, 100);
         
-        // Snellere timeout - 8s max (was 15s)
-        const fetchWithTimeout = async (url, timeout = 8000) => {
+        // Timeout moet langer dan API worst case (batch queries kunnen traag zijn)
+        const fetchWithTimeout = async (url, timeout = 20000) => {
           try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);

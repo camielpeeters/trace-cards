@@ -71,8 +71,8 @@ export async function GET(request, { params }) {
       });
     }
     
-    // FASE 3: BATCH pricing ophalen
-    const BATCH_SIZE = 12;
+    // FASE 3: BATCH pricing ophalen - PARALLEL voor snelheid
+    const BATCH_SIZE = 15;
     const pricingMap = new Map();
     
     const cardIds = shopCards.map(c => c.cardId);
@@ -81,15 +81,14 @@ export async function GET(request, { params }) {
       batches.push(cardIds.slice(i, i + BATCH_SIZE));
     }
     
-    // Process batches SEQUENTIEEL
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex];
+    // Process ALL batches in PARALLEL
+    const batchPromises = batches.map(async (batch, batchIndex) => {
       const query = batch.map(id => `id:${id}`).join(' OR ');
       const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}`;
       
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         
         const response = await fetch(url, {
           headers: { 'X-Api-Key': pokemonApiKey },
@@ -126,15 +125,16 @@ export async function GET(request, { params }) {
               });
             }
           });
+          return cards.length;
         }
+        return 0;
       } catch (error) {
         console.warn(`⚠️ Shop batch ${batchIndex + 1} error:`, error.message);
+        return 0;
       }
-      
-      if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
+    });
+    
+    await Promise.all(batchPromises);
     
     // FASE 4: Combineer kaarten met pricing
     const cardsWithPricing = shopCards.map(card => ({

@@ -83,11 +83,10 @@ export async function GET(request, { params }) {
       });
     }
     
-    // FASE 3: BATCH pricing ophalen (max 3-4 API calls totaal!)
+    // FASE 3: BATCH pricing ophalen - PARALLEL voor snelheid
     // Pokemon TCG API ondersteunt: ?q=id:card1 OR id:card2 OR id:card3
-    // Max ~15 IDs per query (URL length limit)
     
-    const BATCH_SIZE = 12; // 12 cards per API call
+    const BATCH_SIZE = 15; // 15 cards per API call
     const pricingMap = new Map();
     
     // Maak batches van card IDs
@@ -97,19 +96,16 @@ export async function GET(request, { params }) {
       batches.push(cardIds.slice(i, i + BATCH_SIZE));
     }
     
-    console.log(`🔄 Fetching pricing in ${batches.length} batch(es)...`);
+    console.log(`🔄 Fetching pricing in ${batches.length} batch(es) PARALLEL...`);
     
-    // Process batches SEQUENTIEEL (voorkomt rate limiting)
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex];
-      
-      // Bouw query: id:card1 OR id:card2 OR id:card3
+    // Process ALL batches in PARALLEL (veel sneller!)
+    const batchPromises = batches.map(async (batch, batchIndex) => {
       const query = batch.map(id => `id:${id}`).join(' OR ');
       const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}`;
       
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout per batch
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per batch
         
         const response = await fetch(url, {
           headers: { 'X-Api-Key': pokemonApiKey },
@@ -148,23 +144,24 @@ export async function GET(request, { params }) {
             }
           });
           
-          console.log(`✅ Batch ${batchIndex + 1}/${batches.length}: ${cards.length} cards priced (${Date.now() - startTime}ms)`);
+          console.log(`✅ Batch ${batchIndex + 1}/${batches.length}: ${cards.length} cards (${Date.now() - startTime}ms)`);
+          return cards.length;
         } else {
-          console.warn(`⚠️ Batch ${batchIndex + 1} failed: ${response.status} (${Date.now() - startTime}ms)`);
+          console.warn(`⚠️ Batch ${batchIndex + 1} failed: ${response.status}`);
+          return 0;
         }
       } catch (error) {
         if (error.name === 'AbortError') {
-          console.warn(`⏱️ Batch ${batchIndex + 1} timeout (${Date.now() - startTime}ms)`);
+          console.warn(`⏱️ Batch ${batchIndex + 1} timeout`);
         } else {
           console.error(`❌ Batch ${batchIndex + 1} error: ${error.message}`);
         }
+        return 0;
       }
-      
-      // Kleine delay tussen batches om rate limiting te voorkomen
-      if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
+    });
+    
+    // Wacht op ALLE batches tegelijk
+    await Promise.all(batchPromises);
     
     // FASE 4: Combineer kaarten met pricing data
     const cardsWithPricing = purchaseCards.map(card => ({
