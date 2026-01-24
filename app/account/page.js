@@ -6,6 +6,7 @@ import { Shield, LogOut, Search, Home, Sparkles, BarChart3, Mail, ChevronRight, 
 import { isAuthenticated, logout } from '../lib/auth';
 import UserProfile from '../components/UserProfile';
 import ThemeToggle from '../components/ThemeToggle';
+import NotificationTray from '../components/NotificationTray';
 import Link from 'next/link';
 import { 
   getOffers, 
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
   const [purchaseOffers, setPurchaseOffers] = useState([]);
   const [shopOrders, setShopOrders] = useState([]);
   const [offersLoading, setOffersLoading] = useState(false);
+  const [pendingOffersCount, setPendingOffersCount] = useState(0);
 
   // Load offers from API
   const loadOffersFromAPI = async () => {
@@ -105,9 +107,15 @@ export default function AdminDashboard() {
         }),
       ]);
       
+      let count = 0;
+      
       if (purchaseRes.ok) {
         const { offers } = await purchaseRes.json();
         setPurchaseOffers(offers || []);
+        // Calculate pending count
+        count += offers.filter(o => 
+          o.status && o.status.toUpperCase() === 'PENDING'
+        ).length;
       } else {
         console.error('Failed to fetch purchase offers:', purchaseRes.status);
       }
@@ -115,9 +123,15 @@ export default function AdminDashboard() {
       if (shopRes.ok) {
         const { orders } = await shopRes.json();
         setShopOrders(orders || []);
+        // Calculate pending count
+        count += orders.filter(o => 
+          o.status && o.status.toLowerCase() === 'pending'
+        ).length;
       } else {
         console.error('Failed to fetch shop orders:', shopRes.status);
       }
+      
+      setPendingOffersCount(count);
     } catch (error) {
       console.error('Error loading offers:', error);
     } finally {
@@ -148,8 +162,31 @@ export default function AdminDashboard() {
       });
       
       if (response.ok) {
-        // Reload offers
+        // Reload offers and update count
         await loadOffersFromAPI();
+        // Recalculate pending count
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          const [purchaseRes, shopRes] = await Promise.all([
+            fetch('/api/user/purchase-offers', {
+              headers: { 'Authorization': `Bearer ${token}` },
+            }),
+            fetch('/api/user/shop-orders', {
+              headers: { 'Authorization': `Bearer ${token}` },
+            }),
+          ]);
+          
+          let count = 0;
+          if (purchaseRes.ok) {
+            const { offers } = await purchaseRes.json();
+            count += offers.filter(o => o.status && o.status.toUpperCase() === 'PENDING').length;
+          }
+          if (shopRes.ok) {
+            const { orders } = await shopRes.json();
+            count += orders.filter(o => o.status && o.status.toLowerCase() === 'pending').length;
+          }
+          setPendingOffersCount(count);
+        }
         return true;
       }
       return false;
@@ -1032,6 +1069,11 @@ export default function AdminDashboard() {
                   </Link>
                 </>
               )}
+              <NotificationTray 
+                authenticated={true} 
+                pendingOffersCount={pendingOffersCount}
+                onLoadNotifications={loadOffersFromAPI}
+              />
               <ThemeToggle />
               <UserProfile />
             </div>

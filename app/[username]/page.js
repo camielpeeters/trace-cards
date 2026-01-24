@@ -6,6 +6,7 @@ import { ShoppingCart, X, Heart, Sparkles, ArrowLeft, User, Shield, Menu, Copy, 
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
 import UserProfile from '../components/UserProfile';
+import NotificationTray from '../components/NotificationTray';
 import { isAuthenticated } from '../lib/auth';
 import { useAuth } from '../hooks/useAuth';
 import { getCachedSets, getPurchaseCards, getShopCards, updatePurchaseCards, updateShopCards } from '../lib/storage';
@@ -895,31 +896,12 @@ export default function PublicUserPage() {
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               <ThemeToggle />
               
-              {/* Notification Badge - Only for authenticated users */}
-              {(() => {
-                const shouldShow = authenticated && pendingOffersCount > 0;
-                if (shouldShow || authenticated) {
-                  console.log('🔔 Notification badge render check:', { authenticated, pendingOffersCount, shouldShow });
-                }
-                return null;
-              })()}
-              {authenticated && pendingOffersCount > 0 && (
-                <Link href="/account">
-                  <button
-                    className="relative p-2 sm:p-3 glass rounded-lg sm:rounded-xl backdrop-blur-md transition-all hover:scale-110 group"
-                    title={`${pendingOffersCount} nieuwe ${pendingOffersCount === 1 ? 'aanbieding' : 'aanbiedingen'}`}
-                    onClick={() => {
-                      // Set orders tab active in localStorage so dashboard opens it
-                      localStorage.setItem('dashboardActiveTab', 'orders');
-                    }}
-                  >
-                    <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-white dark:text-red-200 relative z-10" />
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg animate-pulse">
-                      {pendingOffersCount > 9 ? '9+' : pendingOffersCount}
-                    </span>
-                  </button>
-                </Link>
-              )}
+              {/* Notification Tray */}
+              <NotificationTray 
+                authenticated={authenticated} 
+                pendingOffersCount={pendingOffersCount}
+                onLoadNotifications={loadPendingOffersCount}
+              />
               
               {/* Show login link only if not authenticated */}
               {!authenticated && (
