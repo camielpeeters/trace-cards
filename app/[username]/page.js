@@ -90,8 +90,23 @@ export default function PublicUserPage() {
   
   // Load pending offers count when auth is ready
   useEffect(() => {
-    if (!authLoading && isAuthenticated() && authUser) {
-      loadPendingOffersCount();
+    console.log('🔐 Auth state changed:', { authLoading, authUser: !!authUser, authenticated: isAuthenticated() });
+    if (!authLoading) {
+      const isAuth = isAuthenticated();
+      console.log('🔐 Auth check:', { isAuth, hasAuthUser: !!authUser });
+      if (isAuth && authUser) {
+        console.log('✅ Auth ready, loading pending offers count');
+        loadPendingOffersCount();
+      } else if (isAuth) {
+        // Try again after a short delay if authUser is not yet available
+        console.log('⏳ Auth true but authUser not ready, retrying...');
+        const timeoutId = setTimeout(() => {
+          if (authUser) {
+            loadPendingOffersCount();
+          }
+        }, 500);
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [authLoading, authUser, authenticated]); // Run when auth state changes
   
@@ -173,8 +188,12 @@ export default function PublicUserPage() {
 
   const loadPendingOffersCount = async () => {
     try {
+      console.log('🛒 Loading pending offers count...');
       const token = localStorage.getItem('authToken');
-      if (!token) return;
+      if (!token) {
+        console.log('⚠️ No auth token found');
+        return;
+      }
       
       const [purchaseRes, shopRes] = await Promise.all([
         fetch('/api/user/purchase-offers', {
@@ -189,17 +208,32 @@ export default function PublicUserPage() {
       
       if (purchaseRes.ok) {
         const { offers } = await purchaseRes.json();
-        count += offers.filter(o => o.status === 'PENDING').length;
+        // Check for both 'PENDING' and 'pending' status (case-insensitive)
+        const pendingCount = offers.filter(o => 
+          o.status && o.status.toUpperCase() === 'PENDING'
+        ).length;
+        console.log('📦 Purchase offers:', { total: offers.length, pending: pendingCount, allStatuses: offers.map(o => o.status) });
+        count += pendingCount;
+      } else {
+        console.warn('⚠️ Failed to load purchase offers:', purchaseRes.status, await purchaseRes.text().catch(() => ''));
       }
       
       if (shopRes.ok) {
         const { orders } = await shopRes.json();
-        count += orders.filter(o => o.status === 'pending').length;
+        // Check for both 'pending' and 'PENDING' status (case-insensitive)
+        const pendingCount = orders.filter(o => 
+          o.status && o.status.toLowerCase() === 'pending'
+        ).length;
+        console.log('🛍️ Shop orders:', { total: orders.length, pending: pendingCount, allStatuses: orders.map(o => o.status) });
+        count += pendingCount;
+      } else {
+        console.warn('⚠️ Failed to load shop orders:', shopRes.status, await shopRes.text().catch(() => ''));
       }
       
+      console.log('✅ Total pending offers count:', count);
       setPendingOffersCount(count);
     } catch (error) {
-      console.error('Error loading offers count:', error);
+      console.error('❌ Error loading offers count:', error);
     }
   };
 
@@ -862,6 +896,13 @@ export default function PublicUserPage() {
               <ThemeToggle />
               
               {/* Notification Badge - Only for authenticated users */}
+              {(() => {
+                const shouldShow = authenticated && pendingOffersCount > 0;
+                if (shouldShow || authenticated) {
+                  console.log('🔔 Notification badge render check:', { authenticated, pendingOffersCount, shouldShow });
+                }
+                return null;
+              })()}
               {authenticated && pendingOffersCount > 0 && (
                 <Link href="/account">
                   <button

@@ -1255,15 +1255,25 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     window.addEventListener('resize', resize);
     resize();
     
-    // Initialiseer en start animatie
-    if (width && height) {
-      initClouds();
-      initGrass(); // Initialiseer gras
-      if (darkModeRef.current) {
-        initStars();
+    // Initialiseer en start animatie - use setTimeout to ensure canvas is ready
+    const startAnimation = () => {
+      if (width && height) {
+        console.log('🎬 Starting animation with dimensions:', { width, height });
+        initClouds();
+        initGrass(); // Initialiseer gras
+        if (darkModeRef.current) {
+          initStars();
+        }
+        animate();
+      } else {
+        console.warn('⚠️ Cannot start animation - missing dimensions:', { width, height });
+        // Retry after a short delay
+        setTimeout(startAnimation, 100);
       }
-      animate();
-    }
+    };
+    
+    // Start animation after a small delay to ensure canvas is ready
+    setTimeout(startAnimation, 50);
 
     return () => {
       window.removeEventListener('resize', resize);
@@ -1303,11 +1313,12 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: -2, 
+        zIndex: -1, 
         backgroundColor: 'transparent',
         backdropFilter: darkMode ? 'blur(1px)' : 'none',
         WebkitBackdropFilter: darkMode ? 'blur(1px)' : 'none',
         pointerEvents: 'none',
+        display: 'block',
       }}
     />
   );
