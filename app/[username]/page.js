@@ -294,12 +294,27 @@ export default function PublicUserPage() {
         }
       } else {
         // Public profile: Load cards from API (database)
-        // Always load purchase cards, always load shop cards (we'll need them when switching tabs)
-        // Progress tracker
-        setLoadingProgress(10);
+        // SMOOTH PROGRESS: Animeer naar target in plaats van sprongen
+        const animateProgress = (target) => {
+          setLoadingProgress(prev => {
+            if (prev < target) return target;
+            return prev;
+          });
+        };
         
-        // Add timeout to prevent infinite loading on slow connections
-        const fetchWithTimeout = async (url, timeout = 15000) => {
+        animateProgress(5);
+        
+        // Start smooth progress animation
+        const progressInterval = setInterval(() => {
+          setLoadingProgress(prev => {
+            // Langzaam naar 90% tijdens fetch, nooit 100% tot klaar
+            if (prev < 85) return prev + 2;
+            return prev;
+          });
+        }, 100);
+        
+        // Snellere timeout - 8s max (was 15s)
+        const fetchWithTimeout = async (url, timeout = 8000) => {
           try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -313,7 +328,6 @@ export default function PublicUserPage() {
             } else {
               console.error(`❌ Error fetching ${url}:`, err);
             }
-            // Return a fake 408 Response for timeout
             return new Response(JSON.stringify({ error: 'Request timeout' }), {
               status: 408,
               headers: { 'Content-Type': 'application/json' }
@@ -321,40 +335,45 @@ export default function PublicUserPage() {
           }
         };
         
-        setLoadingProgress(30);
-        
+        // Parallel fetch voor snelheid
         const [purchaseResponse, shopResponse] = await Promise.all([
           fetchWithTimeout(`/api/public/${username}/purchase-cards`),
           fetchWithTimeout(`/api/public/${username}/shop-cards`)
         ]);
         
-        setLoadingProgress(60);
+        // Stop smooth progress, spring naar 90%
+        clearInterval(progressInterval);
+        animateProgress(90);
         
         // Handle purchase cards response
         if (purchaseResponse.ok) {
           const purchaseData = await purchaseResponse.json();
-          console.log('📦 Public purchase cards loaded:', purchaseData.cards?.length || 0, 'cards');
+          console.log('📦 Purchase cards loaded:', purchaseData.cards?.length || 0, 'cards', purchaseData._meta?.loadTimeMs ? `(${purchaseData._meta.loadTimeMs}ms)` : '');
           setUser(purchaseData.user || null);
           setPurchaseCards(purchaseData.cards || []);
         } else {
           console.error('❌ Failed to load purchase cards:', purchaseResponse.status, purchaseResponse.statusText);
-          setUser(null);
+          // Don't set user to null yet - shop response might have it
           setPurchaseCards([]);
         }
         
-        setLoadingProgress(80);
+        animateProgress(95);
         
         // Handle shop cards response
         if (shopResponse.ok) {
           const shopData = await shopResponse.json();
-          console.log('📦 Public shop cards loaded:', shopData.cards?.length || 0, 'cards');
+          console.log('🛒 Shop cards loaded:', shopData.cards?.length || 0, 'cards');
           setShopCards(shopData.cards || []);
+          // If we didn't get user from purchase, try shop
+          if (!user && shopData.user) {
+            setUser(shopData.user);
+          }
         } else {
           console.error('❌ Failed to load shop cards:', shopResponse.status, shopResponse.statusText);
           setShopCards([]);
         }
         
-        setLoadingProgress(100);
+        animateProgress(100);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -697,33 +716,52 @@ export default function PublicUserPage() {
   };
 
   if (loading) {
+    // Bepaal fase tekst op basis van progress
+    const getLoadingText = () => {
+      if (loadingProgress < 20) return 'Verbinden...';
+      if (loadingProgress < 50) return 'Kaarten ophalen...';
+      if (loadingProgress < 85) return 'Prijzen laden...';
+      if (loadingProgress < 95) return 'Bijna klaar...';
+      return 'Voltooien...';
+    };
+    
     return (
       <div className="min-h-screen font-['Ubuntu',_sans-serif] relative flex items-center justify-center">
-        <div className="animated-background-container"></div>
+        <div className="animated-background-container">
+          <div className="cloud cloud1"></div>
+          <div className="cloud cloud2"></div>
+          <div className="cloud cloud3"></div>
+          <div className="cloud cloud4"></div>
+          <div className="cloud cloud5"></div>
+          <div className="cloud cloud6"></div>
+        </div>
         <div className="relative z-10">
-          <div className="glass-strong rounded-3xl p-12 text-center max-w-md mx-auto">
-            {/* Pokéball Spinner */}
-            <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="absolute inset-0 rounded-full border-8 border-red-500 border-t-white animate-spin"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border-4 border-red-500"></div>
+          <div className="glass-strong rounded-3xl p-10 text-center max-w-sm mx-auto">
+            {/* Pokéball Spinner - kleiner en sneller */}
+            <div className="relative w-16 h-16 mx-auto mb-5">
+              <div className="absolute inset-0 rounded-full border-[6px] border-red-500 border-t-white animate-spin" style={{ animationDuration: '0.8s' }}></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-[3px] border-red-500"></div>
             </div>
             
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4 overflow-hidden">
+            {/* Progress Bar - snellere transition */}
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-3 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500 ease-out rounded-full relative overflow-hidden"
-                style={{ width: `${loadingProgress}%` }}
+                className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full relative overflow-hidden"
+                style={{ 
+                  width: `${loadingProgress}%`,
+                  transition: 'width 0.15s ease-out'
+                }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
               </div>
             </div>
             
             {/* Progress Text */}
-            <p className="text-gray-800 dark:text-white font-bold text-xl mb-2">
+            <p className="text-gray-800 dark:text-white font-bold text-lg mb-1">
               {loadingProgress}%
             </p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Kaarten laden...
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              {getLoadingText()}
             </p>
           </div>
         </div>

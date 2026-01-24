@@ -1,33 +1,39 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '../../../../lib/prisma';
-import { getUSDtoEURRate } from '../../../../lib/pricing-sources/tcgplayer';
 
 export const dynamic = 'force-dynamic';
 
+// Pokemon TCG API ondersteunt batch queries - VEEL efficiënter
+// In plaats van 45 losse calls, doen we 3-4 batch calls
+
 export async function GET(request, { params }) {
+  const startTime = Date.now();
+  
   try {
     const { username } = await params;
     
-    // Check if API key is configured
-    const pokemonApiKey = process.env.POKEMON_TCG_API_KEY;
-    if (!pokemonApiKey) {
-      console.error('❌ POKEMON_TCG_API_KEY not configured in environment variables');
-    } else {
-      console.log('✅ POKEMON_TCG_API_KEY is configured');
+    if (!username) {
+      return NextResponse.json({ error: 'Username required' }, { status: 400 });
     }
     
+    const pokemonApiKey = process.env.POKEMON_TCG_API_KEY;
     const prisma = getPrisma();
     
-    // Find user
+    // FASE 1: Database lookup (< 500ms)
+    console.log(`🔍 Looking up user: ${username}`);
+    
     const user = await prisma.user.findUnique({
       where: { username: username.toLowerCase() }
     });
     
     if (!user) {
+      console.log(`❌ User not found: ${username}`);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    // Get user's active purchase cards
+    console.log(`✅ User found: ${user.username} (${Date.now() - startTime}ms)`);
+    
+    // FASE 2: Kaarten ophalen uit database (< 500ms)
     const purchaseCards = await prisma.purchaseCard.findMany({
       where: {
         userId: user.id,
@@ -39,137 +45,120 @@ export async function GET(request, { params }) {
       ]
     });
     
-    // Batch fetch pricing data - process all batches in parallel for speed
-    const BATCH_SIZE = 20;
+    console.log(`📦 Found ${purchaseCards.length} cards (${Date.now() - startTime}ms)`);
     
-    // Create batches
-    const batches = [];
-    for (let i = 0; i < purchaseCards.length; i += BATCH_SIZE) {
-      batches.push(purchaseCards.slice(i, i + BATCH_SIZE));
+    // Als geen API key of geen kaarten, return direct
+    if (!pokemonApiKey || purchaseCards.length === 0) {
+      const cards = purchaseCards.map(card => ({
+        ...card,
+        images: JSON.parse(card.images),
+        tcgplayer: null
+      }));
+      
+      return NextResponse.json({
+        user: {
+          username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl
+        },
+        cards
+      });
     }
     
-    // Process all batches in parallel
-    const allBatchResults = await Promise.all(
-      batches.map(batch => 
-        Promise.all(
-          batch.map(async (card) => {
-            let tcgplayer = null;
-            
-            if (!pokemonApiKey) {
-              return {
-                ...card,
-                images: JSON.parse(card.images),
-                tcgplayer: null
-              };
-            }
-            
-            // RETRY LOGIC: 3 attempts met exponential backoff
-            const MAX_RETRIES = 3;
-            let lastError = null;
-            
-            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout (was 5s)
-            
-              try {
-                const apiResponse = await fetch(
-                  `https://api.pokemontcg.io/v2/cards/${card.cardId}`,
-                  {
-                    headers: { 'X-Api-Key': pokemonApiKey },
-                    signal: controller.signal
-                  }
-                );
-                clearTimeout(timeoutId);
-                
-                if (apiResponse.ok) {
-                  const apiData = await apiResponse.json();
-                  const apiCard = apiData.data;
-                  
-                  if (apiCard?.tcgplayer?.prices) {
-                    const exchangeRate = 0.92; // USD to EUR
-                    
-                    const convertToEUR = (usdPrice) => {
-                      return usdPrice ? usdPrice * exchangeRate : null;
-                    };
-                    
-                    const convertedPrices = {};
-                    Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
-                      const variant = apiCard.tcgplayer.prices[variantKey];
-                      if (variant) {
-                        convertedPrices[variantKey] = {
-                          market: convertToEUR(variant.market),
-                          mid: convertToEUR(variant.mid),
-                          low: convertToEUR(variant.low),
-                          high: convertToEUR(variant.high)
-                        };
-                      }
-                    });
-                    
-                    tcgplayer = {
-                      url: apiCard.tcgplayer.url || null,
-                      prices: convertedPrices,
-                      lastUpdated: new Date().toISOString()
-                    };
-                    
-                    console.log(`✅ Pricing loaded: ${card.cardName} (#${card.cardNumber}) - ${Object.keys(convertedPrices).length} variants [attempt ${attempt}]`);
-                    break; // Success, exit retry loop
-                  } else {
-                    console.warn(`⚠️ No pricing data for ${card.cardName} (#${card.cardNumber}, ${card.cardId}) - API returned no prices [attempt ${attempt}]`);
-                    break; // No point retrying if API has no data
-                  }
-                } else {
-                  const errorMsg = `${apiResponse.status} ${apiResponse.statusText}`;
-                  console.error(`❌ API error for ${card.cardName} (#${card.cardNumber}): ${errorMsg} [attempt ${attempt}/${MAX_RETRIES}]`);
-                  lastError = new Error(errorMsg);
-                  
-                  // Only retry on 5xx errors or 429 (rate limit)
-                  if (attempt < MAX_RETRIES && (apiResponse.status >= 500 || apiResponse.status === 429)) {
-                    const delay = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
-                    console.log(`⏳ Retrying in ${delay}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
-                  }
-                  break; // Don't retry 4xx errors
-                }
-              } catch (error) {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                  console.warn(`⏱️ Timeout fetching pricing for ${card.cardName} (#${card.cardNumber}, ${card.cardId}) [attempt ${attempt}/${MAX_RETRIES}]`);
-                } else {
-                  console.error(`❌ Error fetching pricing for ${card.cardName} (#${card.cardNumber}, ${card.cardId}): ${error.message} [attempt ${attempt}/${MAX_RETRIES}]`);
-                }
-                lastError = error;
-                
-                // Retry on timeout or network errors
-                if (attempt < MAX_RETRIES) {
-                  const delay = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
-                  console.log(`⏳ Retrying in ${delay}ms...`);
-                  await new Promise(resolve => setTimeout(resolve, delay));
-                  continue;
-                }
-                // Always return card data even if pricing fails
-                tcgplayer = null;
-              }
-            }
-            
-            if (!tcgplayer && lastError) {
-              console.error(`❌ FINAL: Failed to load pricing for ${card.cardName} (#${card.cardNumber}) after ${MAX_RETRIES} attempts`);
-            }
+    // FASE 3: BATCH pricing ophalen (max 3-4 API calls totaal!)
+    // Pokemon TCG API ondersteunt: ?q=id:card1 OR id:card2 OR id:card3
+    // Max ~15 IDs per query (URL length limit)
+    
+    const BATCH_SIZE = 12; // 12 cards per API call
+    const pricingMap = new Map();
+    
+    // Maak batches van card IDs
+    const cardIds = purchaseCards.map(c => c.cardId);
+    const batches = [];
+    for (let i = 0; i < cardIds.length; i += BATCH_SIZE) {
+      batches.push(cardIds.slice(i, i + BATCH_SIZE));
+    }
+    
+    console.log(`🔄 Fetching pricing in ${batches.length} batch(es)...`);
+    
+    // Process batches SEQUENTIEEL (voorkomt rate limiting)
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      
+      // Bouw query: id:card1 OR id:card2 OR id:card3
+      const query = batch.map(id => `id:${id}`).join(' OR ');
+      const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}`;
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout per batch
+        
+        const response = await fetch(url, {
+          headers: { 'X-Api-Key': pokemonApiKey },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const cards = data.data || [];
           
-            return {
-              ...card,
-              images: JSON.parse(card.images),
-              tcgplayer: tcgplayer
-            };
-          })
-        )
-      )
-    );
+          // Map pricing data per card ID
+          cards.forEach(apiCard => {
+            if (apiCard?.tcgplayer?.prices) {
+              const exchangeRate = 0.92;
+              const convertedPrices = {};
+              
+              Object.keys(apiCard.tcgplayer.prices).forEach(variantKey => {
+                const variant = apiCard.tcgplayer.prices[variantKey];
+                if (variant) {
+                  convertedPrices[variantKey] = {
+                    market: variant.market ? variant.market * exchangeRate : null,
+                    mid: variant.mid ? variant.mid * exchangeRate : null,
+                    low: variant.low ? variant.low * exchangeRate : null,
+                    high: variant.high ? variant.high * exchangeRate : null
+                  };
+                }
+              });
+              
+              pricingMap.set(apiCard.id, {
+                url: apiCard.tcgplayer?.url || null,
+                prices: convertedPrices,
+                lastUpdated: new Date().toISOString()
+              });
+            }
+          });
+          
+          console.log(`✅ Batch ${batchIndex + 1}/${batches.length}: ${cards.length} cards priced (${Date.now() - startTime}ms)`);
+        } else {
+          console.warn(`⚠️ Batch ${batchIndex + 1} failed: ${response.status} (${Date.now() - startTime}ms)`);
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.warn(`⏱️ Batch ${batchIndex + 1} timeout (${Date.now() - startTime}ms)`);
+        } else {
+          console.error(`❌ Batch ${batchIndex + 1} error: ${error.message}`);
+        }
+      }
+      
+      // Kleine delay tussen batches om rate limiting te voorkomen
+      if (batchIndex < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
     
-    // Flatten all batch results
-    const cardsWithPricing = allBatchResults.flat();
+    // FASE 4: Combineer kaarten met pricing data
+    const cardsWithPricing = purchaseCards.map(card => ({
+      ...card,
+      images: JSON.parse(card.images),
+      tcgplayer: pricingMap.get(card.cardId) || null
+    }));
     
-    console.log(`✅ Loaded ${cardsWithPricing.length} purchase cards with pricing`);
+    const pricedCount = cardsWithPricing.filter(c => c.tcgplayer).length;
+    const totalTime = Date.now() - startTime;
+    
+    console.log(`✅ DONE: ${pricedCount}/${cardsWithPricing.length} cards with pricing (${totalTime}ms total)`);
     
     return NextResponse.json({
       user: {
@@ -177,11 +166,19 @@ export async function GET(request, { params }) {
         displayName: user.displayName,
         avatarUrl: user.avatarUrl
       },
-      cards: cardsWithPricing
+      cards: cardsWithPricing,
+      _meta: {
+        totalCards: cardsWithPricing.length,
+        pricedCards: pricedCount,
+        loadTimeMs: totalTime
+      }
     });
     
   } catch (error) {
-    console.error('Error fetching public cards:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Fatal error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }
