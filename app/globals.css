@@ -220,34 +220,36 @@ body {
     display: none !important;
   }
   
-  /* Show CSS clouds for Safari */
+  /* Show CSS clouds for Safari - INTENSER */
   .animated-background-container .cloud {
     display: block !important;
     position: absolute;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.65);
     border-radius: 100px;
-    filter: blur(30px);
-    -webkit-filter: blur(30px);
-    opacity: 0.7;
+    filter: blur(28px);
+    -webkit-filter: blur(28px);
+    opacity: 0.85;
     will-change: transform;
+    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3);
   }
   
   .dark .animated-background-container .cloud {
-    background: rgba(200, 210, 220, 0.25);
-    opacity: 0.4;
+    background: rgba(220, 230, 240, 0.45);
+    opacity: 0.7;
+    box-shadow: 0 8px 32px rgba(200, 210, 220, 0.2);
   }
   
   .animated-background-container .cloud1 {
-    width: 400px;
-    height: 140px;
+    width: 450px;
+    height: 160px;
     top: 12%;
     left: -200px;
     animation: cloud-move 45s linear infinite;
   }
   
   .animated-background-container .cloud2 {
-    width: 450px;
-    height: 160px;
+    width: 500px;
+    height: 180px;
     top: 32%;
     left: -250px;
     animation: cloud-move-slow 60s linear infinite;
@@ -255,8 +257,8 @@ body {
   }
   
   .animated-background-container .cloud3 {
-    width: 350px;
-    height: 120px;
+    width: 400px;
+    height: 140px;
     top: 6%;
     left: -150px;
     animation: cloud-move 50s linear infinite;
@@ -264,8 +266,8 @@ body {
   }
   
   .animated-background-container .cloud4 {
-    width: 380px;
-    height: 130px;
+    width: 430px;
+    height: 150px;
     top: 48%;
     left: -180px;
     animation: cloud-move-slow 55s linear infinite;
@@ -273,12 +275,21 @@ body {
   }
   
   .animated-background-container .cloud5 {
-    width: 320px;
-    height: 110px;
+    width: 380px;
+    height: 130px;
     top: 22%;
     left: -160px;
     animation: cloud-move 58s linear infinite;
     animation-delay: -35s;
+  }
+  
+  .animated-background-container .cloud6 {
+    width: 420px;
+    height: 145px;
+    top: 58%;
+    left: -190px;
+    animation: cloud-move 52s linear infinite;
+    animation-delay: -25s;
   }
 }
 
