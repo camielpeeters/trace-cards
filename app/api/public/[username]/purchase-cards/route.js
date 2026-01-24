@@ -9,7 +9,7 @@ const PRICE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 uur
 // Fetch single card pricing met timeout
 async function fetchCardPricing(cardId, apiKey) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s per kaart
+  const timeoutId = setTimeout(() => controller.abort(), 4000);
   
   try {
     const response = await fetch(
@@ -54,26 +54,32 @@ async function fetchCardPricing(cardId, apiKey) {
   }
 }
 
-// Process cards in chunks with concurrency limit
-async function fetchPricingWithLimit(cardIds, apiKey, concurrency = 5) {
-  const results = new Map();
+// Background price fetching (fire-and-forget)
+async function fetchAndCachePricesInBackground(cards, apiKey, prisma) {
+  console.log(`🔄 Background: fetching ${cards.length} prices...`);
   
-  for (let i = 0; i < cardIds.length; i += concurrency) {
-    const chunk = cardIds.slice(i, i + concurrency);
-    const promises = chunk.map(async (cardId) => {
-      const pricing = await fetchCardPricing(cardId, apiKey);
-      if (pricing) results.set(cardId, pricing);
-    });
-    
-    await Promise.all(promises);
-    
-    // Kleine pauze tussen chunks om rate limits te voorkomen
-    if (i + concurrency < cardIds.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+  for (const card of cards) {
+    try {
+      const pricing = await fetchCardPricing(card.cardId, apiKey);
+      if (pricing) {
+        await prisma.purchaseCard.update({
+          where: { id: card.id },
+          data: {
+            tcgplayerPrices: JSON.stringify(pricing.prices),
+            tcgplayerUrl: pricing.url,
+            tcgplayerUpdated: new Date()
+          }
+        });
+        console.log(`💾 Background cached: ${card.cardId}`);
+      }
+      // Small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } catch (err) {
+      console.warn(`Background fetch failed for ${card.cardId}:`, err.message);
     }
   }
   
-  return results;
+  console.log(`✅ Background fetch complete`);
 }
 
 export async function GET(request, { params }) {
@@ -100,8 +106,6 @@ export async function GET(request, { params }) {
       console.log(`❌ User not found: ${username}`);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
-    console.log(`✅ User found: ${user.username} (${Date.now() - startTime}ms)`);
     
     // FASE 2: Kaarten ophalen uit database (inclusief cached pricing)
     const purchaseCards = await prisma.purchaseCard.findMany({
@@ -151,7 +155,6 @@ export async function GET(request, { params }) {
       const isFresh = (now - lastUpdated) < PRICE_CACHE_TTL_MS;
       
       if (isFresh && card.tcgplayerPrices) {
-        // Use cached pricing
         const cachedPrices = parseJson(card.tcgplayerPrices);
         if (cachedPrices) {
           cachedPriceMap.set(card.cardId, {
@@ -168,28 +171,37 @@ export async function GET(request, { params }) {
     });
     
     const cachedCount = cachedPriceMap.size;
-    console.log(`💾 ${cachedCount} cached, ${cardsNeedingPrices.length} need refresh`);
+    const totalCards = purchaseCards.length;
+    const cacheRatio = cachedCount / totalCards;
     
-    // FASE 4: Fetch prijzen voor kaarten die dat nodig hebben
-    // Individuele queries zijn VEEL sneller dan batch OR queries!
+    console.log(`💾 ${cachedCount}/${totalCards} cached (${Math.round(cacheRatio * 100)}%), ${cardsNeedingPrices.length} need refresh`);
+    
+    // FASE 4: Besluit: direct returnen of wachten op fetch?
+    // Als >70% gecached is, return direct en fetch de rest op achtergrond
+    // Anders, wacht op fetch (eerste bezoek)
+    
     let freshPricingMap = new Map();
     
     if (pokemonApiKey && cardsNeedingPrices.length > 0) {
-      const cardIdsToFetch = cardsNeedingPrices.map(c => c.cardId);
-      console.log(`🔄 Fetching ${cardIdsToFetch.length} prices (5 concurrent)...`);
-      
-      freshPricingMap = await fetchPricingWithLimit(cardIdsToFetch, pokemonApiKey, 5);
-      
-      console.log(`✅ Fetched ${freshPricingMap.size}/${cardIdsToFetch.length} prices (${Date.now() - startTime}ms)`);
-      
-      // FASE 5: Update database met nieuwe prijzen (fire-and-forget)
-      if (freshPricingMap.size > 0) {
-        const updatePromises = [];
+      if (cacheRatio >= 0.7) {
+        // VEEL gecached → return direct, fetch op achtergrond
+        console.log(`⚡ Fast path: returning cached data, fetching ${cardsNeedingPrices.length} in background`);
         
-        freshPricingMap.forEach((pricing, cardId) => {
-          const card = cardsNeedingPrices.find(c => c.cardId === cardId);
-          if (card) {
-            updatePromises.push(
+        // Fire-and-forget background fetch (niet await!)
+        fetchAndCachePricesInBackground(cardsNeedingPrices, pokemonApiKey, prisma);
+        
+      } else {
+        // WEINIG gecached → wacht op fetch (eerste bezoek)
+        console.log(`🔄 Slow path: fetching ${cardsNeedingPrices.length} prices synchronously...`);
+        
+        // Fetch met concurrency limit
+        for (let i = 0; i < cardsNeedingPrices.length; i += 5) {
+          const chunk = cardsNeedingPrices.slice(i, i + 5);
+          const promises = chunk.map(async (card) => {
+            const pricing = await fetchCardPricing(card.cardId, pokemonApiKey);
+            if (pricing) {
+              freshPricingMap.set(card.cardId, pricing);
+              // Update DB (fire-and-forget)
               prisma.purchaseCard.update({
                 where: { id: card.id },
                 data: {
@@ -197,23 +209,19 @@ export async function GET(request, { params }) {
                   tcgplayerUrl: pricing.url,
                   tcgplayerUpdated: new Date()
                 }
-              }).catch(err => console.warn(`DB update failed for ${cardId}:`, err.message))
-            );
-          }
-        });
+              }).catch(() => {});
+            }
+          });
+          await Promise.all(promises);
+        }
         
-        // Fire-and-forget
-        Promise.all(updatePromises).then(() => {
-          console.log(`💾 Cached ${updatePromises.length} prices to DB`);
-        });
+        console.log(`✅ Fetched ${freshPricingMap.size}/${cardsNeedingPrices.length} prices (${Date.now() - startTime}ms)`);
       }
     }
     
-    // FASE 6: Combineer alle kaarten met pricing
+    // FASE 5: Combineer alle kaarten met pricing
     const cardsWithPricing = purchaseCards.map(card => {
       const images = parseJson(card.images) || { small: null, large: null };
-      
-      // Probeer: 1) verse API data, 2) cached data
       const tcgplayer = freshPricingMap.get(card.cardId) || cachedPriceMap.get(card.cardId) || null;
       
       return {
@@ -234,7 +242,7 @@ export async function GET(request, { params }) {
     const pricedCount = cardsWithPricing.filter(c => c.tcgplayer).length;
     const totalTime = Date.now() - startTime;
     
-    console.log(`✅ DONE: ${pricedCount}/${cardsWithPricing.length} priced (${cachedCount} cached, ${freshPricingMap.size} fresh) (${totalTime}ms)`);
+    console.log(`✅ DONE: ${pricedCount}/${cardsWithPricing.length} priced (${totalTime}ms)`);
     
     return NextResponse.json({
       user: {
@@ -248,6 +256,7 @@ export async function GET(request, { params }) {
         pricedCards: pricedCount,
         cachedCards: cachedCount,
         freshFetched: freshPricingMap.size,
+        backgroundFetching: cacheRatio >= 0.7 && cardsNeedingPrices.length > 0 ? cardsNeedingPrices.length : 0,
         loadTimeMs: totalTime
       }
     });

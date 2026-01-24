@@ -744,14 +744,15 @@ export default function PublicUserPage() {
           <div className="cloud cloud6"></div>
         </div>
         <div className="relative z-10">
-          <div className="glass-strong rounded-3xl p-10 text-center max-w-sm mx-auto">
-            {/* Pokéball Spinner - kleiner en sneller */}
+          {/* Vaste breedte container - voorkomt resize bij tekst wissel */}
+          <div className="glass-strong rounded-3xl p-10 text-center w-72 mx-auto">
+            {/* Pokéball Spinner */}
             <div className="relative w-16 h-16 mx-auto mb-5">
               <div className="absolute inset-0 rounded-full border-[6px] border-red-500 border-t-white animate-spin" style={{ animationDuration: '0.8s' }}></div>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-[3px] border-red-500"></div>
             </div>
             
-            {/* Progress Bar - snellere transition */}
+            {/* Progress Bar */}
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-3 overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full relative overflow-hidden"
@@ -764,11 +765,11 @@ export default function PublicUserPage() {
               </div>
             </div>
             
-            {/* Progress Text */}
+            {/* Progress Text - vaste hoogte voor tekst */}
             <p className="text-gray-800 dark:text-white font-bold text-lg mb-1">
               {loadingProgress}%
             </p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm h-5">
               {getLoadingText()}
             </p>
           </div>

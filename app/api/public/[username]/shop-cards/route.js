@@ -3,10 +3,8 @@ import { getPrisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-// Prijzen worden gecached in DB - alleen opnieuw fetchen als ouder dan 24 uur
 const PRICE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 uur
 
-// Fetch single card pricing met timeout
 async function fetchCardPricing(cardId, apiKey) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -54,25 +52,25 @@ async function fetchCardPricing(cardId, apiKey) {
   }
 }
 
-// Process cards with concurrency limit
-async function fetchPricingWithLimit(cardIds, apiKey, concurrency = 5) {
-  const results = new Map();
-  
-  for (let i = 0; i < cardIds.length; i += concurrency) {
-    const chunk = cardIds.slice(i, i + concurrency);
-    const promises = chunk.map(async (cardId) => {
-      const pricing = await fetchCardPricing(cardId, apiKey);
-      if (pricing) results.set(cardId, pricing);
-    });
-    
-    await Promise.all(promises);
-    
-    if (i + concurrency < cardIds.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+async function fetchAndCachePricesInBackground(cards, apiKey, prisma) {
+  for (const card of cards) {
+    try {
+      const pricing = await fetchCardPricing(card.cardId, apiKey);
+      if (pricing) {
+        await prisma.shopCard.update({
+          where: { id: card.id },
+          data: {
+            tcgplayerPrices: JSON.stringify(pricing.prices),
+            tcgplayerUrl: pricing.url,
+            tcgplayerUpdated: new Date()
+          }
+        });
+      }
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } catch (err) {
+      // Ignore errors in background
     }
   }
-  
-  return results;
 }
 
 export async function GET(request, { params }) {
@@ -88,7 +86,6 @@ export async function GET(request, { params }) {
     const pokemonApiKey = process.env.POKEMON_TCG_API_KEY;
     const prisma = getPrisma();
     
-    // FASE 1: Database lookup
     const user = await prisma.user.findUnique({
       where: { username: username.toLowerCase() }
     });
@@ -97,7 +94,6 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    // FASE 2: Kaarten ophalen uit database (inclusief cached pricing)
     const shopCards = await prisma.shopCard.findMany({
       where: {
         userId: user.id,
@@ -112,7 +108,6 @@ export async function GET(request, { params }) {
     
     console.log(`🛒 Found ${shopCards.length} shop cards (${Date.now() - startTime}ms)`);
     
-    // Helper: parse JSON veilig
     const parseJson = (data) => {
       if (!data) return null;
       if (typeof data === 'object') return data;
@@ -123,7 +118,6 @@ export async function GET(request, { params }) {
       }
     };
     
-    // Als geen kaarten, return direct
     if (shopCards.length === 0) {
       return NextResponse.json({
         user: {
@@ -136,7 +130,6 @@ export async function GET(request, { params }) {
       });
     }
     
-    // FASE 3: Bepaal welke kaarten verse prijzen nodig hebben
     const now = Date.now();
     const cardsNeedingPrices = [];
     const cachedPriceMap = new Map();
@@ -162,25 +155,23 @@ export async function GET(request, { params }) {
     });
     
     const cachedCount = cachedPriceMap.size;
-    console.log(`💾 Shop: ${cachedCount} cached, ${cardsNeedingPrices.length} need refresh`);
+    const totalCards = shopCards.length;
+    const cacheRatio = totalCards > 0 ? cachedCount / totalCards : 1;
     
-    // FASE 4: Fetch prijzen met individuele queries (sneller dan batch!)
     let freshPricingMap = new Map();
     
     if (pokemonApiKey && cardsNeedingPrices.length > 0) {
-      const cardIdsToFetch = cardsNeedingPrices.map(c => c.cardId);
-      freshPricingMap = await fetchPricingWithLimit(cardIdsToFetch, pokemonApiKey, 5);
-      
-      console.log(`✅ Shop fetched ${freshPricingMap.size}/${cardIdsToFetch.length} prices`);
-      
-      // Update database (fire-and-forget)
-      if (freshPricingMap.size > 0) {
-        const updatePromises = [];
-        
-        freshPricingMap.forEach((pricing, cardId) => {
-          const card = cardsNeedingPrices.find(c => c.cardId === cardId);
-          if (card) {
-            updatePromises.push(
+      if (cacheRatio >= 0.7) {
+        // Return fast, fetch in background
+        fetchAndCachePricesInBackground(cardsNeedingPrices, pokemonApiKey, prisma);
+      } else {
+        // Fetch synchronously
+        for (let i = 0; i < cardsNeedingPrices.length; i += 5) {
+          const chunk = cardsNeedingPrices.slice(i, i + 5);
+          const promises = chunk.map(async (card) => {
+            const pricing = await fetchCardPricing(card.cardId, pokemonApiKey);
+            if (pricing) {
+              freshPricingMap.set(card.cardId, pricing);
               prisma.shopCard.update({
                 where: { id: card.id },
                 data: {
@@ -188,18 +179,14 @@ export async function GET(request, { params }) {
                   tcgplayerUrl: pricing.url,
                   tcgplayerUpdated: new Date()
                 }
-              }).catch(err => console.warn(`DB update failed:`, err.message))
-            );
-          }
-        });
-        
-        Promise.all(updatePromises).then(() => {
-          console.log(`💾 Cached ${updatePromises.length} shop prices to DB`);
-        });
+              }).catch(() => {});
+            }
+          });
+          await Promise.all(promises);
+        }
       }
     }
     
-    // FASE 5: Combineer alle kaarten met pricing
     const cardsWithPricing = shopCards.map(card => {
       const images = parseJson(card.images) || { small: null, large: null };
       const tcgplayer = freshPricingMap.get(card.cardId) || cachedPriceMap.get(card.cardId) || null;
