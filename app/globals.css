@@ -218,6 +218,8 @@ body {
   /* Canvas is now enabled for Safari to show animated grass */
   
   /* Show CSS clouds for Safari - INTENSER */
+  /* Also target clouds directly (not just within animated-background-container) */
+  .cloud,
   .animated-background-container .cloud {
     display: block !important;
     position: absolute;
@@ -228,14 +230,18 @@ body {
     opacity: 0.85;
     will-change: transform;
     box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3);
+    z-index: -1;
   }
   
+  .dark .cloud,
   .dark .animated-background-container .cloud {
     background: rgba(220, 230, 240, 0.45);
     opacity: 0.7;
     box-shadow: 0 8px 32px rgba(200, 210, 220, 0.2);
   }
   
+  /* Cloud positioning - works for both direct .cloud and .animated-background-container .cloud */
+  .cloud1,
   .animated-background-container .cloud1 {
     width: 450px;
     height: 160px;
@@ -244,6 +250,7 @@ body {
     animation: cloud-move 45s linear infinite;
   }
   
+  .cloud2,
   .animated-background-container .cloud2 {
     width: 500px;
     height: 180px;
@@ -253,6 +260,7 @@ body {
     animation-delay: -20s;
   }
   
+  .cloud3,
   .animated-background-container .cloud3 {
     width: 400px;
     height: 140px;
@@ -262,6 +270,7 @@ body {
     animation-delay: -40s;
   }
   
+  .cloud4,
   .animated-background-container .cloud4 {
     width: 430px;
     height: 150px;
@@ -271,6 +280,7 @@ body {
     animation-delay: -10s;
   }
   
+  .cloud5,
   .animated-background-container .cloud5 {
     width: 380px;
     height: 130px;
@@ -280,6 +290,7 @@ body {
     animation-delay: -35s;
   }
   
+  .cloud6,
   .animated-background-container .cloud6 {
     width: 420px;
     height: 145px;

@@ -108,7 +108,7 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
   }
 
   return (
-    <div className="relative" ref={trayRef}>
+    <div className="relative" ref={trayRef} style={{ zIndex: 9999 }}>
       {/* Notification Badge Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -123,7 +123,7 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
 
       {/* Notification Tray Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 glass-strong rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/30 backdrop-blur-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 glass-strong rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/30 backdrop-blur-xl overflow-hidden" style={{ zIndex: 9999 }}>
           <div className="p-4 border-b border-white/10 dark:border-gray-700/30 flex items-center justify-between">
             <h3 className="font-bold text-lg text-gray-800 dark:text-white">
               Notificaties
