@@ -36,19 +36,23 @@ function CloudBackgroundCanvas({ darkMode = false }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log('⚠️ Canvas ref not available');
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('❌ Failed to get 2d context');
+      return;
+    }
+    
     // Browser detection (used only for canvas safety fallbacks / minor styling)
     const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
-    
-    // Safari detection - DISABLE CANVAS ENTIRELY for Safari
     const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(ua);
     
     if (IS_SAFARI) {
-      console.log('🍎 Safari detected - Canvas disabled, using CSS clouds fallback');
-      // Don't render canvas at all for Safari
-      return;
+      console.log('🍎 Safari detected - Canvas enabled for grass animation');
     }
     
     const IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
@@ -947,9 +951,13 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     }
 
     function initGrass() {
-      if (!width || !height) return;
+      if (!width || !height) {
+        console.log('⚠️ initGrass: Missing dimensions', { width, height });
+        return;
+      }
       // Reset gras bij resize (zodat het altijd aan footer blijft)
       grassRef.current = [];
+      console.log('🌱 Initializing grass with', { width, height });
       
       // Gras op footer (onderkant van scherm) - gebruik altijd actuele height
       // Meer clusters voor volledige bodem vulling
@@ -997,6 +1005,8 @@ function CloudBackgroundCanvas({ darkMode = false }) {
           grassRef.current.push(blade);
         }
       }
+      
+      console.log('✅ Grass initialized:', grassRef.current.length, 'blades');
     }
 
     function initStars() {
@@ -1188,6 +1198,17 @@ function CloudBackgroundCanvas({ darkMode = false }) {
         initGrass();
       }
       
+      // Debug: log grass rendering
+      if (grassRef.current.length > 0 && animationTimeRef.current < 0.5) {
+        const visibleBlades = grassRef.current.filter(b => !b.isThin && b.width >= 5).length;
+        console.log('🌱 Drawing grass:', { 
+          total: grassRef.current.length, 
+          visible: visibleBlades,
+          height,
+          width 
+        });
+      }
+      
       // SAFE DESIGN (cross-browser):
       // - Draw a solid grass base strip so the footer is always fully filled (no gaps)
       // - Do NOT render thin back-layer blades (they flicker/glitch across browsers)
@@ -1275,16 +1296,18 @@ function CloudBackgroundCanvas({ darkMode = false }) {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none safari-hide"
+      className="fixed inset-0 pointer-events-none"
       style={{ 
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: -1, 
+        zIndex: -2, 
         backgroundColor: 'transparent',
         backdropFilter: darkMode ? 'blur(1px)' : 'none',
+        WebkitBackdropFilter: darkMode ? 'blur(1px)' : 'none',
+        pointerEvents: 'none',
       }}
     />
   );

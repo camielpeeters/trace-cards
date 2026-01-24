@@ -212,13 +212,10 @@ body {
   }
 }
 
-/* Safari-only: Simple CSS clouds as fallback + HIDE CANVAS */
+/* Safari-only: Simple CSS clouds as fallback */
 /* Safari detection: -webkit-backdrop-filter support but NO -moz-appearance (that's Firefox) */
 @supports (-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none)) {
-  /* Hide canvas completely for Safari */
-  .safari-hide {
-    display: none !important;
-  }
+  /* Canvas is now enabled for Safari to show animated grass */
   
   /* Show CSS clouds for Safari - INTENSER */
   .animated-background-container .cloud {

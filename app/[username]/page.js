@@ -73,11 +73,6 @@ export default function PublicUserPage() {
     };
     checkAuth();
     
-    // Load pending offers count for authenticated users
-    if (isAuthenticated() && authUser) {
-      loadPendingOffersCount();
-    }
-    
     // Only check on storage events (other tabs login/logout) - no polling
     const handleStorageChange = (e) => {
       if (e.key === 'authToken') {
@@ -92,6 +87,13 @@ export default function PublicUserPage() {
     
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [username]); // Only run on username change
+  
+  // Load pending offers count when auth is ready
+  useEffect(() => {
+    if (!authLoading && isAuthenticated() && authUser) {
+      loadPendingOffersCount();
+    }
+  }, [authLoading, authUser, authenticated]); // Run when auth state changes
   
   // Load user data - wait for auth to load, then decide own vs public
   // NOTE: activeTab removed from dependencies - data is already loaded for both tabs, no need to reload on tab switch
