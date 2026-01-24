@@ -80,6 +80,11 @@ model PurchaseCard {
   addedAt    DateTime @default(now())
   isActive   Boolean  @default(true)
   
+  // Cached pricing (auto-updated, 24h TTL)
+  tcgplayerPrices  String?   // JSON with all variant prices
+  tcgplayerUrl     String?
+  tcgplayerUpdated DateTime?
+  
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@unique([userId, setId, cardId])
@@ -100,6 +105,11 @@ model ShopCard {
   stock      Int      @default(1)
   addedAt    DateTime @default(now())
   isActive   Boolean  @default(true)
+  
+  // Cached pricing (auto-updated, 24h TTL)
+  tcgplayerPrices  String?   // JSON with all variant prices
+  tcgplayerUrl     String?
+  tcgplayerUpdated DateTime?
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
