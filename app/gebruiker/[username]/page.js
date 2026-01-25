@@ -306,6 +306,9 @@ export default function PublicUserPage() {
         <div className="cloud cloud1"></div>
         <div className="cloud cloud2"></div>
         <div className="cloud cloud3"></div>
+        <div className="cloud cloud4"></div>
+        <div className="cloud cloud5"></div>
+        <div className="cloud cloud6"></div>
       </div>
       
       <div className="relative z-10">
