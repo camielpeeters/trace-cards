@@ -1312,6 +1312,21 @@ function CloudBackgroundCanvas({ darkMode = false }) {
     canvas.style.height = height + 'px';
   }, [darkMode]);
 
+  // Test Safari CSS clouds support
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const testSupports = CSS.supports('(-webkit-backdrop-filter: blur(1px))') && 
+                          !CSS.supports('(-moz-appearance: none)');
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      console.log('🌥️ Safari CSS clouds test:', { 
+        testSupports, 
+        isSafari, 
+        userAgent: navigator.userAgent,
+        hasCloudElements: document.querySelectorAll('.cloud').length
+      });
+    }
+  }, []);
+
   return (
     <canvas
       ref={canvasRef}

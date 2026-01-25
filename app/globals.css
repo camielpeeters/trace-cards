@@ -212,50 +212,57 @@ body {
   }
 }
 
-/* Safari-only: Simple CSS clouds as fallback */
+/* Default: Hide CSS clouds for all browsers (canvas is used) */
+/* Safari will override this with @supports rule below */
+.animated-background-container .cloud,
+.animated-background-container .cloud1,
+.animated-background-container .cloud2,
+.animated-background-container .cloud3,
+.animated-background-container .cloud4,
+.animated-background-container .cloud5,
+.animated-background-container .cloud6 {
+  display: none;
+}
+
+/* Safari-only: Show CSS clouds (they work alongside canvas for grass) */
 /* Safari detection: -webkit-backdrop-filter support but NO -moz-appearance (that's Firefox) */
+/* Using more specific selectors for better cascade control */
 @supports (-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none)) {
-  /* Canvas is now enabled for Safari to show animated grass */
-  
-  /* Show CSS clouds for Safari - INTENSER - HIGHEST PRIORITY */
-  /* Target ALL cloud elements in Safari */
-  .cloud,
-  .animated-background-container .cloud,
-  .cloud1,
-  .cloud2,
-  .cloud3,
-  .cloud4,
-  .cloud5,
-  .cloud6,
-  .animated-background-container .cloud1,
-  .animated-background-container .cloud2,
-  .animated-background-container .cloud3,
-  .animated-background-container .cloud4,
-  .animated-background-container .cloud5,
-  .animated-background-container .cloud6 {
-    display: block !important;
-    position: absolute !important;
-    background: rgba(255, 255, 255, 0.75) !important;
-    border-radius: 100px !important;
-    filter: blur(30px) !important;
-    -webkit-filter: blur(30px) !important;
-    opacity: 0.9 !important;
-    will-change: transform !important;
-    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.4) !important;
-    z-index: -1 !important;
-    visibility: visible !important;
+  /* Show CSS clouds for Safari - Beautiful animated clouds */
+  /* Using high specificity selectors without !important */
+  html body .animated-background-container .cloud,
+  html body .animated-background-container .cloud1,
+  html body .animated-background-container .cloud2,
+  html body .animated-background-container .cloud3,
+  html body .animated-background-container .cloud4,
+  html body .animated-background-container .cloud5,
+  html body .animated-background-container .cloud6 {
+    display: block;
+    position: absolute;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 100px;
+    filter: blur(28px);
+    -webkit-filter: blur(28px);
+    opacity: 0.85;
+    will-change: transform;
+    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3);
+    z-index: -1;
   }
   
-  .dark .cloud,
-  .dark .animated-background-container .cloud {
+  html body .dark .animated-background-container .cloud,
+  html body .dark .animated-background-container .cloud1,
+  html body .dark .animated-background-container .cloud2,
+  html body .dark .animated-background-container .cloud3,
+  html body .dark .animated-background-container .cloud4,
+  html body .dark .animated-background-container .cloud5,
+  html body .dark .animated-background-container .cloud6 {
     background: rgba(220, 230, 240, 0.45);
     opacity: 0.7;
     box-shadow: 0 8px 32px rgba(200, 210, 220, 0.2);
   }
   
-  /* Cloud positioning - works for both direct .cloud and .animated-background-container .cloud */
-  .cloud1,
-  .animated-background-container .cloud1 {
+  /* Cloud positioning and animation */
+  html body .animated-background-container .cloud1 {
     width: 450px;
     height: 160px;
     top: 12%;
@@ -263,8 +270,7 @@ body {
     animation: cloud-move 45s linear infinite;
   }
   
-  .cloud2,
-  .animated-background-container .cloud2 {
+  html body .animated-background-container .cloud2 {
     width: 500px;
     height: 180px;
     top: 32%;
@@ -273,8 +279,7 @@ body {
     animation-delay: -20s;
   }
   
-  .cloud3,
-  .animated-background-container .cloud3 {
+  html body .animated-background-container .cloud3 {
     width: 400px;
     height: 140px;
     top: 6%;
@@ -283,8 +288,7 @@ body {
     animation-delay: -40s;
   }
   
-  .cloud4,
-  .animated-background-container .cloud4 {
+  html body .animated-background-container .cloud4 {
     width: 430px;
     height: 150px;
     top: 48%;
@@ -293,8 +297,7 @@ body {
     animation-delay: -10s;
   }
   
-  .cloud5,
-  .animated-background-container .cloud5 {
+  html body .animated-background-container .cloud5 {
     width: 380px;
     height: 130px;
     top: 22%;
@@ -303,28 +306,13 @@ body {
     animation-delay: -35s;
   }
   
-  .cloud6,
-  .animated-background-container .cloud6 {
+  html body .animated-background-container .cloud6 {
     width: 420px;
     height: 145px;
     top: 58%;
     left: -190px;
     animation: cloud-move 52s linear infinite;
     animation-delay: -25s;
-  }
-}
-
-/* Hide CSS clouds for non-Safari browsers (they use canvas) */
-/* This must come AFTER the Safari @supports rule */
-@supports not ((-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none))) {
-  .cloud,
-  .cloud1,
-  .cloud2,
-  .cloud3,
-  .cloud4,
-  .cloud5,
-  .cloud6 {
-    display: none !important;
   }
 }
 
