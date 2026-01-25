@@ -963,7 +963,14 @@ export default function PublicUserPage() {
   if (!user) {
     return (
       <div className="min-h-screen font-['Ubuntu',_sans-serif] relative flex items-center justify-center p-4">
-        <div className="animated-background-container"></div>
+        <div className="animated-background-container">
+          <div className="cloud cloud1"></div>
+          <div className="cloud cloud2"></div>
+          <div className="cloud cloud3"></div>
+          <div className="cloud cloud4"></div>
+          <div className="cloud cloud5"></div>
+          <div className="cloud cloud6"></div>
+        </div>
         <div className="relative z-10">
           <div className="glass-strong rounded-3xl p-12 max-w-md text-center">
             <User className="w-16 h-16 text-red-500 mx-auto mb-4" />

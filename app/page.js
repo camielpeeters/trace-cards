@@ -212,7 +212,14 @@ export default function Home() {
   return (
     <div className="min-h-screen font-['Ubuntu',_sans-serif] relative">
       {/* Gradient Background */}
-      <div className="animated-background-container"></div>
+      <div className="animated-background-container">
+        <div className="cloud cloud1"></div>
+        <div className="cloud cloud2"></div>
+        <div className="cloud cloud3"></div>
+        <div className="cloud cloud4"></div>
+        <div className="cloud cloud5"></div>
+        <div className="cloud cloud6"></div>
+      </div>
       
       {/* Content overlay */}
       <div className="relative z-10">
