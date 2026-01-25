@@ -313,6 +313,20 @@ body {
   }
 }
 
+/* Hide CSS clouds for non-Safari browsers (they use canvas) */
+/* This must come AFTER the Safari @supports rule */
+@supports not ((-webkit-backdrop-filter: blur(1px)) and (not (-moz-appearance: none))) {
+  .cloud,
+  .cloud1,
+  .cloud2,
+  .cloud3,
+  .cloud4,
+  .cloud5,
+  .cloud6 {
+    display: none !important;
+  }
+}
+
 @keyframes card-glow {
   0% {
     box-shadow: 0 0 5px rgba(239, 68, 68, 0.3),
@@ -424,16 +438,8 @@ body {
 /* Oude wolken CSS uitgeschakeld - nu via CloudBackground component */
 /* BUT: Keep CSS clouds for Safari as fallback (they work alongside canvas for grass) */
 /* Hide CSS clouds for non-Safari browsers (they use canvas) */
-/* Default: hide all clouds, Safari @supports rule will override */
-.cloud,
-.cloud1,
-.cloud2,
-.cloud3,
-.cloud4,
-.cloud5,
-.cloud6 {
-  display: none !important;
-}
+/* IMPORTANT: This rule must come AFTER the Safari @supports rule so Safari can override it */
+/* We use a more specific selector to ensure Safari @supports takes precedence */
 
 @keyframes fade-orbs {
   0%, 100% {

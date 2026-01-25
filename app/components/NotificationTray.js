@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ShoppingBag, ShoppingCart, X, ChevronRight, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationTray({ authenticated, pendingOffersCount, onLoadNotifications }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -121,6 +123,8 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
     // Set the active tab in localStorage
     localStorage.setItem('dashboardActiveTab', notification.tab);
     setIsOpen(false);
+    // Navigate using router
+    router.push(notification.link);
   };
 
   if (!authenticated || pendingOffersCount === 0) {
@@ -191,11 +195,11 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
             ) : (
               <div className="divide-y divide-white/10 dark:divide-gray-700/30">
                 {notifications.map((notification) => (
-                  <Link
+                  <div
                     key={notification.id}
-                    href={notification.link}
                     onClick={() => handleNotificationClick(notification)}
                     className="block p-4 hover:bg-white/20 dark:hover:bg-gray-700/20 transition-colors cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-lg ${
@@ -230,7 +234,7 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-1" />
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}
@@ -238,16 +242,16 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
 
           {notifications.length > 0 && (
             <div className="p-3 border-t border-white/10 dark:border-gray-700/30">
-              <Link
-                href="/account"
+              <div
                 onClick={() => {
                   localStorage.setItem('dashboardActiveTab', 'orders');
                   setIsOpen(false);
+                  router.push('/account');
                 }}
-                className="block text-center text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                className="block text-center text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"
               >
                 Bekijk alle notificaties
-              </Link>
+              </div>
             </div>
           )}
         </div>,
