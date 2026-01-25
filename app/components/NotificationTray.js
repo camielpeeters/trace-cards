@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ShoppingBag, ShoppingCart, X, ChevronRight, Clock } from 'lucide-react';
 import Link from 'next/link';
 
@@ -8,21 +9,40 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [trayPosition, setTrayPosition] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef(null);
   const trayRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Calculate tray position based on button position
+  useEffect(() => {
+    if (isOpen && buttonRef.current && mounted) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setTrayPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [isOpen, mounted]);
 
   // Close tray when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (trayRef.current && !trayRef.current.contains(event.target)) {
+      if (trayRef.current && !trayRef.current.contains(event.target) && 
+          buttonRef.current && !buttonRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
 
-    if (isOpen) {
+    if (isOpen && mounted) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen]);
+  }, [isOpen, mounted]);
 
   // Load notifications when tray opens
   useEffect(() => {
@@ -107,10 +127,26 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
     return null;
   }
 
+  if (!mounted) {
+    return (
+      <button
+        ref={buttonRef}
+        className="relative p-2 sm:p-3 glass rounded-lg sm:rounded-xl backdrop-blur-md transition-all hover:scale-110 group"
+        title={`${pendingOffersCount} nieuwe ${pendingOffersCount === 1 ? 'notificatie' : 'notificaties'}`}
+      >
+        <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-white dark:text-red-200 relative z-10" />
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg animate-pulse">
+          {pendingOffersCount > 9 ? '9+' : pendingOffersCount}
+        </span>
+      </button>
+    );
+  }
+
   return (
-    <div className="relative" ref={trayRef} style={{ zIndex: 9999 }}>
+    <>
       {/* Notification Badge Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 sm:p-3 glass rounded-lg sm:rounded-xl backdrop-blur-md transition-all hover:scale-110 group"
         title={`${pendingOffersCount} nieuwe ${pendingOffersCount === 1 ? 'notificatie' : 'notificaties'}`}
@@ -121,9 +157,16 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
         </span>
       </button>
 
-      {/* Notification Tray Dropdown */}
-      {isOpen && (
-        <div className="fixed right-4 top-20 w-80 sm:w-96 glass-strong rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/30 backdrop-blur-xl overflow-hidden" style={{ zIndex: 9999 }}>
+      {/* Notification Tray Dropdown - Portal */}
+      {isOpen && mounted && createPortal(
+        <div 
+          ref={trayRef}
+          className="fixed w-80 sm:w-96 glass-strong rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/30 backdrop-blur-xl overflow-hidden z-[100] animate-fade-in"
+          style={{
+            top: `${trayPosition.top}px`,
+            right: `${trayPosition.right}px`
+          }}
+        >
           <div className="p-4 border-b border-white/10 dark:border-gray-700/30 flex items-center justify-between">
             <h3 className="font-bold text-lg text-gray-800 dark:text-white">
               Notificaties
@@ -207,8 +250,9 @@ export default function NotificationTray({ authenticated, pendingOffersCount, on
               </Link>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }

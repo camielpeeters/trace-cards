@@ -424,17 +424,14 @@ body {
 /* Oude wolken CSS uitgeschakeld - nu via CloudBackground component */
 /* BUT: Keep CSS clouds for Safari as fallback (they work alongside canvas for grass) */
 /* Hide CSS clouds for non-Safari browsers (they use canvas) */
-/* This will be overridden by the Safari-specific @supports rule below */
-.cloud:not(.animated-background-container .cloud) {
-  display: none !important;
-}
-
-.cloud1:not(.animated-background-container .cloud1),
-.cloud2:not(.animated-background-container .cloud2),
-.cloud3:not(.animated-background-container .cloud3),
-.cloud4:not(.animated-background-container .cloud4),
-.cloud5:not(.animated-background-container .cloud5),
-.cloud6:not(.animated-background-container .cloud6) {
+/* Default: hide all clouds, Safari @supports rule will override */
+.cloud,
+.cloud1,
+.cloud2,
+.cloud3,
+.cloud4,
+.cloud5,
+.cloud6 {
   display: none !important;
 }
 
