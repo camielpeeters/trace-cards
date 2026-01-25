@@ -69,97 +69,135 @@ export default function PublicUserPage() {
     const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
     
     if (isSafari) {
-      // Apply cloud styles directly via JavaScript for Safari
-      const style = document.createElement('style');
-      style.id = 'safari-clouds-fix';
-      style.textContent = `
-        .animated-background-container .cloud,
-        .animated-background-container .cloud1,
-        .animated-background-container .cloud2,
-        .animated-background-container .cloud3,
-        .animated-background-container .cloud4,
-        .animated-background-container .cloud5,
-        .animated-background-container .cloud6 {
-          display: block !important;
-          position: absolute !important;
-          background: rgba(255, 255, 255, 0.65) !important;
-          border-radius: 100px !important;
-          filter: blur(28px) !important;
-          -webkit-filter: blur(28px) !important;
-          opacity: 0.85 !important;
-          will-change: transform !important;
-          box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3) !important;
-          z-index: -1 !important;
+      // Function to apply cloud styles
+      const applyCloudStyles = () => {
+        // First, inject CSS
+        let style = document.getElementById('safari-clouds-fix');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'safari-clouds-fix';
+          document.head.appendChild(style);
         }
         
-        .dark .animated-background-container .cloud,
-        .dark .animated-background-container .cloud1,
-        .dark .animated-background-container .cloud2,
-        .dark .animated-background-container .cloud3,
-        .dark .animated-background-container .cloud4,
-        .dark .animated-background-container .cloud5,
-        .dark .animated-background-container .cloud6 {
-          background: rgba(220, 230, 240, 0.45) !important;
-          opacity: 0.7 !important;
-          box-shadow: 0 8px 32px rgba(200, 210, 220, 0.2) !important;
-        }
+        style.textContent = `
+          .animated-background-container .cloud,
+          .animated-background-container .cloud1,
+          .animated-background-container .cloud2,
+          .animated-background-container .cloud3,
+          .animated-background-container .cloud4,
+          .animated-background-container .cloud5,
+          .animated-background-container .cloud6 {
+            display: block !important;
+            position: absolute !important;
+            background: rgba(255, 255, 255, 0.65) !important;
+            border-radius: 100px !important;
+            filter: blur(28px) !important;
+            -webkit-filter: blur(28px) !important;
+            opacity: 0.85 !important;
+            will-change: transform !important;
+            box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3) !important;
+            z-index: -1 !important;
+            visibility: visible !important;
+          }
+          
+          .dark .animated-background-container .cloud,
+          .dark .animated-background-container .cloud1,
+          .dark .animated-background-container .cloud2,
+          .dark .animated-background-container .cloud3,
+          .dark .animated-background-container .cloud4,
+          .dark .animated-background-container .cloud5,
+          .dark .animated-background-container .cloud6 {
+            background: rgba(220, 230, 240, 0.45) !important;
+            opacity: 0.7 !important;
+            box-shadow: 0 8px 32px rgba(200, 210, 220, 0.2) !important;
+          }
+          
+          .animated-background-container .cloud1 {
+            width: 450px !important;
+            height: 160px !important;
+            top: 12% !important;
+            left: -200px !important;
+            animation: cloud-move 45s linear infinite !important;
+          }
+          
+          .animated-background-container .cloud2 {
+            width: 500px !important;
+            height: 180px !important;
+            top: 32% !important;
+            left: -250px !important;
+            animation: cloud-move-slow 60s linear infinite !important;
+            animation-delay: -20s !important;
+          }
+          
+          .animated-background-container .cloud3 {
+            width: 400px !important;
+            height: 140px !important;
+            top: 6% !important;
+            left: -150px !important;
+            animation: cloud-move 50s linear infinite !important;
+            animation-delay: -40s !important;
+          }
+          
+          .animated-background-container .cloud4 {
+            width: 430px !important;
+            height: 150px !important;
+            top: 48% !important;
+            left: -180px !important;
+            animation: cloud-move-slow 55s linear infinite !important;
+            animation-delay: -10s !important;
+          }
+          
+          .animated-background-container .cloud5 {
+            width: 380px !important;
+            height: 130px !important;
+            top: 22% !important;
+            left: -160px !important;
+            animation: cloud-move 58s linear infinite !important;
+            animation-delay: -35s !important;
+          }
+          
+          .animated-background-container .cloud6 {
+            width: 420px !important;
+            height: 145px !important;
+            top: 58% !important;
+            left: -190px !important;
+            animation: cloud-move 52s linear infinite !important;
+            animation-delay: -25s !important;
+          }
+        `;
         
-        .animated-background-container .cloud1 {
-          width: 450px !important;
-          height: 160px !important;
-          top: 12% !important;
-          left: -200px !important;
-          animation: cloud-move 45s linear infinite !important;
-        }
-        
-        .animated-background-container .cloud2 {
-          width: 500px !important;
-          height: 180px !important;
-          top: 32% !important;
-          left: -250px !important;
-          animation: cloud-move-slow 60s linear infinite !important;
-          animation-delay: -20s !important;
-        }
-        
-        .animated-background-container .cloud3 {
-          width: 400px !important;
-          height: 140px !important;
-          top: 6% !important;
-          left: -150px !important;
-          animation: cloud-move 50s linear infinite !important;
-          animation-delay: -40s !important;
-        }
-        
-        .animated-background-container .cloud4 {
-          width: 430px !important;
-          height: 150px !important;
-          top: 48% !important;
-          left: -180px !important;
-          animation: cloud-move-slow 55s linear infinite !important;
-          animation-delay: -10s !important;
-        }
-        
-        .animated-background-container .cloud5 {
-          width: 380px !important;
-          height: 130px !important;
-          top: 22% !important;
-          left: -160px !important;
-          animation: cloud-move 58s linear infinite !important;
-          animation-delay: -35s !important;
-        }
-        
-        .animated-background-container .cloud6 {
-          width: 420px !important;
-          height: 145px !important;
-          top: 58% !important;
-          left: -190px !important;
-          animation: cloud-move 52s linear infinite !important;
-          animation-delay: -25s !important;
-        }
-      `;
-      document.head.appendChild(style);
+        // Also directly set inline styles on cloud elements as backup
+        setTimeout(() => {
+          const clouds = document.querySelectorAll('.animated-background-container .cloud');
+          clouds.forEach((cloud, index) => {
+            cloud.style.display = 'block';
+            cloud.style.position = 'absolute';
+            cloud.style.background = 'rgba(255, 255, 255, 0.65)';
+            cloud.style.borderRadius = '100px';
+            cloud.style.filter = 'blur(28px)';
+            cloud.style.webkitFilter = 'blur(28px)';
+            cloud.style.opacity = '0.85';
+            cloud.style.willChange = 'transform';
+            cloud.style.boxShadow = '0 8px 32px rgba(255, 255, 255, 0.3)';
+            cloud.style.zIndex = '-1';
+            cloud.style.visibility = 'visible';
+          });
+        }, 100);
+      };
+      
+      // Apply immediately and also after DOM is ready
+      applyCloudStyles();
+      setTimeout(applyCloudStyles, 100);
+      setTimeout(applyCloudStyles, 500);
+      
+      // Also listen for DOM changes
+      const observer = new MutationObserver(() => {
+        applyCloudStyles();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
       
       return () => {
+        observer.disconnect();
         const existingStyle = document.getElementById('safari-clouds-fix');
         if (existingStyle) {
           existingStyle.remove();
